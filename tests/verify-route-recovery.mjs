@@ -58,7 +58,7 @@ for(const id of recoveryCases){
  }
  const finalId=id==='barnard'?'barnard':'bode';
  assert.equal(state.flight.target,finalId);assert.equal(state.flight.legIndex,5);assert.equal(paused,false);assert.equal($('infoDialog').open,false);
- assert.equal(JSON.stringify(state.flight.rollback),rollback);assert.ok(state.beta>0);assert.equal(state.flight.routeIssue,undefined);assert.equal($('repairRoute').hidden,true);
+ assert.equal(state.flight.rollbackLeg,5);assert.equal(state.flight.rollback.proper,state.proper);assert.equal(JSON.stringify(state.flight.rollback.ship),JSON.stringify(state.ship));assert.equal(state.flight.rollback.flight,null);assert.ok(state.beta>0);assert.equal(state.flight.routeIssue,undefined);assert.equal($('repairRoute').hidden,true);
  Simulation.tick(FlightEstimate.get().proper*1.00001);assert.equal(state.flight,null);assert.ok(state.visited.includes(finalId));
 }
 console.log('PASS fifth/sixth-leg failures for two catalogue black holes, a stale non-black-hole mode and a final passage without an outgoing point: pause once, exact physical reload, edit/retry, preserved rollback and real final arrival');
@@ -108,4 +108,20 @@ await run('Promise.all([...ArrivalStars.pending.values()])');
 run(`{
 assert.equal(state.flight.target,'bode');assert.equal(paused,true);assert.equal(recoveryPhysics(),coldRecoveryPhysics);
 console.log('PASS load-time continuation after asynchronous catalogue loading preserves the saved pause, exact instantaneous physics and original outbound point');
+const boundary=state.flight.rollback;
+Simulation.tick(FlightEstimate.get().proper/8);FlightHistory.cancel();
+assert.equal(state.flight,null);assert.equal(state.current,null);assert.ok(state.visited.includes('sgr'));
+assert.equal(JSON.stringify(state.ship.p3),JSON.stringify(boundary.ship.p3));
+for(const key of ['proper','earth','matter','totalDistance'])assert.equal(state[key],boundary[key]);
+assert.equal(state.flightHistory.at(-1).target,'sgr');assert.equal(state.itinerary.length,0);
+console.log('PASS cancelling after a completed gravitational passage returns to its actual exit with the passage history, elapsed time and fuel intact');
+resetRecovery();state.selected='barnard';launch();Route.add('bode',{mode:'stop'});
+const first=state.flight;
+ArrivalStars.index=null;ArrivalStars.loading=null;ArrivalStars.results.clear();ArrivalStars.pending.clear();ArrivalStars.resolved.clear();
+Simulation.tick(FlightEstimate.get().proper);
+assert.equal(state.flight,null);assert.ok(MissionPlanner.routeWaits.has(first));assert.equal(state.itinerary[0].id,'bode');
+Route.cancelDraft();
 }`);
+await run('Promise.all([...ArrivalStars.pending.values()])');
+run(`assert.equal(state.flight,null);assert.equal(state.current,'barnard');assert.equal(state.itinerary.length,0);
+console.log('PASS a delayed catalogue lookup cannot restart an edited or cleared draft after a stop');`);

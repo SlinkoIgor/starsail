@@ -71,8 +71,15 @@ reset();brake(4.001,0,16);FlightTips.render();assert.equal($('toast').hidden,tru
 state.flight.mission.brake.proper=4;FlightTips.render();assert.equal($('toast').dataset.kind,'arrival');
 assert.equal($('toast').dataset.icon,'arrival');assert.equal(state.orbit,null,'arrival plaque does not park the ship early');
 assert.equal(state.flight.flightTip,undefined);assert.deepEqual(FlightTips.entries.map(t=>state.flightTips.shown[t.id]),allCounts(0));
+assert.equal(elapsedFlightTime(state.flight),null,'no elapsed times without a departure record');
+state.proper=10;state.earth=20;state.flight.rollback={proper:9.5,earth:18};
+assert.deepEqual(elapsedFlightTime(state.flight),{proper:.5,earth:2},'legacy departure times are available for the target card');
+assert.equal(durationText(22.61),'22,61 года');assert.equal(durationText(101),'101 год');
+state.flight.missionElapsed={proper:1/365.25,earth:3/365.25};
+FlightTips.render();
+assert.equal($('toastText').textContent,'Прибытие: '+object('alpha').name+'.');
 state.flight.mission.arrival={targetId:'alpha'};FlightTips.render();assert.equal($('toast').dataset.icon,'orbit');
-const orbitalText=$('toastText').textContent;assert.ok(orbitalText.includes(object('alpha').name));
+const orbitalText='Выход на орбиту: '+object('alpha').name+'.';assert.equal($('toastText').textContent,orbitalText);
 speed=.5;FlightTips.render();assert.equal($('toast').hidden,true,'slowing moves the arrival window away');
 speed=1;FlightTips.render();assert.equal($('toastText').textContent,orbitalText);assert.equal($('toast').hidden,false);
 paused=true;FlightTips.render();assert.equal($('toast').hidden,false,'pause preserves the current arrival plaque');
@@ -115,15 +122,32 @@ assert.equal(state.current,p.arrivalStar?.id||p.targetId);
 assert.equal($('toast').hidden,true,'actual arrival has no lingering plaque');renderUI();assert.equal($('toast').hidden,true);
 console.log('PASS real long braking, exact save/reload and actual arrival clearing the bottom tip');
 
-reset();state.selected='alpha';launch();const shortPlan=state.flight.mission;
+reset();state.selected=state.current;renderUI();assert.equal($('arrivalEstimate').hidden,true,'there is no completed trip at the initial station');
+state.proper=500;state.earth=750;
+state.selected='alpha';launch();const shortFlight=state.flight,shortPlan=shortFlight.mission;
 assert.ok(shortPlan.arrival&&shortPlan.proper<20&&shortPlan.proper>4);
 Simulation.tick(shortPlan.proper-4);renderUI();
 assert.equal(state.flight.flightTip,undefined,'short flights never display a tip');assert.deepEqual(FlightTips.entries.map(t=>state.flightTips.shown[t.id]),allCounts(0));
 assert.equal($('toast').dataset.kind,'arrival');assert.equal($('toast').dataset.icon,'orbit');assert.equal(state.orbit,null);
+assert.equal($('toastText').textContent,orbitalText);
+assert.equal($('arrivalEstimate').hidden,false);
+assert.equal($('arrivalProper').textContent,durationText(shortPlan.proper));
+assert.equal($('arrivalEarth').textContent,durationText(shortPlan.earth));
 const arrivalRender=renderUI;
 try {renderUI=()=>{};Simulation.tick(FlightEstimate.get().proper*1.00001);} finally {renderUI=arrivalRender;}
 assert.equal(state.flight,null);assert.ok(state.orbit);assert.equal($('toast').hidden,true,'arrival clears its plaque even while a deferred UI render is blocked');
-console.log('PASS actual short orbital flight has no tips, announces four seconds before arrival and hides the plaque exactly when parked');
+const checkParked = () => {
+ renderUI();
+ assert.equal($('arrivalEstimate').hidden,false);
+ assert.equal($('arrivalLabel').textContent,'ВРЕМЯ В ПУТИ');
+ assert.equal($('arrivalProper').textContent,durationText(shortFlight.missionElapsed.proper));
+ assert.equal($('arrivalEarth').textContent,durationText(shortFlight.missionElapsed.earth));
+};
+checkParked();Simulation.tick(12);checkParked();state=restore(JSON.parse(JSON.stringify(state)));checkParked();
+state.selected='sol';renderUI();assert.equal($('arrivalLabel').textContent,'ДЛИТЕЛЬНОСТЬ ПОЛЁТА');
+state.selected=state.current;delete state.lastArrival;state=restore(JSON.parse(JSON.stringify(state)));renderUI();
+assert.equal($('arrivalEstimate').hidden,true,'an old stationary save without flight times has no arrival summary');
+console.log('PASS orbital arrival names the target and the target card shows both flight times on approach, while parked and after reload');
 
 reset();state.itinerary=[{id:'alpha',mode:'stop'},{id:'barnard',mode:'stop'}];Route.start();
 const firstLeg=state.flight;Simulation.tick(firstLeg.mission.proper);
@@ -136,6 +160,11 @@ state=restore(oldClockSave);const oldClockPhysics=JSON.stringify([state.flight,s
 const inferred=FlightTips.elapsed(state.flight);assert.ok(Math.abs(inferred-state.flight.missionElapsed.proper/speed)<1e-8);
 assert.equal(JSON.stringify([state.flight,state.ship,state.matter,state.proper,state.earth]),oldClockPhysics,'inferring an old presentation clock does not rewrite physical state');
 Simulation.advance(.25);assert.ok(Math.abs(state.flight.noticeElapsed-inferred-.25)<1e-8);
+const lastLeg=state.flight;Simulation.tick(FlightEstimate.get().proper);renderUI();
+assert.equal(state.flight,null);assert.equal($('arrivalLabel').textContent,'ВРЕМЯ В ПУТИ');
+assert.equal($('arrivalProper').textContent,durationText(lastLeg.missionElapsed.proper));
+assert.equal($('arrivalEarth').textContent,durationText(lastLeg.missionElapsed.earth));
+assert.notEqual($('arrivalEarth').textContent,durationText(state.earth),'route totals do not leak into leg durations');
 console.log('PASS automatic route continuation resets the presentation clock, prior plaques do not leak and old version-13 flights acquire a compatible clock without changing their trajectory');
 
 reset();state.flightSetup=FlightSetup.normalize({engine:true,sail:false,arrivalFuelPercent:50});planRoutePoint('proxima');planRoutePoint('alpha');

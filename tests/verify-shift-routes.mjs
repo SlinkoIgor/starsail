@@ -105,6 +105,9 @@ assert.equal(JSON.stringify([state.ship,state.matter,state.beta,state.proper,sta
 assert.equal(state.flight.target,'s21');assert.equal(state.flight.requestedTarget,'sgr');assert.ok(!state.flight.mission.passage);
 for(let i=0;state.flight&&i<6;i++)Simulation.tick(FlightEstimate.get().proper);
 assert.equal(state.current,'s21');assert.ok(!object('arrival-star:sgr:1'));
+renderUI();
+assert.equal($('arrivalProper').textContent,durationText(state.proper),'a replanned stop includes time before the braking plan');
+assert.equal($('arrivalEarth').textContent,durationText(state.earth));
 console.log('PASS aborting a passage creates an actual braking trajectory toward the known star, preserving instantaneous position, speed, fuel and clocks');
 resetRoutes();state.current='proxima';state.ship=Space.point(object('proxima').p3);state.itinerary=[{id:'sgr',mode:'flyby'},{id:'bode',mode:'stop'}];Route.start();Simulation.tick(state.flight.mission.proper*.2);
 const physicalBeforeUndo=JSON.stringify([state.ship,state.matter,state.beta,state.proper,state.earth]);

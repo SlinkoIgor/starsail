@@ -465,34 +465,29 @@ window.addEventListener('keydown', (e) => {
     $('search').select();
     return;
   }
-  if (e.key === 'Escape' && !$('mapFilters').hidden) {
+  if (e.key === 'Escape') {
+    if (e.defaultPrevented || e.repeat || e.isComposing || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    if (!$('mapFilters').hidden) MapFilters.close();
+    else if (!$('catalog').hidden) {
+      if (CSS.supports('selector(:open)') && $('catalogFilter').matches(':open')) return;
+      closeCatalog();
+    } else if (!$('menu').hidden) closeMenu();
+    else if (Quests.isOpen) Quests.close();
+    else if (!$('themePicker').hidden) {
+      $('themePicker').hidden = true;
+      $('themeBtn').setAttribute('aria-expanded', 'false');
+      $('themeBtn').focus();
+    } else if (e.target.closest?.('input:not([type="range"]),textarea,select,[contenteditable]')) return;
+    else if (state.flight) FlightHistory.cancel();
+    else if (state.itinerary.length) Route.undo();
+    else if (state.selected != null) {
+      clickedMapTarget = doubleClickTarget = null;
+      MapPointer.leave();
+      if (cameraGoal?.focus === state.selected) cameraGoal = null;
+      select(null);
+    } else if (zenMode) setZenMode(false);
+    else return;
     e.preventDefault();
-    MapFilters.close();
-    return;
-  }
-  if (e.key === 'Escape' && !$('catalog').hidden) {
-    if (CSS.supports('selector(:open)') && $('catalogFilter').matches(':open')) return;
-    e.preventDefault();
-    closeCatalog();
-    return;
-  }
-  if (e.key === 'Escape' && !$('menu').hidden) {
-    e.preventDefault();
-    closeMenu();
-    return;
-  }
-  if (e.key === 'Escape' && Quests.isOpen) {
-    e.preventDefault();
-    Quests.close();
-    return;
-  }
-  if (e.key === 'Escape' && !document.querySelector('dialog[open]') && !e.target.closest('input,textarea,select,[contenteditable]') && Route.undo()) {
-    e.preventDefault();
-    return;
-  }
-  if (e.key === 'Escape' && zenMode) {
-    e.preventDefault();
-    setZenMode(false);
     return;
   }
   if (e.target.closest('input,textarea,select,button,summary,[contenteditable]')) return;
@@ -502,12 +497,6 @@ window.addEventListener('keydown', (e) => {
     paused = !paused;
     renderUI();
     persist();
-  }
-  if (e.key === 'Escape') {
-    closeCatalog();
-    closeMenu();
-    $('themePicker').hidden = true;
-    FlightQueue.dismiss();
   }
   if (e.key === '+' || e.key === '=') goCamera(cam.x, cam.y, cam.span / 2, false, true);
   if (e.key === '-') goCamera(cam.x, cam.y, cam.span * 2, false, true);

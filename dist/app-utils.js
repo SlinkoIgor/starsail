@@ -250,16 +250,17 @@ const speedNumber = (beta) => {
   return whole + ',' + fraction.replace(/0+$/, '').padEnd(2, '0');
 };
 const percentC = (beta) => speedNumber(beta) + ' % c';
-const durationText = (years) =>
-  !Number.isFinite(years)
-    ? 'недостижимо'
-    : years >= 1
-      ? compact(years) + ' лет'
-      : years >= 1 / 365.25
-        ? fmt(years * 365.25, 1) + ' сут.'
-        : years >= 1 / (365.25 * 24)
-          ? fmt(years * 365.25 * 24, 1) + ' ч'
-          : fmt(years * Rocket.year, 0) + ' с';
+const durationYears = new Intl.NumberFormat('ru-RU', {
+  style: 'unit', unit: 'year', unitDisplay: 'long', maximumFractionDigits: 2,
+});
+const durationText = (years) => {
+  if (!Number.isFinite(years)) return 'недостижимо';
+  if (years >= 1000) return compact(years) + ' лет';
+  if (years >= 1) return durationYears.format(years >= 100 ? Math.round(years) : years);
+  if (years >= 1 / 365.25) return fmt(years * 365.25, 1) + ' сут.';
+  if (years >= 1 / (365.25 * 24)) return fmt(years * 365.25 * 24, 1) + ' ч';
+  return fmt(years * Rocket.year, 0) + ' с';
+};
 const massText = (tonnes) => {
   const kg = tonnes * 1000;
   return kg >= 1

@@ -1,9 +1,9 @@
 'use strict';
 // Flight commands and compatibility with saved legacy trajectories.
-function launch(forceEngine = false, {focusRoute = true} = {}) {
+function launch(forceEngine = false, {focusRoute = true, rollback = null} = {}) {
   if (!forceEngine) FlightSetup.sync();
   if (!forceEngine && MissionPlanner.enabledIdle()) {
-    MissionPlanner.launch(null, null, {focusRoute});
+    MissionPlanner.launch(null, null, {focusRoute, rollback});
     return;
   }
   if (state.flight) return;
@@ -33,8 +33,8 @@ function launch(forceEngine = false, {focusRoute = true} = {}) {
           Math.max(1, state.controlG || 100),
         ),
     wind = boost ? { ...windPlan(), baseCovered: 0, elapsedProper: 0 } : null;
-  const rollback = FlightHistory.snapshot(),
-    summary = FlightEstimate.get();
+  rollback ??= FlightHistory.snapshot();
+  const summary = FlightEstimate.get();
   state.flight = {
     rollback,
     summary: { distance: d, proper: summary?.proper, earth: summary?.earth },
@@ -186,6 +186,20 @@ function advance(ds, earth, proper, comoving = false, path) {
     toast('Цель пройдена. Физический тормозной путь ещё не исчерпан.',4200,'warning');
   }
 }
+function elapsedFlightTime(f) {
+  // A replanned stop starts fresh mission counters partway through the same leg.
+  if (f.missionElapsed && (!f.detachedSource || f.elapsedBeforeReplan)) {
+    const prior = f.elapsedBeforeReplan;
+    return {
+      proper: (prior?.proper ?? 0) + f.missionElapsed.proper,
+      earth: (prior?.earth ?? 0) + f.missionElapsed.earth,
+    };
+  }
+  // Legacy flybys share the rollback snapshot of the whole route.
+  const start = f.departureClocks || (!f.legIndex || f.starEpochEarth === f.rollback?.earth ? f.rollback : null);
+  if (!Number.isFinite(start?.proper) || !Number.isFinite(start?.earth)) return null;
+  return {proper: state.proper - start.proper, earth: state.earth - start.earth};
+}
 function finishFlight(arrived) {
   const f = state.flight,
     target = object(f.target);
@@ -202,6 +216,8 @@ function finishFlight(arrived) {
     );
     state.ship = Space.point(stop.p3);
     state.current = stop.id;
+    const elapsed = elapsedFlightTime(f);
+    state.lastArrival = elapsed && {target: stop.id, ...elapsed};
     if (stop !== target) {
       state.selected = stop.id;
       if (!state.visited.includes(stop.id)) state.visited.push(stop.id);
@@ -217,6 +233,7 @@ function finishFlight(arrived) {
     }
     if (!state.visited.includes(target.id)) state.visited.push(target.id);
     if (f.requestedTarget && !state.visited.includes(f.requestedTarget)) state.visited.push(f.requestedTarget);
+    Quests.arrived(f, stop.id);
     log(
       'Прибытие: ' +
         stop.name +
@@ -247,13 +264,15 @@ function finishFlight(arrived) {
   state.phase = 'idle';
   state.flight = null;
   FlightTips.clear();
+  if (arrived && f.route?.length && f.legIndex < f.route.length - 1) {
+    // Keep upcoming catalogue objects pinned while the next departure is prepared.
+    state.itinerary = f.route.slice(f.legIndex + 1);
+    Quests.sync();
+    Route.afterStop(f);
+  }
   renderUI();
   renderCatalog();
   persist();
-  if (arrived) {
-    Route.afterStop(f);
-
-  }
 }
 function autoFraction(predict) {
   const f = state.flight,

@@ -3,7 +3,9 @@ const Quests = {
   view: null,
   opened: false,
   isOpen: false,
-  pending: null,
+  get pending() {
+    return state.pendingQuestArrivals?.[0] ?? null;
+  },
   presenting: false,
   autoPaused: false,
   panelKey: null,
@@ -36,9 +38,12 @@ const Quests = {
   },
   restore(saved) {
     saved.quests = this.normalize(saved.quests);
+    if (Array.isArray(saved.pendingQuestArrivals)) {
+      saved.pendingQuestArrivals = saved.pendingQuestArrivals.filter(id => saved.visited.includes(id) && this.isQuestObject(id));
+    } else delete saved.pendingQuestArrivals;
   },
   reset() {
-    this.pending = this.panelKey = this.announced = this.story = null;
+    this.panelKey = this.announced = this.story = null;
     this.view = this.loadKey = this.retrying = null;
     this.opened = this.autoPaused = false;
   },
@@ -76,10 +81,11 @@ const Quests = {
   ensure() {
     const store = this.store(),
       wanted = QUESTS.filter(q => store.active.includes(q.id) || this.isOpen && q.id === this.view && !this.locked(q)),
-      key = wanted.map(q => q.id).join('|');
+      arrivals = state.pendingQuestArrivals || [],
+      key = [...wanted.map(q => q.id), ...arrivals].join('|');
     if (key === this.loadKey) return;
     this.loadKey = key;
-    this.load(wanted.flatMap(q => q.steps.flatMap(step => this.ids(step))));
+    this.load([...wanted.flatMap(q => q.steps.flatMap(step => this.ids(step))), ...arrivals.filter(id => !object(id))]);
   },
   load(ids) {
     const missing = [...new Set(ids)].filter(id => this.streamed(id) && !this.objects.has(id));
@@ -199,10 +205,7 @@ const Quests = {
       log('Квест пройден: ' + quest.title + '.');
       for (const opened of this.opens(quest, visited)) log('Открыт квест: ' + opened.title + '.');
     }
-    if ((here || !state.flight) && this.told(step) && !this.store().seen[this.key(quest, step)]) {
-      this.pending = id;
-      return;
-    }
+    if (state.pendingQuestArrivals?.includes(id) && this.told(step) && !this.store().seen[this.key(quest, step)]) return;
     toast(
       p.complete
         ? 'Квест «' + quest.title + '» пройден.'
@@ -286,16 +289,22 @@ const Quests = {
       if (again) this.fly(id);
     });
   },
+  isQuestObject(id) {
+    return !!id && QUESTS.some(quest => quest.steps.some(step => this.ids(step).includes(id)));
+  },
+  arrived(flight, stopId) {
+    // A flight to a galaxy or a nebula can park at a different, nearby star.
+    const id = [flight.requestedTarget, flight.target, stopId].find(candidate => this.isQuestObject(candidate));
+    if (!id || ($('infoDialog').open && $('infoDialog').dataset.objectId === id)) return;
+    (state.pendingQuestArrivals ??= []).push(id);
+  },
   present() {
     const id = this.pending;
-    if (!id || zenMode || $('infoDialog').open || $('flightBuilder').open) return false;
-    this.pending = null;
-    if (!object(id)) return false;
+    if (!id || $('infoDialog').open || $('flightBuilder').open || !object(id)) return false;
     if (state.flight && !paused) {
       syncClock();
       paused = true;
       this.autoPaused = true;
-      persist();
     }
     showObject(id);
     return true;
@@ -358,6 +367,11 @@ const Quests = {
     return [state.flight ? 1 : 0, state.current, state.visited.length, ...this.flightIds(), '/', ...this.routeIds()].join('|');
   },
   mountStory(o) {
+    if (this.pending === o.id) {
+      state.pendingQuestArrivals.shift();
+      if (!state.pendingQuestArrivals.length) delete state.pendingQuestArrivals;
+      persist();
+    }
     const entries = this.entries(o.id);
     this.story = null;
     if (!entries.length) return;

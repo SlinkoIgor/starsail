@@ -60,7 +60,7 @@ const synthetic={valid:true,accelerationEnd:{proper:1,distance:2},coast:{proper:
 FlightBuilder.drawRoute(synthetic,true,synthetic,null);const chart=$('builderRouteDiagram').innerHTML;
 const ranges=[...chart.matchAll(/data-stage="(\\d)" data-proper="([^"]+)" data-distance="([^"]+)" data-start="([^"]+)" data-end="([^"]+)"/g)];assert.equal(ranges.length,3);
 for(const [i,r] of ranges.entries())nearPlanner(Number(r[5])-Number(r[4]),392*[2/17,6/17,9/17][i]);
-for(const word of ['Разгон','Свободный полёт','Торможение','1,00 лет','3,00 лет','6,00 лет','2,00 св. лет','6,00 св. лет','9,00 св. лет'])assert.ok(chart.includes(word),word+' is part of the chart');
+for(const word of ['Разгон','Свободный полёт','Торможение','1 год','3 года','6 лет','2,00 св. лет','6,00 св. лет','9,00 св. лет'])assert.ok(chart.includes(word),word+' is part of the chart');
 assert.equal(FlightBuilder.routeDistanceText(0),'0 св. лет');assert.ok(FlightBuilder.routeDistanceText(.000001).includes('св. лет'));assert.ok(!FlightBuilder.routeDistanceText(.000001).includes('а.е.'));assert.ok(chart.includes('Время на борту')&&chart.includes('Расстояние в системе внешнего наблюдателя'));
 console.log('PASS distance-proportional diagram, explicit metric labels and light-years including zero/tiny values');
 const noCoast={...synthetic,peakBeta:.9,coast:{proper:0,distance:0}};FlightBuilder.drawRoute(noCoast,true,noCoast,null);const noCoastChart=$('builderRouteDiagram').innerHTML;

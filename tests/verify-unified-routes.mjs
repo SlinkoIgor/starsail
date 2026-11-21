@@ -5,10 +5,23 @@ const {run}=await import('data:text/javascript,'+encodeURIComponent(harness+'\ne
 run(`{
 const reset=()=>{state=initial();state.expansion=false;paused=true;Simulation.debt=Simulation.wallDebt=0;FlightQueue.reset();Cosmology.sync(state);for(const id of ['menu','mapFilters','catalog','themePicker'])$(id).hidden=true;$('infoDialog').close();$('flightBuilder').close();zenMode=false;};
 const physics=()=>JSON.stringify([state.flight?.mission,state.flight?.missionElapsed,state.flight?.from,state.flight?.target,state.ship,state.beta,state.matter,state.proper,state.earth,state.phase]);
-const esc=()=>window.listeners.keydown({key:'Escape',target:{closest:()=>false},preventDefault(){}});
+const esc=(options={})=>window.listeners.keydown({key:'Escape',target:{closest:()=>false},preventDefault(){},...options});
 reset();
 const targets=['barnard','alpha','ross'];
 const point=(id,shiftKey=false)=>{assert.ok(object(id),id);const pick=pickMapTarget;pickMapTarget=()=>({id});pointer={down:true,moved:false,id:1};canvas.listeners.pointerup({pointerId:1,shiftKey});pickMapTarget=pick;};
+document.documentElement.classList=$('map').classList;
+for(const location of ['sol',null]){
+ reset();state.current=location;point('barnard');zenMode=true;$('themePicker').hidden=false;
+ esc();assert.equal(state.selected,'barnard','the open panel closes first');
+ esc();assert.equal(state.selected,null);assert.equal(Quests.nextTarget(),null);
+ assert.equal($('flightCard').hidden,true);assert.equal(state.current,location);assert.equal(zenMode,true);
+ assert.equal(Route.selection,null);assert.equal(Route.feedbackPending,false);drawShip(0);drawRoute();drawRouteDistance();
+ state=restore(JSON.parse(JSON.stringify(state)));renderUI();assert.equal(state.selected,null);assert.equal($('flightCard').hidden,true);
+ esc();assert.equal(zenMode,false,'the next Esc leaves zen');
+ point('ross',true);Route.flushFeedback();assert.equal(state.itinerary.map(n=>n.id).join(),'ross');assert.equal($('flightCard').hidden,false);
+}
+console.log('PASS Esc clears an idle target, its card and route anchor at a star or in open space; reload and reselection work');
+reset();
 point('barnard');assert.equal(state.itinerary.length,0);point('alpha',true);point('ross',true);Route.flushFeedback();
 assert.deepEqual(state.itinerary.map(n=>n.id),targets);
 const segments=[],segment=drawPhysicalSegment,caption=drawRouteDistance;
@@ -55,7 +68,7 @@ assert.deepEqual(state.flight.route.map(n=>n.id),targets);assert.equal(state.nex
 assert.equal($('progressLabel').textContent,'УЧАСТОК 1 / 3');
 segments.length=0;drawPhysicalSegment=(a,b)=>segments.push([a.id||'ship',b.id]);Route.draw();drawPhysicalSegment=segment;
 assert.deepEqual(segments,[['barnard','alpha'],['alpha','ross']]);
-esc();assert.deepEqual(Route.future().map(n=>n.id),['alpha']);assert.equal(physics(),unchanged);
+planRoutePoint('ross');assert.deepEqual(Route.future().map(n=>n.id),['alpha']);assert.equal(physics(),unchanged);
 planRoutePoint('ross');planRoutePoint('ross');assert.equal(Route.future().length,1);assert.equal(physics(),unchanged);
 double('ross');assert.equal(Route.future().length,2);
 ExtendedCatalog.capture(state);const saved=JSON.parse(JSON.stringify(state));state=restore(saved);assert.equal(JSON.stringify(state.flight),JSON.stringify(saved.flight));
@@ -76,11 +89,67 @@ reset();select('barnard');launch();paused=true;const originalFlight=state.flight
 point('alpha');assert.equal(Route.future().length,0);point('ross',true);Route.flushFeedback();
 assert.equal(state.flight.route.map(n=>n.id).join(),'barnard,alpha,ross');assert.equal(state.flight,originalFlight);assert.equal(physics(),originalPhysics);
 assert.ok(Route.future().every(n=>n.setup));assert.equal($('progressLabel').textContent,'УЧАСТОК 1 / 3');
-esc();esc();point('alpha');point('barnard',true);Route.flushFeedback();assert.equal(state.flight.route.map(n=>n.id).join(),'barnard,alpha,barnard');assert.equal(physics(),originalPhysics);
+planRoutePoint('ross');planRoutePoint('alpha');point('alpha');point('barnard',true);Route.flushFeedback();assert.equal(state.flight.route.map(n=>n.id).join(),'barnard,alpha,barnard');assert.equal(physics(),originalPhysics);
 console.log('PASS ordinary in-flight selection followed by Shift adds both future stops, including return to the active endpoint, without changing the executing trajectory');
-reset();select('barnard');launch();paused=true;select('alpha');planRoutePoint('alpha');const before=physics();esc();assert.equal(Route.future().length,0);esc();assert.equal(physics(),before,'Esc never cancels executing leg');
-assert.equal($('progressLabel').textContent,'УЧАСТОК 1 / 1');
-console.log('PASS Esc removes only future legs and preserves the executing leg');
+reset();select('barnard');launch();const flight=state.flight;
+Simulation.tick(flight.mission.proper/4);
+$('infoDialog').showModal();esc();assert.equal(state.flight,flight);$('infoDialog').close();
+$('themePicker').hidden=false;esc();assert.equal($('themePicker').hidden,true);assert.equal(state.flight,flight);
+esc({repeat:true});esc({defaultPrevented:true});esc({ctrlKey:true});esc({target:{closest:()=>true}});
+assert.equal(state.flight,flight,'dismissal, held keys, modifiers and text editing leave the flight active');
+esc();assert.equal(state.flight,null);assert.equal(state.current,flight.rollback.current);
+for(const key of ['ship','earth','proper','matter'])assert.deepEqual(state[key],flight.rollback[key],key+' restored before departure');
+console.log('PASS Esc closes the active overlay first and cancels a running direct flight with the same rollback as the button');
+
+reset();point('vega');point('alpha',true);double('ross');
+assert.equal(state.flight.target,'vega');assert.ok(state.flight.mission.proper>10);
+Simulation.tick(0.01);select('ross');renderUI();
+assert.equal($('flightControls').hidden,false);assert.equal($('cancelFlight').disabled,false);
+assert.ok($('cancelFlight').title.includes(object('vega').name),'cancel identifies the active destination while viewing a future stop');
+const tail=JSON.stringify(Route.future());
+$('cancelFlight').onclick();assert.equal(state.flight,null);assert.equal(state.current,'sol');assert.equal(JSON.stringify(state.itinerary),tail);
+state=restore(JSON.parse(JSON.stringify(state)));assert.equal(JSON.stringify(state.itinerary),tail);
+Route.start();assert.equal(state.flight.target,'alpha','the remaining draft starts only on request');
+console.log('PASS a long first leg can be cancelled immediately while browsing the tail; the remaining draft survives reload and can launch');
+
+reset();point('barnard');point('alpha',true);double('ross');
+const firstDeparture=state.flight.rollback;
+Simulation.tick(FlightEstimate.get().proper);assert.equal(state.flight.legIndex,1);
+const departure=state.flight.rollback;assert.equal(departure.current,'barnard');assert.equal(departure.flight,null);
+assert.ok(departure.pendingQuestArrivals?.includes('barnard'));Quests.present();$('infoDialog').close();Quests.dialogClosed();
+Simulation.tick(state.flight.mission.proper/4);
+state=restore(JSON.parse(JSON.stringify(state)));
+const oldLater=JSON.parse(JSON.stringify(state));oldLater.flight.rollback=firstDeparture;delete oldLater.flight.rollbackLeg;
+paused=true;zenMode=true;esc();
+assert.equal(state.flight,null);assert.equal(state.current,'barnard');assert.equal(state.itinerary.map(n=>n.id).join(),'ross');
+for(const key of ['visited','flightHistory','matter','ship','earth','proper','destroyed','journal','orbit']){
+ if(key==='flightHistory')assert.equal(state.flightHistory.map(h=>h.target).join(),'barnard');
+ else assert.equal(JSON.stringify(state[key]),JSON.stringify(departure[key]),key+' retained at the last departure');
+}
+assert.equal(Quests.pending,null,'a card read during the cancelled leg stays dismissed');
+esc({repeat:true});assert.equal(state.itinerary.map(n=>n.id).join(),'ross');
+Route.start();assert.equal(state.flight.target,'ross');
+Route.show();assert.ok($('dialogContent').innerHTML.includes('Отменить текущий перелёт'));
+$('cancelCurrentLeg').onclick();assert.equal(state.flight,null);assert.equal($('infoDialog').open,false);
+assert.equal(state.current,'barnard');assert.equal(state.itinerary.length,0);
+console.log('PASS cancelling a later leg after reload retains the completed arrival, clocks, fuel, orbit and quest history; the route editor also cancels the sole remaining leg');
+
+state=restore(oldLater);const atCancel=JSON.stringify([state.ship,state.proper,state.earth,state.matter,state.visited]);esc();
+assert.equal(state.flight,null);assert.equal(state.current,null);assert.equal(JSON.stringify([state.ship,state.proper,state.earth,state.matter,state.visited]),atCancel);
+assert.equal(state.itinerary.map(n=>n.id).join(),'ross');assert.ok(state.visited.includes('barnard'));
+reset();select('barnard');launch();delete state.flight.rollback;Simulation.tick(.01);
+renderUI();assert.equal($('cancelFlight').disabled,false);esc();assert.equal(state.flight,null);
+console.log('PASS legacy flights without a leg snapshot cancel at the current position without rewinding prior legs');
+reset();select('vega');launch();paused=true;
+assert.ok(Route.add('barnard'));
+const custom=ExtendedCatalog.pin({...object('ross'),id:'test-remaining-star',name:'Route test star'});
+assert.ok(Route.add(custom.id));
+Simulation.tick(FlightEstimate.get().proper);
+assert.equal(state.flight.target,'barnard');assert.ok(object(custom.id),'streamed future point survives the intermediate stop');
+$('cancelFlight').onclick();persist();
+const retained=JSON.parse(JSON.stringify(state));ExtendedCatalog.pinned.delete(custom.id);state=restore(retained);
+assert.ok(object(custom.id));assert.equal(state.itinerary[0].id,custom.id);Route.start();assert.equal(state.flight.target,custom.id);
+console.log('PASS a streamed waypoint appended after departure stays navigable through a later cancellation, reload and relaunch');
 reset();select('barnard');launch();paused=true;state.flight.route=[];state.flight.legIndex=undefined;
 planRoutePoint('alpha');assert.equal(state.flight.route.map(n=>n.id).join(),'barnard,alpha');assert.equal(state.flight.legIndex,0);
 console.log('PASS legacy empty active route acquires its actual current endpoint before appending');

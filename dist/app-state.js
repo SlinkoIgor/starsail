@@ -98,7 +98,9 @@ function restore(saved) {
     upgraded.departureMode = 'engine';
   if (!Number.isInteger(upgraded.expedition) || upgraded.expedition < 1) upgraded.expedition = 1;
   upgraded.matter = Rocket.usableFuel(upgraded.matter);
-  if (!object(upgraded.selected)) upgraded.selected = object(upgraded.current)?.id || 'proxima';
+  if (upgraded.selected === null)
+    upgraded.selected = upgraded.flight?.target || upgraded.itinerary.at(-1)?.id || upgraded.nextTargets.at(-1)?.id || null;
+  if (upgraded.selected !== null && !object(upgraded.selected)) upgraded.selected = object(upgraded.current)?.id || 'proxima';
   upgraded.universeElapsed = Number.isFinite(saved.universeElapsed)
     ? saved.universeElapsed
     : Math.max(0, upgraded.earth);
@@ -299,7 +301,6 @@ function restore(saved) {
 }
 
 const FlightHistory = {
-  pending: null,
   fadeDuration: 3000,
   limit: 64,
   routeStart(f = state.flight) {
@@ -310,9 +311,14 @@ const FlightHistory = {
     const mapFadeAt = Date.now();
     for (const h of (state.flightHistory || []).slice(this.routeStart(f))) h.mapFadeAt = mapFadeAt;
   },
-  snapshot() {
-    ExtendedCatalog.capture(state);
-    const saved = JSON.parse(JSON.stringify(state));
+  nextDeparture(flight) {
+    // Capture the boundary without nesting the completed flight and its rollback.
+    return this.snapshot({...state, flight: null, phase: 'idle', acceleration: 0,
+      itinerary: flight.route.slice(flight.legIndex + 1)});
+  },
+  snapshot(source = state) {
+    ExtendedCatalog.capture(source);
+    const saved = JSON.parse(JSON.stringify(source));
     saved.paused = paused;
     saved.timeScale = speed;
     return saved;
@@ -358,17 +364,26 @@ const FlightHistory = {
     }
   },
   cancel() {
-    const saved = state.flight?.rollback;
-    if (!saved) return;
+    const f = state.flight;
+    if (!f) return;
     GameAnalytics.flightCancelled();
+    // Older later legs can carry the departure of the entire route.
+    const departure = !f.legIndex || f.rollbackLeg === f.legIndex ? f.rollback : null;
+    const saved = departure || {...state, flight: null, current: null, orbit: null, phase: 'idle', acceleration: 0, paused};
+    const routed = !!f.route?.length || f.legIndex != null;
+    const itinerary = routed ? Route.future() : saved.itinerary;
+    const selected = routed ? itinerary[0]?.id || saved.current || f.requestedTarget || f.target : saved.selected;
     const tipProgress = state.flightTips, questProgress = state.quests;
-    state = restore(saved);
+    Route.cancelFeedback();
+    state = restore({...saved, itinerary, selected,
+      pendingQuestArrivals: state.pendingQuestArrivals});
+    if (f.legIndex) this.finish({legIndex: f.legIndex});
     state.flightTips = FlightTips.mergeProgress(state.flightTips, tipProgress);
     state.quests = Quests.normalize(questProgress);
     FlightQueue.reset();
     paused = !!saved.paused;
     speed = saved.timeScale || 1;
-    Simulation.debt = Simulation.wallDebt = 0;
+    Simulation.clearClock();
     effects = [];
     Route.picking = false;
     Cosmology.sync(state);
@@ -381,7 +396,8 @@ const FlightHistory = {
     renderCatalog();
     const p = FlightView.ship();
     goCamera(p.x, p.y, cam.span, true);
-    toast('Полёт отменён. Состояние до старта восстановлено.',4200,'reset');
+    toast(departure ? 'Перелёт отменён. Корабль вернулся к началу участка.'
+      : 'Перелёт отменён. Корабль остановлен в текущей точке.',4200,'reset');
   },
 };
 

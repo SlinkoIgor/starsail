@@ -11,7 +11,7 @@ const reset=()=>{state=initial();state.selected='alpha';state.expansion=false;st
 reset();launch();paused=true;
 const active=state.flight,physical=()=>JSON.stringify({flight:{...state.flight,route:undefined,legIndex:undefined},ship:state.ship,beta:state.beta,matter:state.matter,phase:state.phase,earth:state.earth,proper:state.proper});
 const before=physical();
-select('sirius');assert.equal(state.flight,active);assert.equal(physical(),before);assert.equal($('targetName').textContent,object('sirius').name);assert.equal($('phaseTag').textContent,'ДОБАВИТЬ УЧАСТОК');assert.equal($('flightControls').hidden,true);
+select('sirius');assert.equal(state.flight,active);assert.equal(physical(),before);assert.equal($('targetName').textContent,object('sirius').name);assert.equal($('phaseTag').textContent,'ДОБАВИТЬ УЧАСТОК');assert.equal($('flightControls').hidden,false);
 const ctx=FlightQueue.context();assert.equal(ctx.current,'alpha');assert.equal(ctx.matter,active.mission.arrivalFuelKg/1000);assert.ok(FlightQueue.forecast(ctx).valid);assert.equal(physical(),before);
 FlightBuilder.open(ctx);assert.equal(FlightBuilder.readOnly,false);assert.equal(FlightBuilder.source.id,'alpha');assert.equal(physical(),before);FlightBuilder.draft.arrivalFuelPercent=25;FlightBuilder.apply();assert.equal(physical(),before);assert.equal(FlightQueue.setupFor('sirius').arrivalFuelPercent,25);
 Route.add('sirius');assert.deepEqual(Route.future().map(n=>n.id),['sirius']);assert.equal(physical(),before);
@@ -19,8 +19,8 @@ select('vega');Route.add('vega');assert.deepEqual(Route.future().map(n=>n.id),['
 FlightQueue.dismiss();assert.equal(state.selected,'alpha');assert.equal($('targetName').textContent,object('alpha').name);
 const saved=JSON.parse(JSON.stringify(state)),restored=restore(saved);assert.equal(restored.flight.route.length,3);assert.equal(restored.flight.route[1].setup.arrivalFuelPercent,25);assert.equal(restored.trafficSeed,31);assert.equal(restored.multiplayer,false);
 state=restored;Simulation.tick(state.flight.mission.proper*1.00001);assert.equal(state.flight.target,'sirius');assert.equal(Route.future().length,1);Simulation.tick(state.flight.mission.proper*1.00001);assert.equal(state.flight.target,'vega');assert.equal(Route.future().length,0);Simulation.tick(state.flight.mission.proper*1.00001);assert.equal(state.current,'vega');assert.equal(state.flight,null);assert.ok(state.flightHistory.length>=3);
-// Cancelling the flight restores the pre-departure expedition.
-state=restore(saved);FlightHistory.cancel();assert.equal(state.current,'sol');assert.equal(Route.future().length,0);
+// Cancelling the first flight also keeps future targets appended after departure.
+state=restore(saved);FlightHistory.cancel();assert.equal(state.current,'sol');assert.equal(Route.future().map(n=>n.id).join(),'sirius,vega');assert.equal(Route.future()[0].setup.arrivalFuelPercent,25);
 reset();launch();paused=true;const choices=[];for(const o of OBJECTS.filter(o=>o.navigable&&o.kind==='star'&&o.id!=='alpha').sort((a,b)=>a.d-b.d)){if(choices.every(q=>Space.distance(q,o)>.1)&&Space.distance(o,object('alpha'))>.1)choices.push(o);if(choices.length===10)break;}const ids=choices.map(o=>o.id);
 assert.equal(ids.length,10);for(const id of ids){select(id);Route.add(id);}assert.equal(Route.future().length,10);select('proxima');Route.add('proxima');assert.equal(Route.future().length,10);
 // Unknown/non-navigable records cannot enter the route.

@@ -760,7 +760,7 @@ function drawShip(time) {
   const p = screen(state.ship),
     f = state.flight,
     target = f ? object(f.target) : Route.endpoint(state.itinerary[0]) || object(state.selected),
-    ahead = f ? screen(FlightView.at(f, f.covered / f.distance + 1)) : screen(target),
+    ahead = f ? screen(FlightView.at(f, f.covered / f.distance + 1)) : target ? screen(target) : p,
     angle =
       Number.isFinite(ahead.x) && Number.isFinite(ahead.y)
         ? Math.atan2(ahead.y - p.y, ahead.x - p.x)

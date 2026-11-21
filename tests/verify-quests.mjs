@@ -34,6 +34,10 @@ run(`{
 assert.ok(state.flight&&Quests.flightIds().includes('opengc-ic1101')&&Quests.retrying===null,'the flight to a streamed stage starts by itself once the arrival star is known');
 const saved=FlightHistory.snapshot(),restored=restore(JSON.parse(JSON.stringify(saved)));
 assert.deepEqual(restored.quests.active,['neighbours','records']);assert.ok([restored.flight.target,restored.flight.requestedTarget].includes('opengc-ic1101'),'the flight to a streamed stage survives a reload');
+state=restored;Simulation.tick(FlightEstimate.get().proper);
+assert.notEqual(state.current,'opengc-ic1101','this target parks at a braking star');
+assert.equal(Quests.pending,'opengc-ic1101');assert.equal(Quests.present(),true);
+assert.equal($('infoDialog').dataset.objectId,'opengc-ic1101');$('infoDialog').close();Quests.dialogClosed();
 state=initial();state.expansion=false;Cosmology.sync(state);Quests.reset();
 Quests.isOpen=true;Quests.view='ladder';Quests.renderPanel(true);
 }`);
@@ -164,8 +168,13 @@ Quests.start('neighbours');launch();
 assert.ok(state.flight);assert.equal(Quests.flightStory(),null,'a story read before launch is not announced in flight');
 arrive();renderUI();
 assert.equal(state.quests.credited['neighbours/barnard'],true,'the later visit is still credited');
-assert.equal(Quests.pending,null);assert.equal($('infoDialog').open,false,'a previously read story is not forced open on arrival');
-console.log('PASS reading before flight survives reload, suppresses repeated story prompts and keeps arrival credit');
+assert.equal(Quests.pending,'barnard');assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,'barnard');
+$('infoDialog').close();Quests.dialogClosed();renderUI();assert.equal(Quests.pending,null);
+select('proxima');launch();arrive();assert.equal(Quests.present(),true);$('infoDialog').close();Quests.dialogClosed();
+select('barnard');launch();arrive();assert.equal(Quests.pending,'barnard','revisiting an already credited star still opens its card');
+assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,'barnard');
+assert.equal(entries('Квест «Соседи Солнца»: Звезда Барнарда'),1,'the repeat visit does not repeat credit');
+console.log('PASS reading before launch or returning to a credited stage opens the object card once per arrival');
 
 reset();state.visited.push('alpha');
 assert.equal(Quests.start('neighbours'),true);assert.equal(Quests.start('neighbours'),false);
@@ -219,7 +228,8 @@ assert.equal(state.quests.seen['neighbours/barnard'],true);assert.equal(physics(
 $('infoDialog').open=false;renderUI();
 assert.ok($('toast').hidden||$('toast').dataset.kind!=='quest','a read story is not announced again');
 arrive();assert.equal(state.flight,null);assert.equal(state.current,'barnard');
-assert.equal(Quests.pending,null,'a story read in flight is not forced open again');assert.equal($('infoDialog').open,false);
+assert.equal(Quests.pending,'barnard','closing the story in flight still leaves a new card to show at arrival');
+assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,'barnard');
 assert.equal($('toast').hidden,false);assert.equal($('toast').dataset.kind,'notice');
 assert.ok($('toastText').textContent.includes('Звезда Барнарда · 1 из 10'));assert.equal($('toastAction').textContent,'Открыть');
 renderUI();assert.equal($('toast').hidden,false,'the credit notice outlives the arrival cleanup');
@@ -236,6 +246,7 @@ arrive();renderUI();assert.equal(state.flight,null);assert.equal($('infoDialog')
 assert.ok(slot.innerHTML.includes('Лететь дальше: ')&&!slot.innerHTML.includes('Затем: '),'arrival turns the route offer into a direct flight');
 assert.ok(slot.innerHTML.includes('1 из 10'),'the open card shows the credited stage');
 $('dialogContent').querySelectorAll=findAll;$('infoDialog').open=false;Quests.dialogClosed();assert.equal(Quests.story,null);
+assert.equal(Quests.present(),false,'the card already visible at arrival stays dismissed after closing');
 console.log('PASS a story left open through the arrival refreshes its actions and progress');
 
 reset();Quests.start('neighbours');state.selected='proxima';launch();
@@ -268,12 +279,25 @@ $('infoDialog').open=false;Quests.dialogClosed();assert.equal(paused,false,'clos
 paused=true;Quests.dialogClosed();assert.equal(paused,true,'a pause chosen by the player is never lifted');paused=false;
 console.log('PASS on a multi-leg route the arrival story pauses the next leg and closing it resumes the flight');
 
+reset();state.itinerary=[{id:'proxima',mode:'stop'},{id:'barnard',mode:'stop'}];Route.start();
+$('flightBuilder').open=true;Simulation.tick(state.flight.mission.proper);assert.equal(Quests.present(),false);
+Simulation.tick(FlightEstimate.get().proper);assert.equal(state.flight,null);
+state=restore(JSON.parse(JSON.stringify(state)));Quests.reset();$('flightBuilder').open=false;
+for(const id of ['proxima','barnard']){
+ assert.equal(Quests.pending,id);assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,id);
+ $('infoDialog').close();Quests.dialogClosed();
+}
+assert.equal(Quests.present(),false);renderUI();assert.equal(Quests.pending,null);
+state=restore(JSON.parse(JSON.stringify(state)));renderUI();assert.equal(Quests.pending,null,'loading a completed stop never repeats its delivered card');
+reset();select('ross');launch();arrive();assert.equal(Quests.pending,null,'a stop outside all quests does not open a card');
+console.log('PASS fast consecutive quest stops wait for a dialog, survive reload in order, and ordinary stops stay quiet');
+
 reset();state.visited.push('hyg-71453','hyg-118441');Quests.start('neighbours');
 assert.deepEqual(Quests.progress(quest),{done:2,total:10,complete:false},'companion stars count for their systems');
 assert.equal(Quests.read('alpha','neighbours'),true);
 assert.ok($('dialogContent').innerHTML.includes(object('hyg-71453').name),'the story opens on the visited component');
 assert.ok($('dialogContent').innerHTML.includes('Двойник Солнца по соседству'));$('infoDialog').open=false;Quests.dialogClosed();
-reset();Quests.start('neighbours');state.current='hyg-118441';state.ship=Space.point(object('hyg-118441').p3);state.visited.push('hyg-118441');renderUI();
+reset();Quests.start('neighbours');select('hyg-118441');launch();arrive();renderUI();
 assert.equal(Quests.pending,'hyg-118441','arrival at a companion opens the system story');
 console.log('PASS companions of double stars are accepted for their stage');
 
@@ -315,7 +339,7 @@ console.log('PASS flight cancellation keeps subscriptions and read stories, and 
 
 reset();Quests.start('neighbours');
 for(const step of quest.steps.slice(0,-1))state.visited.push(step.id);
-state.current='tau';state.ship=Space.point(object('tau').p3);state.visited.push('tau');renderUI();
+select('tau');launch();arrive();renderUI();
 assert.equal(Quests.progress(quest).complete,true);assert.equal(entries('Квест пройден: Соседи Солнца'),1);
 assert.equal($('questCount').hidden,true,'a completed quest leaves the badge');
 assert.equal(Quests.pending,'tau');Quests.present();
@@ -335,7 +359,7 @@ $('launchBtn').onclick({});assert.ok(state.flight&&Quests.flightIds().includes('
 arrive();renderUI();assert.equal(state.current,'proxima');assert.equal(state.quests.credited['neighbours/proxima'],true);
 assert.equal(Quests.nextTarget().step.id,'alpha','arrival offers the next stage of the automatically started quest');
 assert.equal($('launchBtn').querySelector('span').textContent,'Лететь к следующей цели');
-$('infoDialog').open=false;Quests.dialogClosed();Quests.pending=null;
+$('infoDialog').open=false;Quests.dialogClosed();
 
 reset();assert.equal(state.selected,'proxima','a new expedition aims at the nearest star');
 const label=()=>$('launchBtn').querySelector('span').textContent;
@@ -353,7 +377,7 @@ select('proxima');renderUI();$('launchBtn').onclick({});
 assert.ok(state.flight&&[state.flight.target,state.flight.requestedTarget].includes('alpha'),'the button flies to the next stage in quest order');
 renderUI();assert.equal($('launchBtn').hidden,true);
 arrive();renderUI();assert.equal(state.current,'alpha');assert.equal(Quests.nextTarget().step.id,'barnard');assert.equal(label(),'Лететь к следующей цели');
-$('infoDialog').open=false;Quests.dialogClosed();Quests.pending=null;
+$('infoDialog').open=false;Quests.dialogClosed();
 for(const step of quest.steps)if(!state.visited.includes(step.id))state.visited.push(step.id);
 renderUI();assert.equal(Quests.nextTarget(),null);assert.equal($('launchBtn').hidden,true,'a completed quest offers no further target');
 console.log('PASS a new expedition aims at Proxima, a parked ship offers the next quest stage only while a quest is active, and the button flies there');
@@ -424,7 +448,8 @@ assert.ok($('dialogContent').innerHTML.includes('Звезда, которая н
 assert.equal(state.quests.seen['neighbours/procyon'],true);$('infoDialog').open=false;Quests.dialogClosed();renderUI();
 assert.ok($('toast').hidden||$('toast').dataset.kind!=='quest','a read story is not announced again');
 arrive();renderUI();
-assert.deepEqual(state.quests.active,[]);assert.equal(Quests.pending,null,'arrival forces no card without a subscription');assert.equal($('infoDialog').open,false);
+assert.deepEqual(state.quests.active,[]);assert.equal(Quests.pending,'procyon','arrival opens the card without a subscription');
+assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,'procyon');
 assert.equal(entries('Квест «Соседи Солнца»'),0,'nothing is credited without a subscription');
 reset();state.selected='sirius';launch();toast('Проверка',4200,'warning');renderUI();
 assert.equal($('toast').dataset.kind,'notice','a launch warning is not hidden by the story');
@@ -435,7 +460,7 @@ if (!run("!!Quests.quest('messier-marathon')")) {
  run(`if(Quests.quest('messier')){
 state=initial();state.expansion=false;Cosmology.sync(state);Quests.reset();Quests.start('messier');
 for(const step of Quests.quest('messier').steps)state.visited.push(step.id);
-renderUI();Quests.pending=null;
+renderUI();
 assert.equal(Quests.progress(Quests.quest('messier')).complete,true);
 assert.equal(state.journal.filter(e=>e.text.includes('Открыт квест')).length,0,'without the marathon the selection opens nothing');
 Quests.isOpen=true;Quests.view=null;Quests.renderPanel(true);Quests.isOpen=false;
@@ -468,8 +493,8 @@ assert.ok($('toast').hidden||$('toast').dataset.kind!=='quest','a closed quest i
 
 reset();Quests.start('messier');
 for(const step of messier.steps.slice(0,-1))state.visited.push(step.id);
-renderUI();Quests.pending=null;assert.equal(Quests.locked(marathon),true,'an unfinished selection keeps the marathon closed');
-state.visited.push(messier.steps.at(-1).id);renderUI();Quests.pending=null;
+renderUI();assert.equal(Quests.locked(marathon),true,'an unfinished selection keeps the marathon closed');
+state.visited.push(messier.steps.at(-1).id);renderUI();
 assert.equal(Quests.locked(marathon),false);assert.equal(entries('Открыт квест: Марафон Мессье'),1);
 for(let i=0;i<3;i++)renderUI();assert.equal(entries('Открыт квест: Марафон Мессье'),1,'the opening is recorded once');
 showObject('m87');html=$('dialogContent').innerHTML;$('infoDialog').open=false;Quests.dialogClosed();
@@ -486,7 +511,8 @@ console.log('PASS the marathon stays closed, hidden from cards and unannounced u
 select(m2);launch();renderUI();
 assert.equal(Quests.flightStory(),null);assert.ok($('toast').hidden||$('toast').dataset.kind!=='quest','checklist stages have no story to announce');
 arrive();renderUI();assert.equal(state.flight,null);assert.ok(state.visited.includes(m2));
-assert.equal(Quests.pending,null,'a checklist stage never forces a card open');
+assert.equal(Quests.pending,m2,'a checklist stop opens the requested object even when the ship parks at its braking star');
+assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,m2);
 assert.equal($('toast').hidden,false);assert.ok($('toastText').textContent.includes('Квест «Марафон Мессье»: M2 · 16 из 110'),'the arrival is credited with a notice');
 html=Quests.storyHTML(object(m2));
 assert.ok(html.startsWith('<section class="quest-story"><div class="quest-membership">')&&!html.includes('<h3>')&&!html.includes('Его история откроется'),'a checklist card carries the quest line only');
@@ -496,5 +522,5 @@ assert.ok(html.includes('data-quest-read="'+m2+'">Карточка<')&&html.incl
 assert.ok(panel('messier').includes('>История<'));
 Quests.start('starlife');html=Quests.storyHTML(object('orion'));
 assert.equal(html.split('<h3>').length-1,1);assert.equal(html.split('quest-membership').length-1,3,'a shared object shows one story and a line for each of its quests');
-console.log('PASS checklist stages are credited with a notice, have no story, plaque or forced card, and shared objects keep a single story');
+console.log('PASS checklist stages open their card and are credited once; shared objects keep a single story');
 }`);

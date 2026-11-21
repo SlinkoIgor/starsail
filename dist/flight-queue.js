@@ -98,7 +98,7 @@ const FlightQueue = {
     UIContent.text($('arrivalLabel'),'ДЛИТЕЛЬНОСТЬ УЧАСТКА');
     UIPatch.set($('arrivalEstimate'), 'hidden', !target.navigable);
     UIContent.text($('arrivalProper'),p.valid?durationText(p.proper):'—');UIContent.text($('arrivalEarth'),p.valid?durationText(p.earth):'—');
-    UIPatch.set($('flightControls'), 'hidden', true);UIPatch.set($('launchBtn'), 'hidden', false);
+    UIPatch.set($('launchBtn'), 'hidden', false);
     UIPatch.set($('launchBtn'), 'disabled', index>=0||!target.navigable||nodes.length>=Route.limit);
     UIContent.text($('launchBtn').querySelector('span'),index>=0?'Участок добавлен':'Добавить участок');
     UIPatch.set($('configureFlight'), 'hidden', !target.navigable||!!context.planningIssue);

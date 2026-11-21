@@ -588,7 +588,7 @@ html[data-theme="dark"] .mission-builder{--muted:#b0b0b0}
 /* Keep every variable-height part above a separate launch row. */
 .flight-card,.flight-card.in-flight{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;overflow:hidden;isolation:isolate}
 .flight-card .card-scroll{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
-.flight-card .card-actions{position:relative;z-index:2;min-width:0;min-height:0;background:var(--paper)}
+.flight-card .card-actions{position:relative;z-index:2;display:grid;row-gap:12px;min-width:0;min-height:0;background:var(--paper)}
 .card-plan-controls{padding:12px 16px;border-top:1px solid var(--line);min-width:0}
 .card-plan-controls .flight-configuration{padding:0;margin:0}
 .card-plan-controls .flight-hint{margin:10px 0 0}
@@ -917,7 +917,7 @@ html[data-theme="dark"] .mission-builder{--muted:#b0b0b0}
 .zen-mode #app>:not(.map-panel),
 .zen-mode .map-panel>:not(#map):not(.map-actions),
 .zen-mode .map-actions>:not(#zenBtn),
-.zen-mode body>:not(#app):not(.svg-library):not(script){visibility:hidden!important;pointer-events:none!important}
+.zen-mode body>:not(#app):not(.svg-library):not(script):not(#infoDialog[open][data-object-id]){visibility:hidden!important;pointer-events:none!important}
 .zen-mode #zenBtn{background:var(--ink);color:var(--paper);--button-hover-bg:var(--button-solid-hover)}
 
 .stellar-photo-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.stellar-photo-overlay circle{fill:none;stroke:#fff;stroke-width:1;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 1px #000)}.stellar-photo-field.unavailable .stellar-photo-overlay{display:none}.stellar-photo-north b{display:inline-block;font:inherit}.stellar-photo-astrometry{font-size:10px}
@@ -969,6 +969,7 @@ html[data-theme="dark"] .mission-builder{--muted:#b0b0b0}
 }
 
 .launch-actions{display:flex;align-items:stretch;gap:8px}
+.flight-card .launch-actions:not(:has(button:not([hidden]))){display:none}
 .launch-actions>.primary-action{flex:1;min-width:0;height:44px;min-height:44px;padding:0 12px;justify-content:center;gap:10px;font:500 13px/20px var(--sans)}
 .launch-actions>.primary-action span{white-space:nowrap;overflow-wrap:normal;text-align:center}
 .launch-actions>.primary-action svg{display:block;width:18px;height:18px;flex:none}
@@ -977,7 +978,6 @@ html[data-theme="dark"] .mission-builder{--muted:#b0b0b0}
 .launch-actions>.cancel-route:hover{border-color:var(--ink)}
 .cancel-route svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.4}
 .cancel-route:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.target-approach{margin-bottom:10px}
 .target-approach>.eyebrow{display:block;margin-bottom:7px}
 .approach-options{display:grid;grid-template-columns:1.55fr 1fr;gap:6px}
 .approach-options button{min-height:44px;padding:8px 7px;border:1px solid var(--line);border-radius:0;background:transparent;color:var(--muted);font:inherit;font-size:11px;line-height:1.35;cursor:pointer}

@@ -146,17 +146,7 @@ function renderPanels() {
   const f = state.flight,
     target = object(f ? f.target : state.selected),
     current = object(state.current),
-    active = !!f,
-    boost = wantsBoost(),
-    arrived = !active && state.current === target.id;
-  if (f && !f.summary) {
-    const estimate = f.mission || FlightEstimate.get();
-    f.summary = { distance: f.distance, proper: estimate?.proper, earth: estimate?.earth };
-  }
-  UIContent.text($('distanceCaption'), 'РАССТОЯНИЕ ДО ЦЕЛИ');
-  UIContent.text($('targetName'), target.name);
-  UIContent.text($('targetType'), objectTypeText(target));
-  UIPatch.toggle($('flightCard'), 'in-flight', active);
+    active = !!f;
   const locationFrom = active
     ? object(f.fromId)?.name || f.from?.name || 'Межзвёздное пространство'
     : current ? 'Стоянка · ' + current.name : 'Межзвёздное пространство';
@@ -175,6 +165,18 @@ function renderPanels() {
     : current
       ? current.name + ' · ' + objectTypeText(current)
       : locationFrom);
+  renderShipTelemetry();
+  UIPatch.set($('flightCard'), 'hidden', !target);
+  if (!target) return null;
+  const boost = wantsBoost(), arrived = !active && state.current === target.id;
+  if (f && !f.summary) {
+    const estimate = f.mission || FlightEstimate.get();
+    f.summary = { distance: f.distance, proper: estimate?.proper, earth: estimate?.earth };
+  }
+  UIContent.text($('distanceCaption'), 'РАССТОЯНИЕ ДО ЦЕЛИ');
+  UIContent.text($('targetName'), target.name);
+  UIContent.text($('targetType'), objectTypeText(target));
+  UIPatch.toggle($('flightCard'), 'in-flight', active);
   const d = target.navigable
     ? (f?.summary?.distance ?? f?.distance ?? Cosmology.physicalDistance(state.ship, target))
     : NaN;
@@ -307,15 +309,37 @@ function renderPanels() {
   UIContent.text($('horizonNotice'), eta?.unreachable
     ? 'При включённом расширении прибытие недостижимо.'
     : '');
-  UIPatch.set($('arrivalEstimate'), 'hidden', arrived || !target.navigable);
-  UIContent.text($('arrivalLabel'), Route.isFlyby()
+  const lastArrival = arrived && state.lastArrival?.target === target.id ? state.lastArrival : null;
+  UIPatch.set($('arrivalEstimate'), 'hidden', !target.navigable || (arrived && !lastArrival));
+  UIContent.text($('arrivalLabel'), lastArrival ? 'ВРЕМЯ В ПУТИ' : Route.isFlyby()
     ? 'ДЛИТЕЛЬНОСТЬ ДО ПРОЛЁТА'
     : 'ДЛИТЕЛЬНОСТЬ ПОЛЁТА');
-  const summary = f?.summary || f?.mission || eta;
+  const summary = arrived ? lastArrival : f?.summary || f?.mission || eta;
   UIContent.text($('arrivalProper'), summary ? durationText(summary.proper) : '—');
   UIContent.text($('arrivalEarth'), summary ? durationText(summary.earth) : '—');
   renderFlightProfile(eta);
   UIPatch.set($('flightDetails'), 'hidden', arrived || !target.navigable);
+  const pct = f ? Math.min(100, (f.covered / f.distance) * 100) : 0;
+  UIPatch.style($('progressBar'), 'width', pct + '%');
+  UIContent.text($('progressValue'), fmt(pct, 1) + '%');
+  UIContent.text($('progressRemaining'), f && eta ? 'Осталось на борту · ' + durationText(eta.proper) : '');
+  UIPatch.set($('cancelFlight'), 'disabled', !active);
+  if (active) {
+    const cancelLabel = 'Отменить текущий перелёт к объекту «' + (object(f.requestedTarget)?.name || target.name) + '»';
+    UIPatch.set($('cancelFlight'), 'title', cancelLabel + ' (Esc)');
+    UIPatch.attr($('cancelFlight'), 'aria-label', cancelLabel);
+  }
+  UIContent.text($('progressLabel'), f
+    ? 'УЧАСТОК ' + ((f.legIndex || 0) + 1) + ' / ' + (f.route?.length || 1)
+    : 'ПРОЙДЕНО');
+  FlightBuilder.renderCard(target, arrived);
+  globalThis.UniverseMap?.renderCard(target);
+  FlightQueue.render();
+  QuickFlight.render();
+  Route.renderDraft();
+  return eta;
+}
+function renderShipTelemetry() {
   renderVelocity();
   renderAcceleration();
   renderClockRatio();
@@ -356,21 +380,6 @@ function renderPanels() {
   UIContent.text($('universeClock'), fmt(13800000000 + cosmicYears, 0));
   UIContent.text($('earthClock'), fmt(Math.floor(state.earth), 0));
   UIContent.text($('shipClock'), fmt(Math.floor(state.proper), 0));
-  const pct = f ? Math.min(100, (f.covered / f.distance) * 100) : 0;
-  UIPatch.style($('progressBar'), 'width', pct + '%');
-  UIContent.text($('progressValue'), fmt(pct, 1) + '%');
-  UIContent.text($('progressRemaining'), f && eta ? 'Осталось на борту · ' + durationText(eta.proper) : '');
-  UIPatch.set($('cancelFlight'), 'disabled', !f?.rollback);
-  UIPatch.set($('cancelFlight'), 'title', f && !f.rollback ? 'В этом старом сохранении нет снимка состояния до старта' : '');
-  UIContent.text($('progressLabel'), f
-    ? 'УЧАСТОК ' + ((f.legIndex || 0) + 1) + ' / ' + (f.route?.length || 1)
-    : 'ПРОЙДЕНО');
   updateTimeControl();
-  FlightBuilder.renderCard(target, arrived);
-  globalThis.UniverseMap?.renderCard(target);
-  FlightQueue.render();
-  QuickFlight.render();
-  Route.renderDraft();
   GalacticTraffic.renderControl();
-  return eta;
 }

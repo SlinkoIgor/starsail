@@ -55,7 +55,7 @@ const Route={
  show(){
   const active=!!state.flight,nodes=active?this.ensureActive():state.itinerary,first=active?state.flight.legIndex+1:0,analysis=active?null:this.analyze(nodes),locked=active&&state.flight.mission?.passage;
   const esc=FlightQueue.escape;
-  let html='<div class="modal-eyebrow">НАВИГАЦИЯ / 3D → 2D</div><h2>Маршрут.</h2><p>Shift + клик добавляет участок маршрута. Двойной клик добавляет последнюю точку и запускает полёт; во время полёта он добавляет следующий участок. Повторный Shift + клик по последней точке и Esc убирают один будущий участок.</p>';
+  let html='<div class="modal-eyebrow">НАВИГАЦИЯ / 3D → 2D</div><h2>Маршрут.</h2><p>Shift + клик добавляет участок маршрута. Двойной клик добавляет последнюю точку и запускает полёт; во время полёта он добавляет следующий участок. Повторный Shift + клик убирает последнюю будущую точку. Во время полёта Esc на карте отменяет текущий перелёт.</p>';
   if(!nodes.length)html+='<p class="route-empty">Добавьте первую точку на карте или через поиск. Для пролёта у чёрной дыры укажите следующую точку.</p>';
   if(state.flight?.routeIssue)html+='<p class="route-issue">Маршрут приостановлен. '+esc(state.flight.routeIssue.reason)+' Измените будущие участки и продолжите полёт.</p>';
   html+='<ol class="route-list">'+nodes.map((n,i)=>{
@@ -64,6 +64,7 @@ const Route={
    if(r&&i<nodes.length-1&&!Gravity.canFlyby(o))detail+=o.kind==='star'||ExtendedCatalog.arrivalStar(o)?'<br>После остановки — '+(state.departureMode==='engine'?'собственная тяга':'разгон парусом')+(state.departureMode!=='engine'&&state.destroyed.includes(o.id)?' недоступен: звезда уже использована; будет использован двигатель.':'.'):'<br>Гравитационный поворот — только у чёрных дыр.';
    if(r&&n.mode==='flyby'){detail+='<br>Поворот в 3D: '+(r.required!==undefined?this.angleText(r.required):'—')+' · максимум '+(r.maxAngle!==undefined?this.angleText(Math.min(Math.PI,r.maxAngle)):'—');if(r.ok&&!r.straight)detail+='<br>Сближение: '+this.radiusText(r.rp);if(o.gravity?.assumed)detail+='<br>Масса и радиус — типовая модель, не измерение.';}
    let actions='<small>'+(n.mode==='flyby'?'ГРАВИТАЦИОННЫЙ ПРОЛЁТ':'ОСТАНОВКА')+'</small>';
+   if(active&&i===state.flight.legIndex)actions+='<div class="route-node-actions"><button id="cancelCurrentLeg">Отменить текущий перелёт</button></div>';
    if(editable)actions='<div class="route-node-actions"><button data-mode="'+i+'" '+(!Gravity.canFlyby(o)&&n.mode!=='flyby'?'disabled':'')+'>'+(n.mode==='flyby'?'Пролёт ↝':'Остановка ■')+'</button><button data-up="'+i+'" '+(i===first||(locked&&i===first+1)?'disabled':'')+'>↑</button><button data-down="'+i+'" '+(i===nodes.length-1||(locked&&i===first)?'disabled':'')+'>↓</button><button data-remove="'+i+'" aria-label="Удалить участок '+(i+1)+'">×</button></div>';
    return '<li class="route-node '+(r?.issue?'invalid':'')+'"><div class="route-node-name"><span>'+String(i+1).padStart(2,'0')+'</span><b>'+esc(o.name)+'</b></div><p>'+detail+(r?.issue?'<br><strong>'+esc(r.issue)+'</strong>':'')+'</p>'+actions+'</li>';
   }).join('')+'</ol><div class="route-actions"><button class="map-size-action" id="addRoutePoint" '+(nodes.length-first>=this.limit?'disabled':'')+'>Добавить точку через поиск +</button>';
@@ -85,7 +86,14 @@ const Route={
   };
   $('addRoutePoint').onclick=()=>{this.picking=true;$('infoDialog').close();$('search').value='';openCatalog();toast('Выберите следующую точку маршрута.',4200,'route');};
   if(!active)$('startRoute').onclick=()=>this.start();
-  else $('cancelRoute').onclick=()=>{syncClock();this.clearFuture();this.show();};
+  else {
+   const shownFlight=state.flight;
+   $('cancelCurrentLeg').onclick=()=>{
+    if(state.flight!==shownFlight){this.show();return;}
+    $('infoDialog').close();FlightHistory.cancel();
+   };
+   $('cancelRoute').onclick=()=>{syncClock();this.clearFuture();this.show();};
+  }
   if(state.flight?.routeIssue)$('resumeRoute').onclick=()=>{this.resume();if(state.flight?.routeIssue)this.show();};
   $('routeTheory').onclick=()=>Library.open('gravity');
  },
@@ -143,6 +151,7 @@ const Route={
    if(p.arrivalStar&&!p.arrivalStar.synthetic)ExtendedCatalog.pin(p.arrivalStar);
    const destination=object(p.targetId),selected=state.selected===f.target,anchor=FlightView.ship(),offset=Cosmology.project(object(f.fromId)||f.from,{x:0,y:0});
    if(selected)state.selected=destination.id;
+   f.elapsedBeforeReplan=elapsedFlightTime(f);
    Object.assign(f,{target:destination.id,requestedTarget:p.requestedTargetId,arrivalStar:p.arrivalStar,summary:{distance:p.distance,proper:p.proper,earth:p.earth},mission:p,missionElapsed:{proper:0,earth:0},from:Space.point(state.ship.p3),detachedSource:true,distance:p.distance,covered:0,maxBeta:p.peakBeta,aim:null,encounter:null,coastRate:0,boost:false,markers:[],view:{a:{x:anchor.x-offset.x,y:anchor.y-offset.y},b:MapLayout.baseProject(destination),referenceEpoch:true,geometryVersion:MapLayout.version,modeKey:FlightView.geometryKey()}});
    delete f.profile;MissionPlanner.activateStage(f,0);state.acceleration=0;FlightMarks.plan(f);
   }else if(f.aim){const anchor=FlightView.ship(),offset=Cosmology.project(object(f.fromId)||f.from,{x:0,y:0});f.from={...state.ship,p3:[...state.ship.p3]};f.detachedSource=true;f.distance=distance(state.ship,object(f.target));f.covered=0;f.aim=null;f.encounter=null;f.view={a:{x:anchor.x-offset.x,y:anchor.y-offset.y},b:MapLayout.baseProject(object(f.target)),referenceEpoch:true,geometryVersion:MapLayout.version,modeKey:FlightView.geometryKey()};}
@@ -166,8 +175,8 @@ const Route={
   state.ship=Space.point(V3.add(body.p3,s.offset));state.acceleration=0;state.beta=p.beta;
   if(p.elapsedProper>=p.proper){if(!state.visited.includes(body.id))state.visited.push(body.id);this.next(f,state.ship,p.beta);}return used;
  },
- next(old,from,beta){FlightHistory.complete(old);if(old.mission){MissionPlanner.continueRoute(old,from,beta);return;}const nodes=old.route,index=old.legIndex+1,target=object(nodes[index]?.id);if(!target)return;state.selected=target.id;state.current=null;state.beta=beta;state.acceleration=0;state.phase='cruise';state.flight={noticeElapsed:0,rollback:old.rollback,cosmic:Cosmology.isCosmic(object(old.target),target),view:{a:MapLayout.baseProject(object(old.target)),b:MapLayout.baseProject(target),referenceEpoch:true},from:{...from,p3:[...from.p3]},target:target.id,fromId:old.target,distance:distance(from,target),covered:0,coastRate:0,maxBeta:beta,boost:false,engine:null,wind:null,magnetic:null,medium:GasMedium.forLeg(from,target,state.sail),missed:false,autoStopping:false,route:nodes,legIndex:index,encounter:null};this.configure();FlightMarks.plan();renderUI();persist();},
- afterStop(old){if(old.mission){MissionPlanner.continueRoute(old);return;}if(!old.route?.length||old.legIndex>=old.route.length-1)return;const index=old.legIndex+1;state.selected=old.route[index].id;launch(false,{focusRoute:false});if(state.flight){state.flight.route=old.route;state.flight.legIndex=index;state.flight.encounter=null;this.configure();persist();}},
+ next(old,from,beta){FlightHistory.complete(old);if(old.mission){MissionPlanner.continueRoute(old,from,beta);return;}const nodes=old.route,index=old.legIndex+1,target=object(nodes[index]?.id);if(!target)return;state.selected=target.id;state.current=null;state.beta=beta;state.acceleration=0;state.phase='cruise';state.flight={noticeElapsed:0,departureClocks:{proper:state.proper,earth:state.earth},rollback:FlightHistory.nextDeparture(old),rollbackLeg:index,cosmic:Cosmology.isCosmic(object(old.target),target),view:{a:MapLayout.baseProject(object(old.target)),b:MapLayout.baseProject(target),referenceEpoch:true},from:{...from,p3:[...from.p3]},target:target.id,fromId:old.target,distance:distance(from,target),covered:0,coastRate:0,maxBeta:beta,boost:false,engine:null,wind:null,magnetic:null,medium:GasMedium.forLeg(from,target,state.sail),missed:false,autoStopping:false,route:nodes,legIndex:index,encounter:null};this.configure();FlightMarks.plan();renderUI();persist();},
+ afterStop(old){if(old.mission){MissionPlanner.continueRoute(old);return;}if(!old.route?.length||old.legIndex>=old.route.length-1)return;const index=old.legIndex+1;state.selected=old.route[index].id;launch(false,{focusRoute:false,rollback:FlightHistory.nextDeparture(old)});if(state.flight){state.itinerary=[];state.flight.route=old.route;state.flight.legIndex=index;state.flight.rollbackLeg=index;state.flight.encounter=null;this.configure();persist();}},
  endpoint(node){const o=object(node?.id);return node?.mode==='stop'&&o?ExtendedCatalog.arrivalStar(o)||o:o;},
  legs(){
   const f=state.flight,nodes=f?(f.route?.length?f.route:[{id:f.target}]):state.itinerary,start=f?.route?.length?(f.legIndex||0):0,legs=[];

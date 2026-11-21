@@ -388,13 +388,13 @@ function fitRoute(target, {wholeRoute = false} = {}) {
 }
 function select(id, fit = false, {deferPreview = false, routeAnchor = true} = {}) {
   const o = object(id);
-  if (!o) return;
-  ExtendedCatalog.pin(o);
+  if (id !== null && !o) return;
+  if (o) ExtendedCatalog.pin(o);
   if (ExtendedCatalog.systemView) {
     if (ExtendedCatalog.systemView.members.has(id)) ExtendedCatalog.systemView.selected = id;
     else ExtendedCatalog.systemView = null;
   }
-  if(routeAnchor)Route.selection=!Route.future().length?{id,state}:null;
+  if(routeAnchor)Route.selection=o&&!Route.future().length?{id,state}:null;
   else if(!Route.future().length)Route.selection={id:state.selected,state};
   state.selected = id;
   if(deferPreview)Route.deferFeedback({selectionOnly:true});

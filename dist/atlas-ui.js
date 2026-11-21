@@ -249,6 +249,7 @@ function showDialog(html, library = false) {
   $('infoDialog').classList.toggle('library-dialog', library);
   $('dialogContent').onclick = null;
   $('dialogContent').innerHTML = html;
+  delete $('infoDialog').dataset.objectId;
   $('infoDialog').showModal();
 }
 function stellarOrbitBounds(o) {
@@ -1250,6 +1251,7 @@ function showObject(id = state.selected) {
     ) + '</article>';
   GameAnalytics.cardOpened(o);
   showDialog(html);
+  $('infoDialog').dataset.objectId = o.id;
   SkyGuide.mount(o);
   Quests.mountStory(o);
   if (o.id === 'sgr' || o.nuclearStar)
