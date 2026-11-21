@@ -54,6 +54,7 @@ function catalogRows(items, total, loading = false, error = '') {
   for (const entry of items) {
     const b = document.createElement('button');
     b.className = 'catalog-item';
+    b.dataset.objectId = entry.id;
     const quality =
       entry.atlasOnly || entry.positionQuality === 'unknown'
         ? ' · ТОЛЬКО ПОИСК'

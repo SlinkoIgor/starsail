@@ -58,7 +58,7 @@ const FlightBuilder = {
     if (!this.readOnly && this.source?.id === 'sol') this.draft.burst = false;
     $('builderTitle').textContent = 'План полёта';
     $('builderRoute').textContent =
-      (this.source?.name || 'Текущая позиция') +
+      (OrbitalMotion.departureName(state, this.source) || 'Текущая позиция') +
       ' → ' +
       object(state.flight?.target || state.selected).name;
     $('builderSource').textContent = this.source?.name || 'В точке старта нет звезды';

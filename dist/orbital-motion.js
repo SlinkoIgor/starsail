@@ -142,9 +142,24 @@ const OrbitalMotion={
   const points=phases.map(E=>({...pointAt(E),phase:E}));
   return{points,currentIndex:phases.indexOf(current)};
  },
- planetPoint(q,E){
-  const sun=Cosmology.catalogObject('sol',false),v=this.vector(q,E),o={id:'planet-'+q.name,kind:'planet',synthetic:true,parentObject:'sol'},p3=sun.p3.map((n,i)=>n+v[i]);
-  return this.projectSnapshot(o,p3);
+ get earth(){return this.planets.find(q=>q.name==='ЗЕМЛЯ');},
+ planetPosition(q,E){
+  const sun=Cosmology.catalogObject('sol',false),v=this.vector(q,E);
+  return sun.p3.map((n,i)=>n+v[i]);
+ },
+ projectPlanet(q,p3){
+  return this.projectSnapshot({id:'planet-'+q.name,kind:'planet',synthetic:true,parentObject:'sol'},p3);
+ },
+ planetPoint(q,E){return this.projectPlanet(q,this.planetPosition(q,E));},
+ onEarth(s){return !s.flight&&s.current==='sol'&&s.ship.departureSite==='earth';},
+ parkOnEarth(){
+  const q=this.earth;
+  // Keep the solar navigation anchor. The departure site travels with the
+  // planet until launch, when the flight takes its own copy of this point.
+  state.ship={...Space.point(this.planetPosition(q,this.phase(q))),departureSite:'earth'};
+ },
+ departureName(s,source){
+  return (s.flight?.from||s.ship).departureSite==='earth'?'Земля':source?.name;
  },
  clipSegment(a,b,pad=2){
   const dx=b.x-a.x,dy=b.y-a.y;let lo=0,hi=1;
@@ -188,6 +203,7 @@ const OrbitalMotion={
     const phase=this.phase(q);this.traceCurve(E=>this.planetPoint(q,E),{curvature:r,knots:[phase]});
     const v=this.vector(q,phase),p=screen(this.planetPoint(q,phase));
     if(p.x>=-3&&p.x<=width+3&&p.y>=-3&&p.y<=height+3)circle(p.x,p.y,2.5,'#454545',1);
+    if(q===this.earth&&this.onEarth(state))continue;
     MapLabels.point({key:'planet-'+q.name,name:q.name,detail:fmt(Math.hypot(...v)/this.AU,2)+' а.е. от Солнца',p,priority:65,opacity:1});
    }
   }

@@ -132,7 +132,8 @@ const MapAnnotations = {
       box = boxAt(offset);
     }
     // Canvas clips partial captions. Edges never change their anchor or row.
-    if (!MapLabels.intersectsViewport(box)) return;
+    if (!MapLabels.intersectsViewport(box) ||
+        (!origin && MapLabels.earthDepartureBox && MapLabels.overlaps(box, MapLabels.earthDepartureBox))) return;
     if (origin) this.originBox = box;
     if (q.object) this.hits.push({ object: q.object, box });
     MapLabels.boxes.push(box);
@@ -143,7 +144,7 @@ const MapAnnotations = {
     if(q.structure)this.structureLabels.push({object:q.object,box,leader,anchor:q.leaderAnchor});
     ctx.save();
     ctx.globalAlpha = alpha;
-    text(q.name, x, y + offset, size, active ? '#171717' : q.color || '#454545', 'left', 'sans');
+    text(q.name, x, y + offset, size, ExpeditionTutorial.target(q.object) ? 'tutorial' : active ? '#171717' : q.color || '#454545', 'left', 'sans');
     ctx.restore();
     q.onPlace?.(box);
   },
@@ -262,6 +263,7 @@ const MapAnnotations = {
     MapLabels.boxes = [];
     MapLabels.uiCount = 0;
     MapLabels.placed = [];
+    if (MapLabels.earthDepartureMarker) MapLabels.drawEarthDeparture(MapLabels.earthDepartureMarker);
     // Include the sail, braking field and thrust for local and flight captions.
     const ship = screen(state.ship),
       radius = state.flight && ['launch', 'brake'].includes(state.phase) ? 65 : 18,
@@ -280,6 +282,10 @@ const MapAnnotations = {
       ...moving.map((q) => ({ ...q, alpha: q.opacity ?? 1 })),
     ])
       this.place(q, obstacles);
+    const p = ExpeditionTutorial.mapTargetPoint();
+    if (p && !this.hits.some(h => h.object.id === 'proxima')) {
+      this.place({key:'object-proxima', name:'Проксима Центавра', object:object('proxima'), p, alpha:1, filtered:true}, obstacles);
+    }
   },
 };
 globalThis.MapAnnotations = MapAnnotations;

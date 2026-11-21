@@ -1,10 +1,17 @@
 'use strict';
 const Quests = {
+  starterId: 'neighbours',
   view: null,
   opened: false,
   isOpen: false,
+  get suspended() {
+    return !!state.tutorialStep;
+  },
+  get activeIds() {
+    return this.suspended ? [] : this.store().active;
+  },
   get pending() {
-    return state.pendingQuestArrivals?.[0] ?? null;
+    return this.suspended ? null : (state.pendingQuestArrivals?.[0] ?? null);
   },
   presenting: false,
   autoPaused: false,
@@ -32,6 +39,7 @@ const Quests = {
           .filter(k => keys.has(k) && source[k] === true).map(k => [k, true]));
     return {
       active: [...new Set(Array.isArray(saved?.active) ? saved.active : [])].filter(id => known.has(id)),
+      ...(saved?.starterPending === true ? {starterPending: true} : {}),
       seen: flags(saved?.seen),
       credited: flags(saved?.credited),
     };
@@ -46,6 +54,15 @@ const Quests = {
     this.panelKey = this.announced = this.story = null;
     this.view = this.loadKey = this.retrying = null;
     this.opened = this.autoPaused = false;
+  },
+  pauseForTutorial() {
+    this.close();
+    this.retrying = null;
+    const notice = $('toast');
+    if (notice.dataset.icon === 'quest') {
+      clearTimeout(toastTimer);
+      notice.hidden = true;
+    }
   },
   store() {
     return (state.quests ||= this.blank());
@@ -125,7 +142,7 @@ const Quests = {
     return {done, total: quest.steps.length, complete: done === quest.steps.length};
   },
   isActive(quest) {
-    return this.store().active.includes(quest.id);
+    return this.activeIds.includes(quest.id);
   },
   flightIds(f = state.flight) {
     return f ? [f.target, f.requestedTarget].filter(Boolean) : [];
@@ -134,6 +151,7 @@ const Quests = {
     return Route.future().map(n => n.id);
   },
   entries(id) {
+    if (this.suspended) return [];
     const visited = this.visitedSet(), found = [];
     for (const quest of QUESTS) {
       if (this.locked(quest, visited)) continue;
@@ -148,9 +166,9 @@ const Quests = {
   },
   nextTarget() {
     if (state.flight || state.itinerary.length || !state.current || state.selected !== state.current) return null;
-    const store = this.store();
-    if (!store.active.length) return null;
-    const visited = this.visitedSet(), active = store.active.map(id => this.quest(id)).filter(Boolean),
+    const ids = this.activeIds;
+    if (!ids.length) return null;
+    const visited = this.visitedSet(), active = ids.map(id => this.quest(id)).filter(Boolean),
       here = active.filter(quest => quest.steps.some(step => this.ids(step).includes(state.current)));
     for (const quest of [...here, ...active]) {
       const step = this.next(quest, visited);
@@ -162,20 +180,26 @@ const Quests = {
     const busy = new Set([...this.flightIds(), ...this.routeIds()]);
     return quest.steps.find(step => !this.done(step, visited) && !this.ids(step).some(id => busy.has(id))) || null;
   },
-  start(id) {
+  subscribe(id) {
     const quest = this.quest(id), store = this.store();
-    if (!quest || store.active.includes(id)) return false;
+    if (this.suspended || !quest || store.active.includes(id)) return null;
     const visited = this.visitedSet();
-    if (this.locked(quest, visited)) return false;
+    if (this.locked(quest, visited)) return null;
     store.active.push(id);
-    GameAnalytics.track('quest_started', {quest_id: id, steps_total: quest.steps.length});
-    GameAnalytics.questProgress(quest, this.progress(quest, visited));
     for (const step of quest.steps) if (this.done(step, visited)) store.credited[this.key(quest, step)] = true;
+    return quest;
+  },
+  start(id) {
+    const quest = this.subscribe(id);
+    if (!quest) return false;
+    GameAnalytics.track('quest_started', {quest_id: id, steps_total: quest.steps.length});
+    GameAnalytics.questProgress(quest, this.progress(quest));
     log('Квест начат: ' + quest.title + '.');
     persist();
     return true;
   },
   sync() {
+    if (this.suspended) return;
     const store = this.store();
     if (!store.active.length && !Object.keys(store.credited).length) return;
     const visited = this.visitedSet();
@@ -213,7 +237,7 @@ const Quests = {
       9000, 'quest', {label: 'Открыть', run: () => this.read(id, quest.id)});
   },
   flightStory(f = state.flight) {
-    if (!f) return null;
+    if (this.suspended || !f) return null;
     const store = this.store(), flying = this.flightIds(f);
     for (const quest of this.ordered()) {
       const index = quest.steps.findIndex(step => this.ids(step).some(x => flying.includes(x)));
@@ -248,6 +272,7 @@ const Quests = {
     ExtendedCatalog.focus(o);
   },
   fly(id, questId) {
+    if (this.suspended) return false;
     const target = object(id);
     if (!target && this.streamed(id)) {
       this.load([id]);
@@ -284,7 +309,8 @@ const Quests = {
     if (!wait || this.retrying === id) return;
     this.retrying = id;
     wait.then(() => {
-      const again = this.retrying === id && !state.flight && state.selected === id && !state.itinerary.length;
+      if (this.retrying !== id) return;
+      const again = !state.flight && state.selected === id && !state.itinerary.length;
       this.retrying = null;
       if (again) this.fly(id);
     });
@@ -505,8 +531,9 @@ const Quests = {
     }
   },
   renderBadge() {
-    const store = this.store(), visited = this.visitedSet(),
-      count = store.active.filter(id => this.quest(id) && !this.progress(this.quest(id), visited).complete).length;
+    UIPatch.set($('questBtn'), 'hidden', this.suspended);
+    const visited = this.visitedSet(),
+      count = this.activeIds.filter(id => this.quest(id) && !this.progress(this.quest(id), visited).complete).length;
     if (count === this.badge) return;
     this.badge = count;
     $('questCount').textContent = String(count);
@@ -517,9 +544,10 @@ const Quests = {
     $('questBtn').setAttribute('aria-label', label);
   },
   render() {
+    this.renderBadge();
+    if (this.suspended) return;
     this.ensure();
     this.sync();
-    this.renderBadge();
     this.renderPanel();
     this.refreshStory();
     if (this.pending && !this.presenting) {
@@ -553,6 +581,7 @@ const Quests = {
     $('questsBody').scrollTop = 0;
   },
   open(questId) {
+    if (this.suspended) return;
     closeCatalog();
     closeMenu();
     MapFilters.close();
@@ -579,7 +608,7 @@ const Quests = {
     if (restoreFocus) $('questBtn').focus({preventScroll: true});
   },
   draw() {
-    const active = this.store().active;
+    const active = this.activeIds;
     if (!active.length) return;
     const visited = this.visitedSet(), viewHeight = zenMode ? height : cameraViewportHeight(),
       ink = paint('#171717'), paper = paint('#f8f8f8'), drawn = new Set();

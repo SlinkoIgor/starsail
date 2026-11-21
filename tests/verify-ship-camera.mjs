@@ -66,7 +66,7 @@ state.expansion=false;Cosmology.elapse(state,15e9);frame(lastFrame+101);assert.e
 for(const viewport of [[1440,855],[390,562]])for(const mode of ['full','radial']){
  [width,height]=viewport;MapSlice.mode=mode;MapLayers.active=false;
  state=initial();state.expansion=false;Cosmology.sync(state);FlightQueue.reset();
- followShip=false;cameraGoal=null;launch(true);paused=true;Simulation.tick(.2);
+ state.selected='proxima';followShip=false;cameraGoal=null;launch(true);paused=true;Simulation.tick(.2);
  cam=UniverseMap.overview();cameraGoal=null;focusShip();assert.equal(followShip,true,'first click centres and follows');assert.ok(cam.span<100,'first click also restores the local surroundings');
  MapLabels.begin();drawObjects();ExtendedCatalog.draw();
  assert.ok(hitObjects.filter(h=>h.p.x>0&&h.p.x<width&&h.p.y>0&&h.p.y<height&&Math.hypot(h.p.x-width/2,h.p.y-height/2)>=20).length>=10,'at least ten real catalogue objects surround the ship');

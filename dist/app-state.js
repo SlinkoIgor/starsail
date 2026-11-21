@@ -10,7 +10,8 @@ let state,
   hitObjects = [],
   lastUI = 0,
   saveTick = 0;
-const initial = () => ({
+const TUTORIAL_STEPS = ['welcome', 'time', 'clocks', 'zoom', 'mass', 'acceleration', 'velocity', 'dilation', 'destination', 'propulsion', 'launch', 'flight'];
+const initial = ({deferStarterQuest = false} = {}) => ({
   version: 13,
   flightDefaultsVersion: 2,
   reserveDefaultsVersion: 1,
@@ -19,11 +20,15 @@ const initial = () => ({
   flightSetup: OrbitalArrival.enabled ? {...FlightSetup.defaults({tankCapacityKg:1}), sail:false, collector:false} : null,
   flightHistory: [],
   flightTips: FlightTips.normalize({used: FlightTips.known()}),
-  quests: {...Quests.blank(), active: ['neighbours']},
+  quests: deferStarterQuest
+    ? {...Quests.blank(), starterPending: true}
+    : {...Quests.blank(), active: [Quests.starterId]},
   jettisoned: 0,
   controlG: 10,
   current: 'sol',
-  selected: 'proxima',
+  selected: 'sol',
+  tutorialStep: null,
+  startYear: new Date().getFullYear(),
   sail: 0,
   departureMode: 'engine',
   expansion: true,
@@ -91,6 +96,9 @@ function restore(saved) {
     sail: 0,
     controlG: 10,
   };
+  upgraded.startYear = Number.isSafeInteger(saved.startYear) && saved.startYear > 0 ? saved.startYear : new Date().getFullYear();
+  upgraded.tutorialStep = TUTORIAL_STEPS.includes(saved.tutorialStep) ? saved.tutorialStep : null;
+  if (saved.timeScale === 0.5) upgraded.timeScale = 0.1;
   // Missing/null setups used the optical defaults before engine-only starts.
   // Keep that fallback for existing expeditions, including active/queued plans.
   if (!Object.hasOwn(saved, 'flightSetup')) upgraded.flightSetup = null;
@@ -375,14 +383,16 @@ const FlightHistory = {
     const selected = routed ? itinerary[0]?.id || saved.current || f.requestedTarget || f.target : saved.selected;
     const tipProgress = state.flightTips, questProgress = state.quests;
     Route.cancelFeedback();
-    state = restore({...saved, itinerary, selected,
+    state = restore({...saved, itinerary, selected, startYear: state.startYear, tutorialStep: state.tutorialStep,
       pendingQuestArrivals: state.pendingQuestArrivals});
     if (f.legIndex) this.finish({legIndex: f.legIndex});
     state.flightTips = FlightTips.mergeProgress(state.flightTips, tipProgress);
     state.quests = Quests.normalize(questProgress);
+    if (state.tutorialStep === 'flight')
+      ExpeditionTutorial.setStep(state.selected === 'proxima' && ExpeditionTutorial.canChoose() ? 'launch' : 'destination');
     FlightQueue.reset();
     paused = !!saved.paused;
-    speed = saved.timeScale || 1;
+    speed = state.timeScale || 1;
     Simulation.clearClock();
     effects = [];
     Route.picking = false;

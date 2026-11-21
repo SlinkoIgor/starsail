@@ -12,6 +12,16 @@ run(`{
  MapLayers.active=true;const enabled=MapLayers.enabled;MapLayers.enabled=()=>true;MapLayers.admitted.clear();MapLayers.ready.clear();
  const known={id:'known-detail',kind:'star'},fresh={id:'fresh-detail',kind:'star'};assert.equal(MapLayers.admits(known),false);MapLayers.ready.set('stellar-cluster',true);MapLayers.ready.set('nebula',true);assert.equal(MapLayers.admits(known),true);MapLayers.ready.clear();assert.equal(MapLayers.admits(known),true,'a pending pan cannot hide admitted detail');assert.equal(MapLayers.admits(fresh),false,'initial detail still waits for its context');MapLayers.enabled=enabled;MapLayers.active=false;
  const filament={kind:'structure',cosmicSubtype:'filament'},end=2.7e9*width/1440;
+ const bounds=canvas.getBoundingClientRect;
+ for(const w of [390,800,1440,1920,3440,7680]){
+  canvas.getBoundingClientRect=()=>({width:w,height:1000});resize();
+  const span=Number($('filamentZoom').dataset.zoom);
+  assert.ok(Math.abs(zoomInterpolate(4,'value','span')/span-1)<1e-12);
+  assert.equal(zoomInterpolate(span,'span','value'),4);
+  assert.equal(gridMetrics({span},w).unit,100e6,'filament ruler at '+w+' CSS pixels');
+  assert.ok(MapDetails.visible(filament,span,w),'filaments are visible at their preset');
+ }
+ canvas.getBoundingClientRect=bounds;width=1440;height=1000;
  const fade=[.6,.7,.8,.9,.99,1].map(f=>MapDetails.opacity(filament,end*f));assert.equal(fade[0],1);assert.equal(fade.at(-1),0);for(let i=1;i<fade.length;i++)assert.ok(fade[i]<fade[i-1]);assert.ok(Math.abs(fade[2]-.5)<1e-12);
  // A first press centres the ship. Every zoom input must preserve that anchor.
  followShip=false;cam={x:100,y:200,span:24};focusShip();assert.equal(followShip,true);
@@ -37,7 +47,7 @@ run(`{
   const span=cam.span;focusShip();assert.ok(cam.span<span,'centring restores the ship surroundings from the expanded overview');releaseShipCamera();
   goCamera(cam.x,cam.y,span*2,true);assert.equal(cam.span,span*2,'camera navigation can retain wide views');
   assert.ok(Number.isFinite(gridMetrics().majorPixels));updateZoomControl();
-  assert.equal($('zoomSlider').value,'5.15','the unchanged slider rests at its upper endpoint');
+  assert.equal($('zoomSlider').value,'6.15','the slider rests at its upper endpoint');
   // Return to the solar neighbourhood with the existing atlas navigation.
   ExtendedCatalog.focus(object('sol'));assert.equal(cameraGoal.span,24);assert.equal(cameraGoal.x,0);assert.equal(cameraGoal.y,0);
   assert.equal(JSON.stringify(state),physics,'camera actions never advance or edit the expedition');

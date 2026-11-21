@@ -188,7 +188,8 @@ function objectTypeText(o) {
 }
 const distance = (a, b) => Space.distance(a, b);
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-const TIME_RATES = [0, 0.5, 1, 10, 100, 1000];
+const INITIAL_UNIVERSE_AGE = 13.8e9;
+const TIME_RATES = [0, 0.1, 1, 10, 100, 1000];
 const SPEED_TICKS = [
   0, 0.09, 0.99, 0.999, 0.9999, 0.99999, 0.999999, 0.9999999, 0.99999999, 0.999999999,
 ];
@@ -303,6 +304,7 @@ function applyTheme(value) {
   for (const key of themeProperties) root.style?.removeProperty(key);
   themeProperties.clear(); darkInk.clear();
   const put = (key, color) => { root.style?.setProperty(key, color); themeProperties.add(key); };
+  put('--tutorial-ink', paint('tutorial'));
   if (theme !== 'dark' && theme !== 'light') {
     put('color-scheme', p.scheme || 'dark');
     const tones = ['f6f6f6','e3e3e3','9b9b9b','7e7e7e','252525','a7a7a7','949494','d2d2d2','bcbcbc','dedede','878787','858585','333','aaa','ddd','bbb','999','555','777'];
@@ -324,6 +326,7 @@ function applyTheme(value) {
 }
 // Canvas and CSS use the same palette. Neutral dark retains its established inks.
 function paint(color) {
+  if (color === 'tutorial') return COLOR_THEMES[theme]?.scheme === 'light' ? '#ab312a' : '#ff8b80';
   if (theme === 'light') return color;
   if (color === '#f8f8f8') return COLOR_THEMES[theme]?.bg || '#000000';
   if (color.startsWith('rgba')) {

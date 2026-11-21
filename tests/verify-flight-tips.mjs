@@ -12,7 +12,7 @@ try {
 Math.random=()=>0;
 const reset = () => {
  OrbitalArrival.enabled=true;FlightTips.learned=FlightTips.normalize().used;
- state=initial();state.flightSetup=FlightSetup.defaults();state.expansion=false;paused=false;speed=1;FlightQueue.reset();
+ state=initial();state.tutorialStep=null;state.flightSetup=FlightSetup.defaults();state.expansion=false;paused=false;speed=1;FlightQueue.reset();
  Simulation.debt=Simulation.wallDebt=0;FlightTips.clear();
  $('toast').hidden=true;Cosmology.sync(state);
 };

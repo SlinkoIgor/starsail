@@ -1,10 +1,14 @@
 'use strict';
 // Restore the expedition, bind controls and run the animation loop.
+let hasSavedExpedition = false;
 try {
-  state = restore(JSON.parse(localStorage.getItem(STORE)));
+  const saved = localStorage.getItem(STORE);
+  hasSavedExpedition = saved !== null;
+  state = hasSavedExpedition ? restore(JSON.parse(saved)) : initial({deferStarterQuest: true});
 } catch {
-  state = initial();
+  state = initial({deferStarterQuest: true});
 }
+ExpeditionTutorial.openSession(hasSavedExpedition);
 GameAnalytics.start();
 FlightSetup.sync();
 ArrivalStars.primeRoutes();
@@ -103,6 +107,8 @@ function frame(now) {
       drawRouteDistance();
       MapVisits.draw();
       Quests.draw();
+      const tutorialTarget = ExpeditionTutorial.mapTargetPoint();
+      if (tutorialTarget) circle(tutorialTarget.x, tutorialTarget.y, 10, 'tutorial', 1.5);
     } catch (error) {
       // Discard any canvas save/clip left behind by the interrupted layer.
       canvas.width = canvas.width;
@@ -174,9 +180,10 @@ const MapPointer = {
 };
 function zoomAtPointer(e) {
   e.preventDefault();
+  if (!ExpeditionTutorial.allows('zoom')) return;
   cameraGoal = null;
   const factor = Math.exp(clamp(e.deltaY, -220, 220) * 0.006),
-    span = clamp(cam.span * factor, 0.00006, MAX_CAMERA_SPAN);
+    span = clamp(cam.span * factor, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN);
   if (followShip) cam = shipCamera(span);
   else {
     const r = MapPointer.rect(),
@@ -196,6 +203,8 @@ function pickMapTarget(e) {
   const r = canvas.getBoundingClientRect(),
     x = e.clientX - r.left,
     y = e.clientY - r.top;
+  const tutorialTarget = ExpeditionTutorial.mapTargetPoint();
+  if (tutorialTarget && Math.hypot(x - tutorialTarget.x, y - tutorialTarget.y) <= 14) return {id:'proxima'};
   const visits = MapVisits.hit(x, y);
   if (visits) return visits.objects.length > 1 ? { visits } : { id: visits.objects[0].id };
   const traffic = GalacticTraffic.hit(x, y);
@@ -210,7 +219,7 @@ function pickMapTarget(e) {
   return { id: target?.navigationId || target?.id };
 }
 canvas.addEventListener('pointerdown', (e) => {
-  if (e.button !== 0) return;
+  if (e.button !== 0 || !ExpeditionTutorial.allows('zoom')) return;
   pointer = {
     down: true,
     x: e.clientX,
@@ -248,6 +257,11 @@ canvas.addEventListener('pointerup', (e) => {
   if (!pointer.down || e.pointerId !== pointer.id) return;
   if (!pointer.moved) {
     const { id, traffic, visits } = pickMapTarget(e);
+    if (state.tutorialStep) {
+      if (ExpeditionTutorial.target(object(id))) select(id);
+      pointer.down = false;
+      return;
+    }
     doubleClickTarget = id && id === clickedMapTarget ? id : null;
     clickedMapTarget = id || null;
     if (visits) MapVisits.focus(visits);
@@ -271,7 +285,7 @@ canvas.addEventListener('pointercancel', () => {
 });
 canvas.addEventListener('pointerleave', () => MapPointer.leave());
 canvas.addEventListener('dblclick', (e) => {
-  if (e.button !== 0 || e.shiftKey || pointer.moved || !doubleClickTarget) return;
+  if (state.tutorialStep || e.button !== 0 || e.shiftKey || pointer.moved || !doubleClickTarget) return;
   const { id } = pickMapTarget(e), target = object(id);
   if (id !== doubleClickTarget || !target?.navigable) return;
   e.preventDefault();
@@ -346,6 +360,14 @@ $('multiplayerToggle').onchange = e => {
 };
 $('libraryBtn').onclick = () => toggleMenu('library');
 $('settingsBtn').onclick = () => toggleMenu('settings');
+$('startTutorial').onclick = () => {
+  if (state.tutorialStep) {
+    closeMenu();
+    ExpeditionTutorial.finish();
+  } else showExpeditionReset(true);
+};
+$('tutorialNext').onclick = () => ExpeditionTutorial.advance();
+$('skipTutorial').onclick = () => ExpeditionTutorial.finish();
 $('menu').onkeydown = (event) => {
   if (event.key !== 'Escape') return;
   event.preventDefault();
@@ -428,33 +450,58 @@ $('infoDialog').addEventListener('click', (e) => {
       $('infoDialog').close();
   }
 });
-$('resetBtn').onclick = () => {
+function showExpeditionReset(tutorial = false) {
+  const message = tutorial
+    ? '<h2>Начать обучение, текущий прогресс будет сброшен</h2>'
+    : '<h2>Снова от Солнца?</h2><p>Текущий прогресс будет сброшен.</p>';
+  const action = tutorial ? 'Начать обучение' : 'Начать экспедицию';
   showDialog(
-    '<div class="modal-eyebrow">НОВАЯ ЭКСПЕДИЦИЯ</div><h2>Снова от Солнца?</h2><p>Текущий прогресс будет сброшен.</p><button class="modal-start" id="confirmReset">Начать экспедицию →</button>',
+    '<div class="modal-eyebrow">НОВАЯ ЭКСПЕДИЦИЯ</div>' + message +
+    '<button class="modal-start" id="confirmReset">' + action + ' →</button>',
   );
   $('confirmReset').onclick = () => {
     GameAnalytics.endExpedition();
     const expedition = (Number.isInteger(state.expedition) ? state.expedition : 1) + 1;
-    state = initial();
+    state = initial({deferStarterQuest: tutorial});
     state.expedition = expedition;
     GameAnalytics.beginExpedition('reset');
     FlightQueue.reset();
     Quests.reset();
     paused = false;
-    speed = 1;
-    Simulation.debt = 0;
-    Simulation.wallDebt = 0;
+    speed = tutorial ? ExpeditionTutorial.startRate : 1;
+    Simulation.clearClock();
+    Route.cancelFeedback();
     lastFrame = performance.now();
     effects = [];
-    goCamera(0, 0, 24);
+    clearTimeout(toastTimer);
+    $('toast').hidden = true;
+    if (tutorial) OrbitalMotion.parkOnEarth();
+    ExpeditionTutorial.setStep(tutorial ? 'welcome' : null);
+    centerOnSun();
     renderUI();
     persist();
     $('infoDialog').close();
-    toast('Новая экспедиция. Солнечная система, нулевой год.',4200,'reset');
+    if (tutorial) $('tutorialNext').focus();
   };
-};
+}
+$('resetBtn').onclick = () => showExpeditionReset();
 window.addEventListener('keydown', (e) => {
   if ($('infoDialog').open || $('flightBuilder').open) return;
+  if (state.tutorialStep) {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); return; }
+    if (e.key === 'Escape' && $('menu').hidden) return;
+    if (e.code === 'Space') {
+      const next = $('tutorialNext');
+      if (!next.ariaKeyShortcuts || !$('menu').hidden || e.defaultPrevented || e.isComposing ||
+          e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      const control = e.target.closest('button,input,textarea,select,summary,a[href],[contenteditable]');
+      if (control && control !== next && !control.closest('.map-rails')) return;
+      e.preventDefault();
+      if (!e.repeat) ExpeditionTutorial.advance();
+      return;
+    }
+    if (['+', '=', '-'].includes(e.key) && !ExpeditionTutorial.allows('zoom')) return;
+  }
   if (
     (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey &&
     (e.code === 'KeyF' || e.key.toLowerCase() === 'f')
@@ -530,6 +577,7 @@ updateShipButton();
 resize();
 Route.recoverCompleted();
 renderUI();
+ExpeditionTutorial.showMap();
 updateMapHeading();
 renderCatalog();
 MapLayers.start();

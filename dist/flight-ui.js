@@ -133,6 +133,7 @@ function renderUI() {
   } finally {
     if (batch) UIPatch.end();
   }
+  ExpeditionTutorial.render();
   FlightTips.render(eta);
   Quests.render();
 }
@@ -147,15 +148,17 @@ function renderPanels() {
     target = object(f ? f.target : state.selected),
     current = object(state.current),
     active = !!f;
+  const sourceName = OrbitalMotion.departureName(state, active ? object(f.fromId) : current);
+  const locationType = OrbitalMotion.onEarth(state) ? 'Планета' : objectTypeText(active ? null : current);
   const locationFrom = active
-    ? object(f.fromId)?.name || f.from?.name || 'Межзвёздное пространство'
-    : current ? 'Стоянка · ' + current.name : 'Межзвёздное пространство';
+    ? sourceName || f.from?.name || 'Межзвёздное пространство'
+    : current ? 'Стоянка · ' + sourceName : 'Межзвёздное пространство';
   UIContent.text($('shipLocationFrom'), locationFrom);
   UIContent.text($('shipLocationTo'), active ? target.name : '');
   UIPatch.set($('shipLocationArrow'), 'hidden', !active);
   UIPatch.set($('shipLocationTo'), 'hidden', !active);
   UIPatch.attr($('shipLocationIcon'), 'href', active ? '#ship-icon' : '#station-icon');
-  UIContent.text($('shipLocationType'), objectTypeText(active ? null : current) +
+  UIContent.text($('shipLocationType'), locationType +
     (state.orbit && current && !active
       ? ' · орбита ' + fmt(state.orbit.radius / Stellar.r0, 2) + ' а.е.'
       : ''));
@@ -163,7 +166,7 @@ function renderPanels() {
   UIPatch.set($('shipLocation'), 'title', active
     ? locationFrom + ' → ' + target.name
     : current
-      ? current.name + ' · ' + objectTypeText(current)
+      ? sourceName + ' · ' + locationType
       : locationFrom);
   renderShipTelemetry();
   UIPatch.set($('flightCard'), 'hidden', !target);
@@ -377,9 +380,13 @@ function renderShipTelemetry() {
       ' на борту');
 
   const cosmicYears = Math.floor(state.universeElapsed ?? state.earth);
-  UIContent.text($('universeClock'), fmt(13800000000 + cosmicYears, 0));
-  UIContent.text($('earthClock'), fmt(Math.floor(state.earth), 0));
-  UIContent.text($('shipClock'), fmt(Math.floor(state.proper), 0));
+  UIContent.text($('universeClock'), fmt(INITIAL_UNIVERSE_AGE + cosmicYears, 0));
+  const calendarYear = elapsed => {
+    const year = state.startYear + Math.floor(elapsed);
+    return year < 10000 ? String(year) : fmt(year, 0);
+  };
+  UIContent.text($('earthClock'), calendarYear(state.earth));
+  UIContent.text($('shipClock'), calendarYear(state.proper));
   updateTimeControl();
   GalacticTraffic.renderControl();
 }

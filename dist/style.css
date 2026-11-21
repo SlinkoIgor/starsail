@@ -1184,3 +1184,182 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
  #infoDialog:has(.object-card)>.modal-close{top:calc(env(safe-area-inset-top) + 4px - var(--object-pad-top));margin-top:calc(env(safe-area-inset-top) + 4px - var(--object-pad-top));margin-right:calc(max(4px,env(safe-area-inset-right)) - var(--object-pad-right))}
  .toast{top:calc(env(safe-area-inset-top) + 48px);bottom:auto;max-height:40dvh;overflow-y:auto}
 }
+
+
+/* The two map instruments keep independent surfaces and anchors. */
+.map-rails { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.map-rails .map-controls { width: 171px; padding: 10px 12px; }
+.map-rails .map-controls-heading { display: flex; margin: 0; text-transform: uppercase; }
+.map-rails .zoom-panel { min-height: 138px; }
+.map-rails .time-panel { min-height: 96px; }
+@media (min-width:701px) and (max-height:650px) {
+  .map-rails { flex-direction: row; align-items: flex-start; }
+  .map-rails .map-controls { width: 143px; }
+}
+
+/* Tutorial cards share an accent with the one control they describe. */
+#app[data-tutorial="time"] #timeControls,
+#app[data-tutorial="clocks"] .clock-readings,
+#app[data-tutorial="zoom"] :is(#zoomControls,.map-scale),
+#app[data-tutorial="mass"] .mass-cell,
+#app[data-tutorial="acceleration"] .acceleration-cell,
+#app[data-tutorial="velocity"] .velocity-cell,
+#app[data-tutorial="dilation"] .dilation-cell,
+#app[data-tutorial="propulsion"] #arrivalEstimate {
+  --muted: var(--tutorial-ink);
+  --ink: var(--tutorial-ink);
+  --line: var(--tutorial-ink);
+  color: var(--tutorial-ink);
+}
+#app[data-tutorial="destination"] .catalog-item[data-object-id="proxima"] strong {
+  color: var(--tutorial-ink);
+}
+#app[data-tutorial="launch"] #launchBtn {
+  background: var(--tutorial-ink);
+  border-color: var(--tutorial-ink);
+  color: var(--paper);
+}
+.tutorial-card {
+  position: fixed;
+  z-index: 8;
+  width: min(302px, calc(100vw - 20px));
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--tone-a7a7a7);
+  font: 13px/1.55 var(--sans);
+}
+#app[data-tutorial="welcome"] .tutorial-card {
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 20px));
+}
+#app[data-tutorial="clocks"] .tutorial-card { width: min(530px, calc(100vw - 20px)); }
+#app[data-tutorial="clocks"] #tutorialText { white-space: pre-line; }
+.tutorial-copy { padding: 14px 16px 12px; }
+.tutorial-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--tutorial-ink);
+}
+.tutorial-heading svg { width: 16px; height: 16px; stroke-width: 1.5; }
+.tutorial-heading h2 {
+  margin: 0;
+  font: 500 11px/1.4 var(--mono);
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+.tutorial-copy p { margin: 0; }
+.tutorial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+}
+.tutorial-actions:not(:has(button:not([hidden]))) { display: none; }
+.tutorial-actions button {
+  min-height: 28px;
+  padding: 4px;
+  font: 11px/1.4 var(--mono);
+}
+#tutorialNext { margin-left: auto; padding-inline: 12px; border: 1px solid var(--line); }
+#tutorialNext:hover { border-color: var(--ink); }
+#skipTutorial { color: var(--card-muted, var(--muted)); }
+#skipTutorial:hover { color: var(--ink); }
+.tutorial-pointer, .tutorial-pointer::after { position: absolute; pointer-events: none; }
+.tutorial-pointer { background: var(--tutorial-ink); }
+.tutorial-pointer::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--tutorial-ink);
+  background: var(--paper);
+  transform: translate(-50%, -50%);
+}
+.tutorial-card:is([data-side="right"],[data-side="left"]) .tutorial-pointer { width: 18px; height: 1px; }
+.tutorial-card:is([data-side="above"],[data-side="below"]) .tutorial-pointer { width: 1px; height: 18px; }
+.tutorial-card[data-side="right"] .tutorial-pointer { right: 100%; }
+.tutorial-card[data-side="left"] .tutorial-pointer { left: 100%; }
+.tutorial-card[data-side="above"] .tutorial-pointer { top: 100%; }
+.tutorial-card[data-side="below"] .tutorial-pointer { bottom: 100%; }
+.tutorial-card[data-side="right"] .tutorial-pointer::after { left: 0; top: 50%; }
+.tutorial-card[data-side="left"] .tutorial-pointer::after { left: 100%; top: 50%; }
+.tutorial-card[data-side="above"] .tutorial-pointer::after { left: 50%; top: 100%; }
+.tutorial-card[data-side="below"] .tutorial-pointer::after { left: 50%; top: 0; }
+
+/* The map stays full height while each real instrument is introduced. */
+#app[data-tutorial-parts~="welcome"] .map-panel { bottom: 0; }
+#app[data-tutorial-parts~="welcome"] :is(.map-actions > :not(#settingsBtn), #toast, #reachReadout),
+#app[data-tutorial="welcome"] .tutorial-pointer,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="time"]) #timeControls,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="zoom"]) :is(#zoomControls, .map-scale),
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="clocks"]) .telemetry,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="propulsion"]) .flight-card {
+  display: none;
+}
+#app[data-tutorial="welcome"] #map, #app[data-tutorial="time"] #map, #app[data-tutorial="clocks"] #map {
+  pointer-events: none;
+}
+#app[data-tutorial-parts~="welcome"] .map-sidebar { top: 140px; }
+#app[data-tutorial-parts~="welcome"] .map-rails { flex-direction: column; }
+#app[data-tutorial-parts~="time"] #timeControls { order: -1; }
+#app[data-tutorial-parts~="zoom"]:not([data-tutorial-parts~="mass"]) .map-sidebar { bottom: 20px; }
+#app[data-tutorial-parts~="clocks"] .telemetry {
+  pointer-events: none; background: transparent; border: 0; box-shadow: none;
+}
+#app[data-tutorial-parts~="clocks"] .telemetry > * {
+  background: var(--paper); box-shadow: 0 0 0 8px var(--paper); border: 0;
+}
+#app[data-tutorial-parts~="clocks"]:not([data-tutorial-parts~="mass"]) .mass-cell,
+#app[data-tutorial-parts~="clocks"]:not([data-tutorial-parts~="acceleration"]) .acceleration-cell,
+#app[data-tutorial-parts~="clocks"]:not([data-tutorial-parts~="velocity"]) .velocity-cell,
+#app[data-tutorial-parts~="clocks"]:not([data-tutorial-parts~="dilation"]) .dilation-cell {
+  visibility: hidden;
+}
+#app[data-tutorial-parts~="propulsion"] :is(#quickFlight, .target-tools, .card-plan-controls, #flightDetails, #objectCardBtn),
+#app[data-tutorial="propulsion"] .card-actions { display: none; }
+
+
+@media(max-width:700px),(max-height:500px) and (pointer:coarse) {
+  #app[data-tutorial-parts~="welcome"] .map-heading {
+    display: block; top: max(8px, env(safe-area-inset-top)); left: 8px; max-width: calc(100% - 66px);
+  }
+  #app[data-tutorial-parts~="welcome"] .map-heading .eyebrow { width: auto; }
+  #app[data-tutorial-parts~="welcome"] .map-heading h1 { display: block; margin: 4px 0 0; max-width: none; }
+  #app[data-tutorial-parts~="welcome"] .ship-location { display: none; }
+  #app[data-tutorial-parts~="welcome"] .map-actions {
+    display: flex; inset: max(6px, env(safe-area-inset-top)) 8px auto auto;
+    padding: 0; border: 0; background: transparent;
+  }
+  #app[data-tutorial-parts~="welcome"] #settingsBtn { width: 40px; }
+  #app[data-tutorial-parts~="time"] .map-sidebar {
+    display: flex; inset: calc(max(8px, env(safe-area-inset-top)) + 62px) 8px auto 8px;
+  }
+  #app[data-tutorial-parts~="time"] .map-rails { width: 100%; overflow: visible; }
+  #app[data-tutorial-parts~="time"] .map-controls { width: 100%; max-width: none; padding: 5px 8px; }
+  #app[data-tutorial-parts~="time"] .map-controls-heading { font-size: 8px; height: auto; }
+  #app[data-tutorial-parts~="time"] #timeRate { display: none; }
+  #app[data-tutorial-parts~="time"] .zoom-panel { height: auto; min-height: 0; margin: 0; }
+  #app[data-tutorial-parts~="time"] .zoom-panel input { display: none; }
+  #app[data-tutorial-parts~="time"] .zoom-levels { position: static; display: flex; flex-direction: row-reverse; flex-wrap: wrap; }
+  #app[data-tutorial-parts~="time"] .zoom-levels button { position: static; width: auto; flex: 1; transform: none; padding: 5px 3px; min-height: 25px; }
+  #app[data-tutorial-parts~="time"] .zoom-levels button.active { text-decoration: underline; }
+  #app[data-tutorial-parts~="time"] .zoom-levels button::before { display: none; }
+  #app[data-tutorial-parts~="zoom"] .map-scale { position: fixed; inset: auto auto 12px 12px; }
+  #app[data-tutorial-parts~="mass"] .map-scale { bottom: 190px; }
+  #app[data-tutorial-parts~="clocks"] .telemetry {
+    display: grid; height: auto; padding: 8px 12px; grid-template-columns: repeat(2,minmax(0,1fr)); grid-template-rows: auto auto auto;
+    gap: 5px 12px; align-items: end;
+  }
+  #app[data-tutorial-parts~="clocks"] .telemetry > * { box-shadow: none; }
+  #app[data-tutorial-parts~="clocks"] .telemetry-cell { grid-template-rows: auto auto; }
+  #app[data-tutorial-parts~="clocks"] .telemetry-cell { gap: 1px; }
+  #app[data-tutorial-parts~="clocks"] .clocks { grid-column: 2; grid-row: 3; width: 100%; }
+  #app[data-tutorial-parts~="propulsion"] .flight-card { inset: auto 8px 190px auto; width: min(300px,calc(100vw - 16px)); }
+  #app[data-tutorial="propulsion"] #arrivalLabel { display: block; flex-basis: 100%; }
+}

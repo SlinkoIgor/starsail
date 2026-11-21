@@ -6,7 +6,7 @@ harness=harness.replaceAll('addEventListener(){}','addEventListener(name,fn){thi
 const {run,context}=await import('data:text/javascript,'+encodeURIComponent(harness+'\nexport {run,context};')+'#route-feedback');
 context.raf.length=0;
 run(`{
-state=initial();state.expansion=false;paused=true;FlightQueue.reset();Route.selection=null;Cosmology.sync(state);
+state=initial();state.selected='proxima';state.expansion=false;paused=true;FlightQueue.reset();Route.selection=null;Cosmology.sync(state);
 let previews=0,analyses=0,saves=0;globalThis.feedbackCounts=()=>({previews,analyses,saves});
 MissionPlanner.preview=()=>{previews++;return MissionPlanner.invalid('Прогноз теста');};
 Route.analyze=()=>{analyses++;return{valid:true,records:state.itinerary.map(n=>({...n,issue:'',d:1,beta:0})),proper:1,earth:2};};
@@ -49,7 +49,7 @@ point('ross',true);assert.equal(state.itinerary.map(n=>n.id).join(),'barnard,alp
 for(const first of ['sol','barnard',OBJECTS.find(o=>!o.navigable).id]){
  state=initial();point(first);point('barnard',true);assert.equal(state.itinerary.map(n=>n.id).join(),'barnard');
 }
-state=initial();point('barnard');state=initial();point('ross',true);assert.equal(state.itinerary.map(n=>n.id).join(),'proxima,ross','a reset uses the new visible selection, never an old expedition anchor');
+state=initial();point('barnard');state=initial();point('ross',true);assert.equal(state.itinerary.map(n=>n.id).join(),'ross','a reset uses the new visible selection, never an old expedition anchor');
 state=initial();point('sgr');point('m87',true);assert.equal(state.itinerary.map(n=>n.id).join(),'sgr,m87');assert.equal(state.itinerary[0].mode,'flyby');
 state=initial();point('barnard');point('sol',true);assert.equal(state.itinerary.map(n=>n.id).join(),'barnard,sol','the second point may be a return to the departure station');
 Route.cancelFeedback();

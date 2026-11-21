@@ -6,7 +6,7 @@ run(`{
   const idle=OrbitalArrival.idle;let calls=0;
   OrbitalArrival.idle=function(...args){calls++;return idle.apply(this,args);};
   try{
-    for(const rate of [.5,1,1000]){
+    for(const rate of [.1,1,1000]){
       state=initial();paused=false;speed=rate;Simulation.wallDebt=0;calls=0;
       Simulation.advance(12*3600,0);
       assert.equal(calls,1,'an idle night is one analytic clock update');
@@ -58,7 +58,7 @@ run(`{
 
 run(`{
   state=initial();paused=false;speed=1;Simulation.wallDebt=0;FlightQueue.reset();
-  MissionPlanner.launch();const saved=JSON.parse(JSON.stringify(state));assert.ok(state.flight);
+  state.selected='proxima';MissionPlanner.launch();const saved=JSON.parse(JSON.stringify(state));assert.ok(state.flight);
   const sample=()=>JSON.stringify([state.proper,state.earth,state.matter,state.beta,state.ship,state.phase,
     state.flight?.missionStage,state.flight?.stageElapsed,state.flight?.noticeElapsed]);
   Simulation.advance(2);const reference=sample();

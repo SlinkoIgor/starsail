@@ -1168,6 +1168,8 @@ const MapLabels = {
       this.viewKey = key;
     }
     this.queue = [];
+    this.earthDepartureMarker = null;
+    this.earthDepartureBox = null;
     this.placed = [];
     this.contours = [];
     this.areaGeometry = null;
@@ -1231,7 +1233,43 @@ const MapLabels = {
       candidates: [{ x: p.x + 19, y: p.y - 18, align: 'left' }],
     });
   },
+  drawEarthDeparture(p) {
+    if (p.x < 0 || p.x > width || p.y < 0 || p.y > height) return;
+    const labels = [
+      {key:'ship', name:SHIP_NAME.toUpperCase(), color:'#171717'},
+      {key:'planet-' + OrbitalMotion.earth.name, name:OrbitalMotion.earth.name, color:'#454545'},
+    ];
+    const w = 8 + Math.max(...labels.map(q => MapLabels.measure(q.name, '10px "Golos Text",Arial,sans-serif')));
+    const row = 15, h = row * labels.length;
+    // Move both lines together. Prefer a clear spot beside the ship, even
+    // when the planetary orbit is smaller than a pixel on the stellar map.
+    const candidates = [[14,-h/2], [-14-w,-h/2], [-w/2,-h-14], [-w/2,14]];
+    const sun = screen(object('sol')), sunLabelWidth = this.measure('СОЛНЦЕ', '12px "Golos Text",Arial,sans-serif');
+    const obstacles = [...this.boxes, {x:sun.x-12,y:sun.y-36,w:sunLabelWidth+46,h:50}];
+    if (state.tutorialStep && !$('tutorialCard').hidden) {
+      const card = $('tutorialCard').getBoundingClientRect(), canvasBox = canvas.getBoundingClientRect();
+      obstacles.push({x:card.left-canvasBox.left,y:card.top-canvasBox.top,w:card.width,h:card.height});
+    }
+    let best, minOverlap = Infinity;
+    for (const [dx,dy] of candidates) {
+      const x = clamp(p.x + dx, 0, width-w), y = clamp(p.y + dy, 0, height-h);
+      let overlap = 0;
+      for (const b of obstacles)
+        overlap += Math.max(0, Math.min(x+w,b.x+b.w)-Math.max(x,b.x)) *
+          Math.max(0, Math.min(y+h,b.y+b.h)-Math.max(y,b.y));
+      if (overlap < minOverlap) { best = {x,y}; minOverlap = overlap; }
+      if (!overlap) break;
+    }
+    this.earthDepartureBox = {...best,w,h};
+    for (const [i,q] of labels.entries()) {
+      const box = {x:best.x, y:best.y + i*row, w, h:row};
+      MapLabels.boxes.push(box);
+      MapLabels.placed.push({key:q.key, ...box});
+      text(q.name, box.x+4, box.y+11, 10, q.color, 'left', 'sans');
+    }
+  },
   draw() {
+    if (this.earthDepartureMarker) this.drawEarthDeparture(this.earthDepartureMarker);
     this.queue.sort(
       (a, b) =>
         Number(this.dynamic(a.key)) - Number(this.dynamic(b.key)) ||
@@ -1289,7 +1327,7 @@ const MapLabels = {
           const active = this.emphasized(q.object), alpha = active ? 1 : q.opacity ?? 1;
           ctx.save();
           ctx.globalAlpha = alpha;
-          text(name, p.x, p.y, size, active ? '#171717' : q.color || '#646464', p.align || 'left', 'sans');
+          text(name, p.x, p.y, size, ExpeditionTutorial.target(q.object) ? 'tutorial' : active ? '#171717' : q.color || '#646464', p.align || 'left', 'sans');
           if (caption) text(caption, p.x, p.y + 14, 7, active ? '#454545' : '#999999', p.align || 'left');
           ctx.restore();
           if (!q.sparse) q.onPlace?.(box);

@@ -54,7 +54,7 @@ console.log('PASS streamed quest stages load on demand from the indexed catalogu
 run(`{
 const reset = () => {
  OrbitalArrival.enabled=true;FlightTips.learned=FlightTips.normalize().used;
- state=initial();state.quests=Quests.blank();state.expansion=false;paused=false;speed=1;FlightQueue.reset();
+ state=initial();state.tutorialStep=null;state.quests=Quests.blank();state.expansion=false;paused=false;speed=1;FlightQueue.reset();
  Simulation.debt=Simulation.wallDebt=0;FlightTips.clear();Quests.reset();Quests.isOpen=false;
  Notices.action=null;$('toast').hidden=true;$('toastAction').hidden=true;$('infoDialog').open=false;
  $('dialogContent').innerHTML='';Cosmology.sync(state);
@@ -354,14 +354,14 @@ Quests.open();assert.equal(Quests.view,'neighbours');assert.ok(!$('questsBody').
 console.log('PASS completion is recorded once with the closing text, and a new expedition starts the neighbours quest afresh');
 
 reset();state=initial();renderUI();
-assert.equal(state.selected,'proxima');assert.equal(Quests.start('neighbours'),false,'the starter quest is already active');
+assert.equal(state.selected,'sol');select('proxima');assert.equal(Quests.start('neighbours'),false,'the starter quest is already active');
 $('launchBtn').onclick({});assert.ok(state.flight&&Quests.flightIds().includes('proxima'),'the first flight needs no quest activation');
 arrive();renderUI();assert.equal(state.current,'proxima');assert.equal(state.quests.credited['neighbours/proxima'],true);
 assert.equal(Quests.nextTarget().step.id,'alpha','arrival offers the next stage of the automatically started quest');
 assert.equal($('launchBtn').querySelector('span').textContent,'Лететь к следующей цели');
 $('infoDialog').open=false;Quests.dialogClosed();
 
-reset();assert.equal(state.selected,'proxima','a new expedition aims at the nearest star');
+reset();select('proxima');
 const label=()=>$('launchBtn').querySelector('span').textContent;
 state.current='proxima';state.ship=Space.point(object('proxima').p3);state.visited.push('proxima');renderUI();
 assert.equal($('launchBtn').hidden,true,'without an active quest a parked ship offers no next-target button');
@@ -434,6 +434,49 @@ console.log('PASS a new expedition aims at Proxima, a parked ship offers the nex
  console.log('PASS quest cards preserve all tip counts, learning and shuffle state with/without subscription and prior tips, across redraw/reload; future random choices stay identical until a tip is actually shown');
 }
 
+reset();Quests.start('neighbours');
+state.itinerary=[{id:'barnard',mode:'stop'},{id:'alpha',mode:'stop'}];Route.start();
+assert.equal(state.flight.target,'barnard');$('startTutorial').onclick();assert.ok(state.flight);
+$('confirmReset').onclick();assert.equal(state.flight,null);assert.deepEqual(state.itinerary,[]);assert.deepEqual(state.nextTargets,[]);
+assert.equal(state.tutorialStep,'welcome');assert.deepEqual(Quests.activeIds,[]);
+$('skipTutorial').onclick();assert.deepEqual(state.quests.credited,{});assert.deepEqual(Quests.activeIds,['neighbours']);
+
+reset();state.visited.push('alpha');Quests.start('blackholes');Quests.start('neighbours');
+state.quests.seen['neighbours/alpha']=true;
+// Saved tutorials may already have subscriptions or an in-progress flight.
+const beforeTutorial=JSON.stringify(state.quests);
+const countLocalFlags=()=>{
+ goCamera(0,0,24,true);
+ const original=ctx.stroke;let count=0;
+ try {ctx.stroke=()=>count++;Quests.draw();} finally {ctx.stroke=original;}
+ return count;
+};
+assert.ok(countLocalFlags()>0);
+Quests.open();toast('Квест завершён',9000,'quest');
+ExpeditionTutorial.setStep('welcome');renderUI();
+assert.equal(Quests.isOpen,false);assert.equal($('toast').hidden,true);
+assert.deepEqual(Quests.activeIds,[]);assert.equal(Quests.isActive(quest),false);
+assert.equal($('questBtn').hidden,true);assert.equal($('questCount').hidden,true);
+assert.equal(Quests.nextTarget(),null);assert.equal(Quests.flightStory({target:'proxima'}),null);
+assert.equal(Quests.storyHTML(object('proxima')),'');Quests.mountStory(object('proxima'));
+Quests.open();assert.equal(Quests.isOpen,false);assert.equal(Quests.fly('proxima','neighbours'),false);
+assert.equal(Quests.start('records'),false);
+assert.equal(countLocalFlags(),0);
+state=restore(FlightHistory.snapshot());renderUI();assert.deepEqual(Quests.activeIds,[]);
+assert.equal(JSON.stringify(state.quests),beforeTutorial);
+$('skipTutorial').onclick();
+assert.equal(JSON.stringify(state.quests),beforeTutorial);assert.deepEqual(Quests.activeIds,['blackholes','neighbours']);
+assert.equal($('questBtn').hidden,false);assert.equal($('questCount').textContent,'2');
+select('proxima');launch();renderUI();assert.equal($('toast').dataset.icon,'quest');
+ExpeditionTutorial.setStep('welcome');renderUI();assert.ok($('toast').hidden||$('toast').dataset.icon!=='quest');
+arrive();renderUI();assert.equal(state.current,'proxima');assert.equal(Quests.pending,null);
+assert.equal(Quests.present(),false);assert.equal($('infoDialog').open,false);
+assert.equal(JSON.stringify(state.quests),beforeTutorial,'arrival during the tutorial leaves the quest ledger untouched');
+$('skipTutorial').onclick();assert.equal(Quests.pending,'proxima');assert.equal(state.quests.credited['neighbours/proxima'],true);
+assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,'proxima');
+assert.ok(countLocalFlags()>0);
+console.log('PASS tutorial pauses all quest UI, actions, stories and credits; subscriptions, prior progress and deferred arrivals survive reload and resume');
+
 reset();state.selected='procyon';launch();renderUI();
 assert.equal($('toast').hidden,false);assert.equal($('toast').dataset.kind,'quest','a quest star is announced even without a subscription');
 assert.equal($('toastText').textContent,'Квест «Соседи Солнца»\\nПроцион. Звезда, которая начинает стареть.');
@@ -470,7 +513,7 @@ assert.ok(!$('questsBody').innerHTML.includes('ЗАКРЫТ'),'no closed card is
 } else run(`{
 const reset = () => {
  OrbitalArrival.enabled=true;FlightTips.learned=FlightTips.normalize().used;
- state=initial();state.quests=Quests.blank();state.expansion=false;paused=false;speed=1;FlightQueue.reset();
+ state=initial();state.tutorialStep=null;state.quests=Quests.blank();state.expansion=false;paused=false;speed=1;FlightQueue.reset();
  Simulation.debt=Simulation.wallDebt=0;FlightTips.clear();Quests.reset();Quests.isOpen=false;
  Notices.action=null;$('toast').hidden=true;$('toastAction').hidden=true;$('infoDialog').open=false;
  $('dialogContent').innerHTML='';Cosmology.sync(state);

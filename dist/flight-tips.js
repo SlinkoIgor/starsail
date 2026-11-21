@@ -1,4 +1,234 @@
 'use strict';
+// The tutorial follows the current control independently of flight notices.
+const ExpeditionTutorial = {
+  storageKey: 'parus-intro-tutorial',
+  startRate: 0.1,
+  openSession(hasExpedition) {
+    let firstVisit = !hasExpedition;
+    try {
+      if (localStorage.getItem(this.storageKey)) firstVisit = false;
+      else localStorage.setItem(this.storageKey, 'seen');
+    } catch {}
+    if (firstVisit) state.timeScale = this.startRate;
+    // A guided flight and its arrival remain in the tutorial even if the tab was closed.
+    let step = state.tutorialStep === 'flight' ? 'flight' : firstVisit ? 'welcome' : null;
+    try {
+      const active = JSON.parse(sessionStorage.getItem(this.storageKey));
+      if (active?.expedition === state.expedition && TUTORIAL_STEPS.includes(active.step))
+        step = active.step;
+    } catch {}
+    // Earlier versions ended training on takeoff. The departure snapshot identifies that flight.
+    if (!step && !state.tutorialStep && state.flight?.target === 'proxima' &&
+        state.flight.rollback?.tutorialStep === 'launch' && !state.flight.tutorialDismissed) step = 'flight';
+    if (['propulsion', 'launch'].includes(step) && (state.selected !== 'proxima' || !this.canChoose())) step = 'destination';
+    if (step) this.prepareDeparture();
+    this.setStep(step);
+  },
+  setStep(step) {
+    if (step && !state.tutorialStep) Quests.pauseForTutorial();
+    state.tutorialStep = step;
+    this.layout();
+    if (!step && state.quests.starterPending) {
+      delete state.quests.starterPending;
+      Quests.subscribe(Quests.starterId);
+    }
+    try {
+      if (step) sessionStorage.setItem(this.storageKey, JSON.stringify({expedition: state.expedition, step}));
+      else sessionStorage.removeItem(this.storageKey);
+    } catch {}
+  },
+  layout() {
+    const app = $('app'), step = state.tutorialStep || '';
+    if (app.dataset.tutorial === step) return;
+    app.dataset.tutorial = step;
+    app.dataset.tutorialParts = TUTORIAL_STEPS.slice(0, TUTORIAL_STEPS.indexOf(step) + 1).join(' ');
+    UIContent.text($('startTutorial'), step ? 'Отключить обучение' : 'Начать обучение');
+    resize();
+  },
+  allows(step) {
+    return !state.tutorialStep || TUTORIAL_STEPS.indexOf(state.tutorialStep) >= TUTORIAL_STEPS.indexOf(step);
+  },
+  prepareDeparture() {
+    if (state.current === 'sol' && !state.flight && !state.orbit && !state.totalDistance &&
+        state.visited.length === 1 && !state.flightHistory.length && !OrbitalMotion.onEarth(state))
+      OrbitalMotion.parkOnEarth();
+  },
+  finish() {
+    if (state.flight?.rollback?.tutorialStep === 'launch') state.flight.tutorialDismissed = true;
+    this.setStep(null);
+    persist();
+    renderUI();
+  },
+  advance() {
+    const step = state.tutorialStep;
+    if (!step) return;
+    if (step === 'destination') {
+      if (this.canChoose()) this.showMap();
+      else this.finish();
+      return;
+    }
+    if (step === 'flight') {
+      if (!state.flight) this.finish();
+      return;
+    }
+    if (step === 'launch') {
+      if ($('launchBtn').disabled) this.finish();
+      return;
+    }
+    const next = TUTORIAL_STEPS[TUTORIAL_STEPS.indexOf(step) + 1];
+    this.setStep(next);
+    persist();
+    renderUI();
+    if (next === 'destination' || next === 'launch') this.showMap();
+  },
+  showMap() {
+    if (!state.tutorialStep) return;
+    if (state.tutorialStep === 'flight') {
+      if (state.flight) fitRoute(object(state.flight.target), {wholeRoute:true});
+      return;
+    }
+    if (!this.allows('destination') || !this.canChoose()) {
+      centerOnSun();
+      return;
+    }
+    const points = ['sol', 'proxima'].map(id => MapLayout.project(object(id)));
+    fitCameraPoints(points, routeViewport(true), SOLAR_CAMERA_SPAN);
+  },
+  canChoose() {
+    return !state.flight && state.current !== 'proxima' && !state.itinerary.length;
+  },
+  target(o) {
+    return o?.id === 'proxima' && state.tutorialStep === 'destination' && this.canChoose();
+  },
+  mapTargetPoint() {
+    if (state.tutorialStep === 'destination' && this.canChoose()) return screen(object('proxima'));
+  },
+  lessons: {
+    welcome: {
+      title: 'Добро пожаловать на «Ковчег»',
+      text: () => (OrbitalMotion.onEarth(state)
+        ? '«Ковчег» начинает путь с Земли. После вылета вернуться в Солнечную систему можно будет только к Солнцу. '
+        : '') + 'На этом корабле можно посетить ближайшую звезду или пересечь всю Вселенную. Познакомьтесь с кораблём и проложите курс.',
+    },
+    time: {
+      title: 'Темп времени', anchor: 'timeControls',
+      text: 'Попробуйте разные темпы. При 1× за секунду проходит год на борту, при 0,1× тот же год занимает десять секунд. Ноль ставит время на паузу.',
+    },
+    clocks: {
+      title: 'Часы экспедиции', anchor: 'tutorialClocks',
+      text: () => 'Время на корабле — год по бортовым часам.\nВремя наблюдателя — год по часам на Земле.\nВозраст Вселенной — время с Большого взрыва. На старте — ' + compact(INITIAL_UNIVERSE_AGE) + ' лет.',
+    },
+    zoom: {
+      title: 'Масштаб карты', anchor: 'zoomControls',
+      text: 'Выберите отметку «Звёзды», чтобы увидеть соседей Солнца. Колесом мыши можно плавно менять масштаб. Линейка слева внизу показывает расстояние на карте.',
+    },
+    mass: {
+      title: 'Масса корабля', anchor: 'massReading',
+      text: 'Сам «Ковчег» весит 1 кг. На старте в баке ещё 1 кг рабочего вещества. Фотонный двигатель расходует его на разгон и торможение.',
+    },
+    acceleration: {
+      title: 'Ускорение', anchor: 'accelerationReading',
+      text: () => 'Шкала показывает ускорение, которое ощущается на борту. Справа — разгон до ' + $('accelerationMax').textContent + ', слева — торможение до ' + $('accelerationMin').textContent + '. Один g равен ускорению свободного падения на Земле.',
+    },
+    velocity: {
+      title: 'Скорость', anchor: 'velocityReading',
+      text: 'Здесь скорость «Ковчега» показана в процентах от скорости света. Чем ближе корабль к скорости света, тем важнее каждый следующий знак после запятой.',
+    },
+    dilation: {
+      title: 'Год на корабле', anchor: 'timeDilationRow',
+      text: 'Пока корабль покоится, часы на борту и на Земле идут в одном темпе. На большой скорости часы расходятся. Эта шкала показывает, сколько лет наблюдателя приходится на один год на борту корабля.',
+    },
+    destination: {
+      title: 'Выберите цель',
+      text: 'Летим к Проксиме Центавра — ближайшей к Солнцу звезде. Нажмите на выделенную звезду на карте.',
+    },
+    propulsion: {
+      title: 'Длительность перелёта', anchor: 'arrivalEstimate',
+      text: () => QuickFlight.issueReason ||
+        'Время в пути до Проксимы по бортовым часам — ' + $('arrivalProper').textContent +
+        ', по часам наблюдателя на Земле — ' + $('arrivalEarth').textContent + '.',
+    },
+    launch: {
+      title: 'Полёт к Проксиме', anchor: 'launchBtn',
+      text: 'Нажмите «Лететь» в карточке звезды. На карте вы увидите перелёт, а на приборах — как меняются скорость корабля и ход его часов.',
+    },
+    flight: {
+      title: 'Учебный перелёт завершён', anchor: 'arrivalEstimate',
+      text: () => state.current === 'proxima' ? 'Вы у Проксимы Центавра. В карточке звезды указано, сколько времени занял перелёт.' : 'Теперь можно завершить обучение и продолжить экспедицию.',
+    },
+  },
+  render() {
+    this.layout();
+    const step = state.tutorialStep, card = $('tutorialCard');
+    const hideCard = !step || (step === 'flight' && !!state.flight);
+    UIPatch.set(card, 'hidden', hideCard);
+    if (hideCard) return;
+    const lesson = this.lessons[step];
+    let body = typeof lesson.text === 'function' ? lesson.text() : lesson.text;
+    let action = 'Далее', waiting = false;
+    let anchor = lesson.anchor && $(lesson.anchor).getBoundingClientRect();
+    let sides = ['above', 'below', 'right', 'left'];
+    if (step === 'welcome') {
+      action = 'Начать обучение';
+      UIPatch.style(card, 'left', '');
+      UIPatch.style(card, 'top', '');
+    } else if (step === 'time' || step === 'zoom') {
+      sides = ['right', 'below', 'above', 'left'];
+    } else if (step === 'destination') {
+      const p = screen(object('proxima')), origin = canvas.getBoundingClientRect();
+      const offscreen = p.x < 0 || p.x > width || p.y < 0 || p.y > cameraViewportHeight();
+      const x = origin.left + clamp(p.x, 0, width), y = origin.top + clamp(p.y, 0, cameraViewportHeight());
+      anchor = {left:x - 9, right:x + 9, top:y - 9, bottom:y + 9};
+      if (this.canChoose()) {
+        waiting = offscreen && !!cameraGoal;
+        action = offscreen ? 'Показать на карте' : '';
+      } else {
+        body = 'Чтобы отправиться к звезде, выберите её на карте и нажмите «Лететь» в карточке. Теперь можно продолжить свою экспедицию.';
+        action = 'Готово';
+        anchor = {left:width / 2, right:width / 2, top:height / 2, bottom:height / 2};
+      }
+    } else if (step === 'propulsion' || step === 'launch' || step === 'flight') {
+      if (step === 'flight') action = 'Завершить обучение';
+      sides = ['left', 'above', 'below', 'right'];
+      if (step === 'launch') {
+        action = $('launchBtn').disabled ? 'Готово' : '';
+        if (!action && speed > 1) body += ' Выберите темп 1×, чтобы рассмотреть разгон.';
+        if (action) body = QuickFlight.issueReason || 'Для этого перелёта сейчас не хватает рабочего вещества. Завершите обучение, чтобы вернуться к планированию.';
+      }
+    }
+    UIContent.text($('tutorialTitle'), lesson.title);
+    UIContent.text($('tutorialText'), body);
+    const next = $('tutorialNext'), shortcut = step === 'welcome' || action === 'Далее';
+    UIContent.text(next, shortcut ? action + ' (Space)' : action);
+    UIPatch.set(next, 'ariaKeyShortcuts', shortcut ? 'Space' : null);
+    UIPatch.set(next, 'hidden', !action);
+    UIPatch.set($('skipTutorial'), 'hidden', step !== 'welcome');
+    UIPatch.style(card, 'visibility', waiting ? 'hidden' : '');
+    if (anchor && !waiting) this.place(card, anchor, sides);
+  },
+  place(card, anchor, sides) {
+    const box = card.getBoundingClientRect(), gap = 26, pad = 10;
+    const room = {
+      right: width - anchor.right - box.width, left: anchor.left - box.width,
+      below: height - anchor.bottom - box.height, above: anchor.top - box.height,
+    };
+    const fits = sides.filter(s => room[s] >= gap + pad);
+    if (!fits.length) fits.push(sides.reduce((a,b) => room[b] > room[a] ? b : a));
+    const cx = (anchor.left + anchor.right) / 2, cy = (anchor.top + anchor.bottom) / 2;
+    const side = fits[0], vertical = side === 'above' || side === 'below';
+    const x = vertical ? cx - box.width / 2 : side === 'right' ? anchor.right + gap : anchor.left - gap - box.width;
+    const y = !vertical ? cy - box.height / 2 : side === 'below' ? anchor.bottom + gap : anchor.top - gap - box.height;
+    const left = clamp(x, pad, width - box.width - pad), top = clamp(y, pad, height - box.height - pad);
+    if (card.dataset.side !== side) card.dataset.side = side;
+    UIPatch.style(card, 'left', Math.round(left) + 'px');
+    UIPatch.style(card, 'top', Math.round(top) + 'px');
+    const arrow = $('tutorialPointer');
+    UIPatch.style(arrow, 'left', vertical ? clamp(cx - left, 12, box.width - 12) + 'px' : '');
+    UIPatch.style(arrow, 'top', vertical ? '' : clamp(cy - top, 12, box.height - 12) + 'px');
+    UIPatch.style(arrow, 'width', side === 'left' ? Math.max(1, anchor.left - left - box.width - 8) + 'px' : '');
+  },
+};
+
 // Only tips about explicit user actions can be learned; explanations keep their display cap.
 const FlightTips = {
   minimumFlightSeconds: 20,
@@ -117,7 +347,9 @@ const FlightTips = {
       $('toast').hidden = true;
     if(persistNow)persist();
   },
-  noteLaunch() {
+  noteLaunch(continuingRoute = false) {
+    if (state.tutorialStep === 'launch' && !continuingRoute && state.flight.target === 'proxima')
+      ExpeditionTutorial.setStep('flight');
     state.flight.noticeElapsed = 0;
     this.observe(state);
   },

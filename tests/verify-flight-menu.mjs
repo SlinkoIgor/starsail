@@ -2,7 +2,7 @@ import fs from 'node:fs';
 const h=fs.readFileSync('tests/verify-map.mjs','utf8').split('\nrun(`')[0]+'\nexport {run};';const {run}=await import('data:text/javascript,'+encodeURIComponent(h));
 run(`{
 OrbitalArrival.enabled=true;
-const menuReset=(setup)=>{state=initial();state.expansion=false;state.matter=.0005;state.flightSetup=FlightSetup.normalize(setup);};
+const menuReset=(setup)=>{state=initial();state.selected='proxima';state.expansion=false;state.matter=.0005;state.flightSetup=FlightSetup.normalize(setup);};
 menuReset({engine:true,sail:true,collector:false,arrivalFuelPercent:0});
 const longTail=MissionPlanner.preview();assert.ok(longTail.valid,longTail.reason);assert.ok(longTail.accelerationEnd.proper>1);
 const plot=FlightBuilder.routeSamples(longTail,FlightBuilder.routeStages(longTail));

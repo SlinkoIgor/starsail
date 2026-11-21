@@ -312,7 +312,7 @@ function drawHorizonBoundary() {
 }
 function drawSymbol(o, p, selected = false) {
   const destroyed = state.destroyed.includes(o.id) && o.kind === 'star';
-  const ink = selected || o.notableLandmark ? '#171717' : '#424242';
+  const ink = ExpeditionTutorial.target(o) ? 'tutorial' : selected || o.notableLandmark ? '#171717' : '#424242';
   if (!selected) {
     if (globalThis.MapVisibility?.active && MapDetails.level(o) >= 3) {
       circle(p.x, p.y, globalThis.MapFilters?.promotes(o) ? 3.5 : 1.2, ink, 0.7);
@@ -841,6 +841,10 @@ function drawShip(time) {
     ctx.setLineDash([]);
   }
   ctx.restore();
+  if (OrbitalMotion.onEarth(state)) {
+    MapLabels.earthDepartureMarker = p;
+    return;
+  }
   if (cam.span < 60000 && (!f || Math.hypot(p.x - screen(target).x, p.y - screen(target).y) > 65))
     MapLabels.point({ key: 'ship', name: SHIP_NAME.toUpperCase(), p, priority: 35 });
 }

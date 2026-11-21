@@ -141,7 +141,7 @@ const QuickFlight = {
     if (!visible) { this.reserveNoticeKey = null; return; }
     const {context, source, setup: c} = this.current(), used = new Set(context.destroyed), star = FlightSetup.available(source, used);
     const stellar = !!source && ['star', 'home'].includes(source.kind), burstIssue = FlightSetup.burstIssue(source, used);
-    const sourceName = String(source?.name || 'Текущая позиция');
+    const sourceName = String(OrbitalMotion.departureName(context, source) || 'Текущая позиция');
     UIContent.text($('quickSource'), sourceName);
     UIPatch.set($('quickSource'), 'title', 'Старт: ' + sourceName);
     document.querySelectorAll('[data-flight-option]').forEach(b => {

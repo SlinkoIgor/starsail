@@ -3,7 +3,7 @@ const harness=fs.readFileSync('tests/verify-map.mjs','utf8').split('\nrun(`')[0]
 const {run}=await import('data:text/javascript,'+encodeURIComponent(harness)+'#route-camera');
 run(`{
 resize();
-const reset=()=>{OrbitalArrival.enabled=true;state=initial();state.expansion=false;paused=true;Simulation.debt=Simulation.wallDebt=0;FlightQueue.reset();Cosmology.sync(state);followShip=false;cameraGoal=null;};
+const reset=()=>{OrbitalArrival.enabled=true;state=initial();state.selected='proxima';state.expansion=false;paused=true;Simulation.debt=Simulation.wallDebt=0;FlightQueue.reset();Cosmology.sync(state);followShip=false;cameraGoal=null;};
 const view=()=>JSON.stringify([cam,cameraGoal,followShip,MapSlice.mode]);
 const explore=(mode,following=false)=>{
  MapSlice.mode=mode;

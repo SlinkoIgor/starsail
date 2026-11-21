@@ -1,9 +1,9 @@
 'use strict';
 // Flight commands and compatibility with saved legacy trajectories.
-function launch(forceEngine = false, {focusRoute = true, rollback = null} = {}) {
+function launch(forceEngine = false, {focusRoute = true, rollback = null, continuingRoute = false} = {}) {
   if (!forceEngine) FlightSetup.sync();
   if (!forceEngine && MissionPlanner.enabledIdle()) {
-    MissionPlanner.launch(null, null, {focusRoute, rollback});
+    MissionPlanner.launch(null, null, {focusRoute, rollback, continuingRoute});
     return;
   }
   if (state.flight) return;
@@ -63,7 +63,7 @@ function launch(forceEngine = false, {focusRoute = true, rollback = null} = {}) 
     ? Stellar.sample(wind, 0).force / wind.massKg
     : Rocket.acceleration(Rocket.dryMass + state.matter, engine.maxG);
   state.phase = boost ? 'launch' : 'thrust';
-  FlightTips.noteLaunch();
+  FlightTips.noteLaunch(continuingRoute);
   paused = false;
   if (boost) {
     const current = object(state.current);

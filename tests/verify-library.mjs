@@ -23,7 +23,7 @@ assert.ok(/<script src="library\.js\?v=[0-9a-f]{12}" data-app>/.test(index), 'li
 
 run(`{
 OrbitalArrival.enabled=true;
-const fresh=()=>{state=initial();state.flightSetup=FlightSetup.defaults();paused=true;FlightQueue.reset();Cosmology.sync(state);};
+const fresh=()=>{state=initial();state.selected='proxima';state.flightSetup=FlightSetup.defaults();paused=true;FlightQueue.reset();Cosmology.sync(state);};
 const html=()=>$('dialogContent').innerHTML;
 const near=(actual,expected,tolerance,label)=>assert.ok(Math.abs(actual/expected-1)<=tolerance,label+': '+actual+' vs '+expected);
 fresh();
@@ -56,7 +56,7 @@ assert.ok(pages.controls.includes('data-library-chapter="flight"')&&pages.model.
 for(const id of ['relativity','map'])assert.ok(/Карта[^<]*нарисована[^<]*неподвижного наблюдателя/.test(pages[id]),id+' states the map frame');
 assert.ok(pages.relativity.includes('не меняются, как бы быстро ни летел')&&pages.map.includes('не зависят от скорости'));
 assert.ok(pages.relativity.includes('Сейчас на борту')&&pages.gravity.includes('Вселенная сейчас')&&pages.model.includes('Корабль и среда сейчас'));
-assert.ok(pages.flight.includes('Ваш план сейчас')&&pages.flight.includes(object(state.selected).name),'the default target is planned live');
+assert.ok(pages.flight.includes('Ваш план сейчас')&&pages.flight.includes(object(state.selected).name),'the selected target is planned live');
 
 const listed=[...CatalogRegistry.libraryHTML().matchAll(/data-catalog-source="([^"]+)"/g)].map(m=>m[1]);
 assert.ok(listed.length>=20);

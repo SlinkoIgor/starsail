@@ -64,8 +64,8 @@ function goCamera(x, y, span, instant = false, keepFollow = false) {
   if (!keepFollow && followShip) releaseShipCamera();
   cameraGoal =
     keepFollow && followShip
-      ? shipCamera(clamp(span, 0.00006, MAX_CAMERA_SPAN))
-      : { x, y, span: clamp(span, 0.00006, MAX_CAMERA_SPAN) };
+      ? shipCamera(clamp(span, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN))
+      : { x, y, span: clamp(span, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN) };
   if (instant) {
     cam = { ...cameraGoal };
     cameraGoal = null;
@@ -81,7 +81,9 @@ function routeViewport(avoidPanels = false) {
     // Panel positions change with the screen size and the card contents.
     // Leave room for the 18px waypoint rings around every visible panel.
     let spaces = [{ left: 20, top: 20, right: width - 20, bottom: viewportHeight - 20 }];
-    const panels = document.querySelectorAll('.flight-card,.map-heading>.eyebrow,.map-heading h1,.ship-location,.map-actions,.map-controls,.map-scale');
+    const panels = document.querySelectorAll('.flight-card,.map-heading>.eyebrow,.map-heading h1,.ship-location,.map-actions,.map-controls,.map-scale' +
+      (state.tutorialStep ? ',.telemetry' : '') +
+      (['propulsion','launch'].includes(state.tutorialStep) ? ',#tutorialCard' : ''));
     for (const panel of panels) {
       const r = panel.getBoundingClientRect();
       if (!r.width || !r.height) continue;
@@ -115,6 +117,11 @@ function centeredCamera(p, span) {
     span,
   };
 }
+function centerOnSun() {
+  const sun = MapLayout.project(object('sol'));
+  const { x, y, span } = centeredCamera(sun, SOLAR_CAMERA_SPAN);
+  goCamera(x, y, span, true);
+}
 function shipCamera(span = cam.span) {
   return centeredCamera(FlightView.ship(), span);
 }
@@ -127,7 +134,7 @@ function focusPoint(id) {
 // Scale-rail zoom-in keeps the selected object on screen and brings it to the centre.
 // Ship following keeps its own anchor; zooming out leaves the view as before.
 function zoomTowardSelection(span, instant = false) {
-  span = clamp(span, 0.00006, MAX_CAMERA_SPAN);
+  span = clamp(span, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN);
   const p = !followShip && span < (cameraGoal || cam).span && focusPoint(state.selected);
   if (!p) return false;
   if (instant) {
@@ -260,21 +267,31 @@ function releaseShipCamera() {
 // Numerical guard only: far beyond the atlas even at Cosmology's maximum a(t).
 // Wheel/keyboard zoom may continue past the unchanged preset rail.
 const MAX_CAMERA_SPAN = 1e100;
+const SOLAR_CAMERA_SPAN = 0.00006;
+const GRID_TARGET_PIXELS = 128;
 // Presets and handle share the same piecewise logarithmic scale.
 const zoomStops = [
-  { value: 0, span: 0.00006 },
+  { value: 0, span: SOLAR_CAMERA_SPAN },
   { value: 1, span: 24 },
   { value: 2, span: 130000 },
   { value: 3, span: 3e7 },
-  { value: 4, span: 5e9 },
   {
-    value: 5,
+    value: 4,
+    get span() {
+      // One ruler division at the filament preset is 100 million light-years.
+      // Keep the rail ordered even if the canvas is collapsed or extremely wide.
+      return clamp(100e6 * width / GRID_TARGET_PIXELS, zoomStops[3].span * 1.1, zoomStops[5].span / 1.1);
+    },
+  },
+  { value: 5, span: 5e9 },
+  {
+    value: 6,
     get span() {
       return globalThis.UniverseMap?.overview().span || 115e9;
     },
   },
   {
-    value: 5.15,
+    value: 6.15,
     get span() {
       return globalThis.UniverseMap ? UniverseMap.overview().span * 1.3 : 1.4e11;
     },
@@ -297,7 +314,7 @@ function zoomInterpolate(input, from, to) {
     : a.value + (b.value - a.value) * fraction;
 }
 function gridMetrics(view = cam, viewportWidth = width) {
-  const unit = nice((view.span * 128) / Math.max(1, viewportWidth)),
+  const unit = nice((view.span * GRID_TARGET_PIXELS) / Math.max(1, viewportWidth)),
     majorPixels = (unit * viewportWidth) / view.span;
   return { unit, majorPixels, minorUnit: unit / 5, minorPixels: majorPixels / 5 };
 }
@@ -372,10 +389,13 @@ function fitRoute(target, {wholeRoute = false} = {}) {
     !wholeRoute && points.every((p) => sx(p) >= v.left && sx(p) <= v.right && sy(p) >= v.top && sy(p) <= v.bottom)
   )
     return;
+  fitCameraPoints(points, v, wholeRoute ? SOLAR_CAMERA_SPAN : current.span);
+}
+function fitCameraPoints(points, v, minimumSpan) {
   const minX = Math.min(...points.map(p => p.x)), maxX = Math.max(...points.map(p => p.x)),
     minY = Math.min(...points.map(p => p.y)), maxY = Math.max(...points.map(p => p.y));
-  let span = Math.max(
-    wholeRoute ? 0.00006 : current.span,
+  const span = Math.max(
+    minimumSpan,
     (((maxX - minX) * width) / (v.right - v.left)) * 1.25,
     (((maxY - minY) * width) / (v.bottom - v.top)) * 1.25,
   );
@@ -397,29 +417,29 @@ function select(id, fit = false, {deferPreview = false, routeAnchor = true} = {}
   if(routeAnchor)Route.selection=o&&!Route.future().length?{id,state}:null;
   else if(!Route.future().length)Route.selection={id:state.selected,state};
   state.selected = id;
+  if (state.tutorialStep === 'destination' && id === 'proxima' && ExpeditionTutorial.canChoose()) {
+    ExpeditionTutorial.setStep('propulsion');
+    deferPreview = false;
+  }
   if(deferPreview)Route.deferFeedback({selectionOnly:true});
   else {Route.cancelFeedback();renderUI();}
-  if (fit) fitRoute(o);
+  if (state.tutorialStep === 'propulsion') ExpeditionTutorial.showMap();
+  else if (fit) fitRoute(o);
   renderCatalog();
   if(!deferPreview)persist();
 }
-let compactMapControls = null;
 function resize() {
   const r = canvas.getBoundingClientRect();
   width = r.width;
   height = r.height;
-  hudHeight = document.querySelector('.telemetry')?.getBoundingClientRect().height || 0;
+  $('filamentZoom').dataset.zoom = String(zoomStops[4].span);
+  hudHeight = state?.tutorialStep ? 0 : document.querySelector('.telemetry')?.getBoundingClientRect().height || 0;
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   // Assigning either bitmap dimension clears the canvas, even when unchanged.
   if (canvas.width !== Math.round(width * dpr)) canvas.width = Math.round(width * dpr);
   if (canvas.height !== Math.round(height * dpr)) canvas.height = Math.round(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const controls = document.querySelector('.map-controls'),
-    compact = width < 700;
-  if (controls && compact !== compactMapControls) {
-    controls.open = !compact;
-    compactMapControls = compact;
-  }
+
 }
 new ResizeObserver(resize).observe(canvas);
 function mapContext(view) {

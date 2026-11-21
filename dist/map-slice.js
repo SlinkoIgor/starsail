@@ -19,7 +19,7 @@ const MapSlice={
  render(){
   const radial=this.mode==='radial';
   document.querySelectorAll('[data-map-mode]').forEach(input=>{input.checked=input.dataset.mapMode===this.mode;});
-  $('mapControlsTitle').textContent=radial?'Карта · радиальная':'Карта и время';
+  $('mapControlsTitle').textContent=radial?'Масштаб · радиальная':'Масштаб';
   const status=$('mapSliceStatus');
   status.hidden=!radial||!MapRadial.error&&!MapRadial.loading;
   status.textContent=!radial?'':MapRadial.error?'Не удалось загрузить карту. Нажмите «Радиальная» ещё раз.':MapRadial.loading?'Загрузка карты…':'';

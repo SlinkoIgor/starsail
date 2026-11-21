@@ -27,6 +27,11 @@ const Simulation={
    .map(q=>({seconds:q.seconds,rate:q.rate}));
   this.wallDebt=this.wallQueue.reduce((sum,q)=>sum+q.seconds,0);
  },
+ idle(years){
+  if(OrbitalArrival.idle(years))return;
+  state.proper+=years;state.earth+=years;Cosmology.elapse(state,years);
+  if(OrbitalMotion.onEarth(state))OrbitalMotion.parkOnEarth();
+ },
  advance(realSeconds,budgetMs=Infinity){
   if(paused||state.flight?.routeIssue)return;
   const queue=this.pendingClock(),tail=queue.at(-1),started=Number.isFinite(budgetMs)?performance.now():0;
@@ -37,7 +42,7 @@ const Simulation={
    // Replaying an idle night in 1/60-second slices only builds a huge backlog.
    if(!state.flight){
     const years=pending.seconds*pending.rate;
-    if(!OrbitalArrival.idle(years)){state.proper+=years;state.earth+=years;Cosmology.elapse(state,years);}
+    this.idle(years);
     queue.shift();continue;
    }
    // Keep the original physical slices; yield between them so a sleeping tab
@@ -46,7 +51,7 @@ const Simulation={
    const slice=Math.min(pending.seconds,1/60),rate=pending.rate;
    let years=slice*rate,zeroSteps=0;
    for(let transitions=0;years>1e-15&&transitions<64;transitions++){
-    if(!state.flight){if(OrbitalArrival.idle(years)){years=0;break;}state.proper+=years;state.earth+=years;Cosmology.elapse(state,years);years=0;break;}
+    if(!state.flight){this.idle(years);years=0;break;}
     const f=state.flight,elapsed=globalThis.FlightTips?.elapsed(f);
     const used=this.step(years);if(!(used>=0&&Number.isFinite(used)))throw new Error('Invalid replay step');
     if(used===0){if(++zeroSteps>=16)throw new Error('Flight made no progress: '+state.phase);}else zeroSteps=0;
@@ -63,7 +68,7 @@ const Simulation={
   if(state.flight?.routeIssue)return;
   let remaining=years+this.debt,zeroSteps=0;this.debt=0;
   for(let transitions=0;remaining>0&&transitions<256;transitions++){
-   if(!state.flight){if(OrbitalArrival.idle(remaining)){remaining=0;break;}state.proper+=remaining;state.earth+=remaining;Cosmology.elapse(state,remaining);remaining=0;break;}
+   if(!state.flight){this.idle(remaining);remaining=0;break;}
    const f=state.flight,elapsed=globalThis.FlightTips?.elapsed(f),rate=speed;
    const used=this.step(remaining);if(!(used>=0&&Number.isFinite(used)))throw new Error('Invalid proper-time step');
    if(used===0){if(++zeroSteps>=16)throw new Error('Flight made no progress: '+state.phase);}else zeroSteps=0;

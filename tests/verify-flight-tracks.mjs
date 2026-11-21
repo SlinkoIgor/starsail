@@ -79,11 +79,17 @@ console.log('PASS real passage cancellation/reload preserves ship, clocks and fu
   state=restore(JSON.parse(JSON.stringify(state)));assert.deepEqual(visible(),[],'expired tracks never reappear after reload');
   console.log('PASS real single arrival fades continuously over 3 wall-clock seconds, including pause/reload, and preserves physics/history');
 
-  reset();state.itinerary=['alpha','barnard','sol'].map(id=>({id,mode:'stop'}));Route.start();
+  // Use the tutorial departure site for the route that returns to the solar port.
+  reset();ExpeditionTutorial.prepareDeparture();
+  assert.ok(OrbitalMotion.onEarth(state));
+  state.itinerary=['alpha','barnard','sol'].map(id=>({id,mode:'stop'}));Route.start();
   arrive();assert.equal(state.flight.target,'barnard');assert.equal(state.flightHistory[0].mapFadeAt,undefined);wall+=10000;assert.deepEqual(visible(),[1],'first leg remains until the entire route ends');
   arrive();assert.equal(state.flight.target,'sol');wall+=10000;assert.deepEqual(visible(),[1,1]);
   state=restore(JSON.parse(JSON.stringify(state)));assert.deepEqual(visible(),[1,1],'active route keeps previous legs on reload');
   arrive();assert.equal(state.flight,null);assert.equal(state.current,'sol');assert.equal(state.flightHistory.length,3);assert.ok(state.flightHistory.every(h=>h.mapFadeAt===wall));assert.deepEqual(visible(),[1,1,1]);
+  assert.equal(state.flightHistory[0].from.departureSite,'earth');
+  assert.equal(state.ship.departureSite,undefined);
+  const returned=FlightHistory.snapshot();
   wall+=1500;assert.deepEqual(visible(),[.5,.5,.5]);
   select('ross');launch();assert.deepEqual(visible(),[.5,.5,.5],'a new flight does not restart the old fade');
   wall+=1500;assert.deepEqual(visible(),[]);assert.ok(state.flight,'old route disappearance cannot stop a new flight');
@@ -100,6 +106,10 @@ console.log('PASS real passage cancellation/reload preserves ship, clocks and fu
   wall+=10000;select('barnard');launch();arrive();assert.equal(state.flight,null);assert.equal(state.flightHistory.length,FlightHistory.limit,'completed traces are bounded in a long expedition');
   assert.equal(state.flightHistory.at(-1).target,'barnard');assert.deepEqual(visible(),[1],'trimming keeps the newest trace');
   console.log('PASS long expeditions keep only the newest completed traces');
+  state=restore(returned);paused=true;$('startTutorial').onclick();
+  assert.equal(Space.distance(state.ship,returned.ship),0);assert.equal(OrbitalMotion.onEarth(state),false);
+  $('confirmReset').onclick();assert.ok(OrbitalMotion.onEarth(state));assert.equal(state.flightHistory.length,0);
+  assert.equal($('shipLocationFrom').textContent,'Стоянка · Земля');ExpeditionTutorial.finish();
  }finally{Date.now=clock;line=stroke;ctx.save=save;ctx.restore=restoreContext;ctx.globalAlpha=1;}
 }
 `);
