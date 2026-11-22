@@ -163,10 +163,7 @@ function renderPanels() {
   UIPatch.set($('shipLocationArrow'), 'hidden', !active);
   UIPatch.set($('shipLocationTo'), 'hidden', !active);
   UIPatch.attr($('shipLocationIcon'), 'href', active ? '#ship-icon' : '#station-icon');
-  UIContent.text($('shipLocationType'), locationType +
-    (state.orbit && current && !active
-      ? ' · орбита ' + fmt(state.orbit.radius / Stellar.r0, 2) + ' а.е.'
-      : ''));
+  UIContent.text($('shipLocationType'), locationType);
   UIPatch.set($('shipLocationType'), 'hidden', active || !current);
   UIPatch.set($('shipLocation'), 'title', active
     ? locationFrom + ' → ' + target.name

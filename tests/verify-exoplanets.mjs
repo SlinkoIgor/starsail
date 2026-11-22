@@ -89,7 +89,10 @@ await run(`(async () => {
     const icons = $('targetPlanets');
     assert.equal(icons.hidden,!count,id);
     assert.equal((icons.innerHTML.match(/class="exoplanet-icon /g) || []).length,count,id);
-    if (id === 'proxima') assert.match(icons.innerHTML,/Планеты неизвестного типа · 2/);
+    if (id === 'proxima') {
+      assert.match(icons.innerHTML,/data-planet-tooltip="Proxima Cen [bd]\\s+Планеты неизвестного типа · 2/);
+      assert.ok(!icons.innerHTML.includes(' title='));
+    }
     if (id === 'sol') {
       assert.match(icons.innerHTML,/Газовые гиганты · 2/);
       assert.match(icons.innerHTML,/Ледяные гиганты · 2/);
@@ -151,12 +154,21 @@ await run(`(async () => {
   MapPointer.move(event.clientX,event.clientY);
   MapPointer.flush();
   assert.equal(canvas.style.cursor,'pointer');
-  assert.equal(canvas.title,Exoplanets.hoverTitle(pick));
-  assert.match(canvas.title,/Вероятно каменистые планеты · 7/);
+  assert.equal(canvas.title,'','planet hover avoids browser tooltip delay');
+  const tip = $('planetTooltip');
+  assert.ok(!tip.hidden);
+  assert.equal(tip.textContent,Exoplanets.hoverTitle(pick));
+  assert.match(tip.textContent,/Вероятно каменистые планеты · 7/);
+  MapPointer.leave();
+  assert.ok(tip.hidden,'leaving the map hides the tooltip');
+  MapPointer.move(event.clientX,event.clientY);
+  MapPointer.flush();
   canvas.listeners.pointerdown(event);
   state.universeElapsed += pick.planet.orbit.periodYears / 2;
   drawPlanets();
   assert.notEqual(Exoplanets.hit(pick.p.x,pick.p.y)?.planet,pick.planet);
+  ExoplanetTooltip.refresh();
+  assert.ok(tip.hidden,'tooltip does not linger when the animated planet moves away');
   const beforeClick = JSON.stringify(state);
   canvas.listeners.pointerup(event);
   assert.equal(JSON.stringify(state),beforeClick,'planet inspection preserves navigation');

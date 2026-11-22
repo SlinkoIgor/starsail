@@ -103,6 +103,7 @@ function frame(now) {
       GalacticTraffic.draw();
       drawShip(now);
       MapLabels.draw();
+      globalThis.ExoplanetTooltip?.refresh();
       Route.drawEncounter();
       drawHover();
       // Paint the distance backing over objects and their names as well as the grid.
@@ -149,6 +150,7 @@ const MapPointer = {
     this.pending = false;
     hover = null;
     this.title('');
+    globalThis.ExoplanetTooltip?.hideMap();
   },
   cursor(value) {
     if (canvas.style.cursor !== value) canvas.style.cursor = value;
@@ -170,10 +172,12 @@ const MapPointer = {
       planet = !state.tutorialStep && !zenMode && globalThis.Exoplanets?.hit(x, y);
     if (planet) {
       hover = null;
-      this.title(Exoplanets.hoverTitle(planet));
+      this.title('');
+      globalThis.ExoplanetTooltip?.showMap(planet, x, y, this.hoverX, this.hoverY);
       this.cursor('pointer');
       return;
     }
+    globalThis.ExoplanetTooltip?.hideMap();
     const visits = MapVisits.hit(x, y);
     this.title(MapVisits.title(visits));
     hover =
@@ -453,6 +457,7 @@ for (const id of objectCardOpeners) {
 }
 $('objectFocus').onclick = () =>
   focusObject(object(FlightQueue.browsing() ? state.selected : state.flight?.target || state.selected));
+globalThis.ExoplanetTooltip?.setup();
 $('closeDialog').onclick = () => $('infoDialog').close();
 $('infoDialog').addEventListener('close', () => {
   const opener = document.activeElement;

@@ -13,7 +13,7 @@
   root.style.colorScheme=p[2]||'dark';
   document.querySelector('meta[name="theme-color"]').content=p[0];
 })();
-</script><title>Ковчег — межзвёздная экспедиция</title><meta name="description" content="Монохромная 2D-игра о Вселенной: релятивистская ракета, звёздный парус и торможение парусом."><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M17 3 4 27h24L17 3Zm0 0v24' fill='none' stroke='%23222'/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=f6145ecb31f6"></head><body>
+</script><title>Ковчег — межзвёздная экспедиция</title><meta name="description" content="Монохромная 2D-игра о Вселенной: релятивистская ракета, звёздный парус и торможение парусом."><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M17 3 4 27h24L17 3Zm0 0v24' fill='none' stroke='%23222'/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=425fcc7902f2"></head><body>
 <svg class="svg-library" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="star-icon" viewBox="0 0 24 24"><path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z"/></symbol><symbol id="launch-icon" viewBox="0 0 24 24"><path d="m5 15 14-10-5 14-3-6-6 2Z"/><path d="m11 13 8-8M5 19l3-3M3 17l2-2M7 21l2-2"/></symbol><symbol id="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol><symbol id="filter-icon" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol><symbol id="quest-icon" viewBox="0 0 24 24"><path d="M6 21V4m0 1h12l-3 4 3 4H6"/></symbol><symbol id="chevron-down-icon" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="station-icon" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10"/></symbol><symbol id="ship-icon" viewBox="0 0 24 24"><path d="m20 12-16-5 3 5-3 5Z" fill="currentColor" stroke="none"/></symbol><symbol id="close-icon" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol><symbol id="open-icon" viewBox="0 0 24 24"><path d="M6 18 18 6M7 6h11v11"/></symbol><symbol id="zen-icon" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></symbol><symbol id="zen-exit-icon" viewBox="0 0 24 24"><path d="M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5"/></symbol><symbol id="theme-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M12 5.5a6.5 6.5 0 0 0 0 13Z" fill="currentColor" stroke="none"/></symbol><symbol id="settings-icon" viewBox="0 0 24 24"><path d="m9 3-.5 3-2 1.2-2.8-1-3 5.2L3 13v2.3l-2.3 1.6 3 5.2 2.8-1 2 1.2.5 3h6l.5-3 2-1.2 2.8 1 3-5.2-2.3-1.6V13l2.3-1.6-3-5.2-2.8 1-2-1.2L15 3Z" transform="translate(2 0) scale(.83)"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="library-icon" viewBox="0 0 24 24"><path d="M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1m0-15c3-2 7-2 10-1v15c-3-1-7-1-10 1V5Z"/></symbol><symbol id="reset-icon" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></symbol><symbol id="tip-icon" viewBox="0 0 24 24"><path d="M8 16c0-3-3-3.5-3-7a7 7 0 0 1 14 0c0 3.5-3 4-3 7M8 16h8M9 19h6m-5 3h4m-2-6v-5m-2-1 2 1 2-1"/></symbol><symbol id="warning-icon" viewBox="0 0 24 24"><path d="m12 3 10 18H2L12 3Z M12 9v5m0 3v1"/></symbol><symbol id="info-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol><symbol id="orbit-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><path d="M20 12a8 8 0 1 1-2.34-5.66L20 9M20 4v5h-5"/></symbol><symbol id="arrival-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/></symbol><symbol id="route-icon" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="20" cy="16" r="2"/><path d="m6 16 5-8m2 0 6 6"/></symbol></defs></svg>
 <div id="app" data-tutorial-parts="welcome">
 <main class="map-panel" aria-label="Карта Вселенной">
@@ -40,13 +40,16 @@
   <button id="filterTab-collections" role="tab" aria-selected="false" aria-controls="filterPanel-collections" tabindex="-1">Подборки<span id="filterCount-collections" class="map-filter-tab-count" hidden></span></button>
   <button id="filterTab-catalogs" role="tab" aria-selected="false" aria-controls="filterPanel-catalogs" tabindex="-1">Каталоги<span id="filterCount-catalogs" class="map-filter-tab-count" hidden></span></button>
  </div>
- <div class="map-filter-scroll">
-  <div id="mapFilterToolbar" class="map-filter-toolbar">
-   <label id="mapFilterDefaultLabel" class="map-filter-default"><input id="mapFilterDefault" type="checkbox"><span>Выставить по умолчанию</span></label>
+ <div class="map-filter-body">
+  <div id="mapFilterScroll" class="map-filter-scroll">
+   <div id="mapFilterToolbar" class="map-filter-toolbar">
+    <label id="mapFilterDefaultLabel" class="map-filter-default"><input id="mapFilterDefault" type="checkbox"><span>Выставить по умолчанию</span></label>
+   </div>
+   <div id="filterPanel-classes" class="map-filter-options" role="tabpanel" aria-labelledby="filterTab-classes"></div>
+   <div id="filterPanel-collections" class="map-filter-options" role="tabpanel" aria-labelledby="filterTab-collections" hidden></div>
+   <div id="filterPanel-catalogs" class="map-filter-options" role="tabpanel" aria-labelledby="filterTab-catalogs" hidden></div>
   </div>
-  <div id="filterPanel-classes" class="map-filter-options" role="tabpanel" aria-labelledby="filterTab-classes"></div>
-  <div id="filterPanel-collections" class="map-filter-options" role="tabpanel" aria-labelledby="filterTab-collections" hidden></div>
-  <div id="filterPanel-catalogs" class="map-filter-options" role="tabpanel" aria-labelledby="filterTab-catalogs" hidden></div>
+  <div class="map-filter-rail"><input id="mapFilterScrollbar" type="range" min="0" max="0" step="any" value="0" aria-label="Прокрутка фильтров" aria-orientation="vertical" aria-controls="mapFilterScroll" hidden></div>
  </div>
  <p id="mapFilterStatus" class="map-filter-status" role="status" aria-live="polite" hidden></p>
 </section>
@@ -83,7 +86,7 @@
    <label class="menu-setting settings-toggle expansion-control" title="Удаление независимых групп. Выключение замораживает достигнутый размер; включение продолжает расширение."><input id="expansionToggle" type="checkbox" checked><span>Расширение Вселенной<small id="expansionFactor" hidden>a = 1,000000</small></span></label>
    <button type="button" class="menu-setting" id="startTutorial">Начать обучение</button>
    <label id="analyticsSetting" class="menu-setting settings-toggle" hidden><input id="analyticsToggle" type="checkbox" checked><span>Статистика игры<small>обезличенные действия · помогает улучшать игру</small></span></label>
-   <div class="menu-setting game-version"><span>Версия игры</span><span id="gameVersion">2026.11.20.3</span></div>
+   <div class="menu-setting game-version"><span>Версия игры</span><span id="gameVersion">2026.11.22.1</span></div>
   </div>
  </div>
 <aside id="flightCard" class="flight-card" aria-label="Текущая цель и действия">
@@ -121,7 +124,8 @@
 </aside>
 <section class="telemetry telemetry--flight" aria-label="Телеметрия корабля"><div class="telemetry-cell mass-cell" id="massReading"><span class="eyebrow">ОБЩАЯ МАССА · <span id="massTotal">2 кг</span></span><div class="mass-bar" id="massBar" role="img" aria-label="Сухая масса 1 кг; топливо 1 из 1 кг; свободно 0 кг"><i id="massDry" class="mass-dry"></i><i id="massFuel" class="mass-fuel"></i></div><div class="mass-legend"><span>КОРПУС <b id="dryMass">1<small>кг</small></b></span><span>БАК <b id="matter">0,5 / 1<small>кг</small></b></span></div></div><div class="telemetry-cell acceleration-cell" id="accelerationReading"><span class="eyebrow">УСКОРЕНИЕ a₀</span><strong id="acceleration" title="Собственное ускорение на борту; ускорение относительно неподвижного наблюдателя равно a₀ / γ³">0,00<small>g</small></strong><div class="acceleration-bar" id="accelerationBar" role="meter" aria-label="Собственное ускорение" aria-valuemin="-10" aria-valuemax="10" aria-valuenow="0"><i id="accelerationFill"></i></div><div class="acceleration-legend" aria-hidden="true"><span id="accelerationMin">−10 g</span><span>0</span><span id="accelerationMax">+10 g</span></div></div><div class="telemetry-cell velocity-cell" id="velocityReading"><div class="velocity-heading"><span class="eyebrow">СКОРОСТЬ</span></div><strong id="velocity">0,00<small>% c</small></strong><div class="velocity-bar" id="velocityBar" role="meter" aria-label="Скорость, логарифмическая шкала" aria-valuemin="0" aria-valuemax="99.9999999" aria-valuenow="0"><i id="velocityFill"></i></div><div class="velocity-ticks" aria-hidden="true"><span class="speed-tick top" style="left:0.0%" title="0"><i></i><b>0</b></span><span class="speed-tick bottom" style="left:11.11111111111111%" title="9%"><i></i><b>9%</b></span><span class="speed-tick top" style="left:22.22222222222222%" title="99%"><i></i><b>99%</b></span><span class="speed-tick bottom" style="left:33.33333333333333%" title="99,9%"><i></i><b>99,9%</b></span><span class="speed-tick top" style="left:44.44444444444444%" title="99,99%"><i></i><b>99,99%</b></span><span class="speed-tick bottom" style="left:55.55555555555556%" title="99,999%"><i></i><b>99,999%</b></span><span class="speed-tick top" style="left:66.66666666666666%" title="99,9999%"><i></i><b>99,9999%</b></span><span class="speed-tick bottom" style="left:77.77777777777779%" title="99,99999%"><i></i><b>99,99999%</b></span><span class="speed-tick top" style="left:88.88888888888889%" title="99,999999%"><i></i><b>99,999999%</b></span><span class="speed-tick bottom edge" style="left:100.0%" title="99,9999999%"><i></i><b>99,9999999%</b></span></div></div><div class="telemetry-cell dilation-cell" id="timeDilationRow"><span class="eyebrow">1 ГОД НА КОРАБЛЕ</span><div class="dilation-reading"><strong id="timeDilation">1</strong><span id="dilationUnit">год наблюдателя</span></div><div class="dilation-bar" id="dilationBar" role="meter" aria-label="Лет неподвижного наблюдателя за один год на корабле, логарифмическая шкала" aria-valuemin="1" aria-valuemax="1000000" aria-valuenow="1"><i id="dilationFill"></i><b id="dilationMarker"></b></div><div class="dilation-ticks" aria-hidden="true"><span class="dilation-tick top" style="left:0.0%"><i></i><b>1</b></span><span class="dilation-tick bottom" style="left:16.666666666666664%"><i></i><b>10</b></span><span class="dilation-tick top" style="left:33.33333333333333%"><i></i><b>100</b></span><span class="dilation-tick bottom" style="left:50.0%"><i></i><b>1 тыс.</b></span><span class="dilation-tick top" style="left:66.66666666666666%"><i></i><b>10 тыс.</b></span><span class="dilation-tick bottom" style="left:83.33333333333334%"><i></i><b>100 тыс.</b></span><span class="dilation-tick top edge" style="left:100.0%"><i></i><b>1 млн</b></span></div></div><div class="clocks"><div id="tutorialClocks" class="clock-readings"><div class="clock-row"><span class="eyebrow">ВРЕМЯ НА КОРАБЛЕ</span><strong id="shipClock">—</strong><small class="clock-unit">год</small></div><div class="clock-row" title="Календарный год по часам наблюдателя на Земле."><span class="eyebrow">ВРЕМЯ НАБЛЮДАТЕЛЯ</span><strong id="earthClock">—</strong><small class="clock-unit">год</small></div><div class="clock-row clock-age" title="Начальные 13,8 млрд лет плюс время экспедиции по часам неподвижного наблюдателя."><span class="eyebrow">ВОЗРАСТ ВСЕЛЕННОЙ</span><strong id="universeClock">13 800 000 000</strong><small class="clock-unit">лет</small></div></div></div></section>
 </div>
-<dialog id="infoDialog"><button class="modal-close icon-button" id="closeDialog" aria-label="Закрыть"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#close-icon"/></svg></button><div id="dialogContent"></div></dialog>
+<div id="planetTooltip" class="info-pop planet-tooltip" role="tooltip" hidden></div>
+<dialog id="infoDialog"><button class="modal-close icon-button" id="closeDialog" aria-label="Закрыть"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#close-icon"/></svg></button><div id="dialogContent"></div><div id="planetDialogTooltip" class="info-pop planet-tooltip" role="tooltip" hidden></div></dialog>
 <dialog id="flightBuilder" class="mission-builder" aria-labelledby="builderTitle">
  <header class="builder-header"><div><div class="modal-eyebrow">КОВЧЕГ / НАВИГАЦИЯ</div><h2 id="builderTitle">План полёта</h2><p id="builderRoute"></p><div class="builder-mobile-preview"><span>На борту <b id="builderProperMobile">—</b></span><span>Запас топлива на финише <b id="builderFuelMobile">—</b></span></div></div><button id="closeBuilder" class="icon-button" aria-label="Закрыть план полёта"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#close-icon"/></svg></button></header>
  <div class="builder-grid">
@@ -201,9 +205,9 @@
 <script src="analytics-config.js?v=c5f22e9bd0f1" data-app></script>
 <script src="analytics.js?v=1010e9397740" data-app></script>
 <script src="exoplanets-data.js?v=8b5eef2b25ef" data-app></script>
-<script src="exoplanets.js?v=72a9f9bd5755" data-app></script>
+<script src="exoplanets.js?v=987646137521" data-app></script>
 <script src="map-camera.js?v=c3d4cede38d5" data-app></script>
-<script src="flight-ui.js?v=ea14753db777" data-app></script>
+<script src="flight-ui.js?v=bbb59785cb0a" data-app></script>
 <script src="flight-builder.js?v=10bb7ea2342b" data-app></script>
 <script src="flight-controls.js?v=a452e33c14b5" data-app></script>
 <script src="sky-guide-data.js?v=c1a3d5f21126" data-app></script>
@@ -220,9 +224,9 @@
 <script src="catalog-registry.js?v=15f5fda40605" data-app></script>
 <script src="map-filter-data.js?v=e66e126ae27f" data-app></script>
 <script src="map-collection-history.js?v=3d02a94a3077" data-app></script>
-<script src="map-filters.js?v=73b285f33e0f" data-app></script>
+<script src="map-filters.js?v=0018d1691c89" data-app></script>
 <script src="star-ages-data.js?v=3c69450db9cb" data-app></script>
-<script src="atlas-ui.js?v=9e3ad725a794" data-app></script>
+<script src="atlas-ui.js?v=f7cfb09461f0" data-app></script>
 <script src="flight-tips.js?v=ea44e9d94ab7" data-app></script>
 <script src="quest-objects-data.js?v=e30d5ab82a89" data-app></script>
 <script src="quests-data.js?v=b0f7c8b98cc8" data-app></script>
@@ -233,5 +237,5 @@
 <script src="route-controls.js?v=4c98a375ced1" data-app></script>
 <script src="galactic-traffic.js?v=78ddea62d07f" data-app></script>
 <script src="library.js?v=cb1a7d067d8d" data-app></script>
-<script src="app.js?v=aacd039060d8" data-app></script>
+<script src="app.js?v=bcb8f0487697" data-app></script>
 </body></html>

@@ -25,7 +25,7 @@ const MapFilters = {
     'early-universe': ['Ранняя Вселенная · z ≥ 6', 'Галактики и квазары с каталожным красным смещением z ≥ 6. Метод измерения и неопределённость сохраняются в исходных карточках.', ['galaxy', 'quasar']],
   },
   get catalogs() { return CatalogRegistry.filters; },
-  classNames: {'star':'Звёзды','exoplanets':'Звёзды с планетами',pulsar:'Пульсары',blackhole:'Чёрные дыры',quasar:'Квазары',nebula:'Туманности',galaxy:'Галактики','stellar-cluster':'Звёздные скопления','galaxy-cluster':'Скопления галактик',structure:'Мегаструктуры',void:'Войды',horizon:'Горизонт'},
+  classNames: {'star':'Звёзды','exoplanets':'Планеты',pulsar:'Пульсары',blackhole:'Чёрные дыры',quasar:'Квазары',nebula:'Туманности',galaxy:'Галактики','stellar-cluster':'Звёздные скопления','galaxy-cluster':'Скопления галактик',structure:'Мегаструктуры',void:'Войды',horizon:'Горизонт'},
   tab: 'classes',
   activeGroup: 'classes',
   selection: null,
@@ -64,7 +64,7 @@ const MapFilters = {
   },
   get planetHostsSelected() {
     return this.collection === 'exoplanets' ||
-      this.activeGroup === 'classes' && !this.unrestricted('classes') && this.values('classes').includes('exoplanets');
+      this.activeGroup === 'classes' && this.values('classes').includes('exoplanets');
   },
   unrestricted(group) { return group !== this.activeGroup || (group === 'collections' ? this.values(group).length === 0 : this.all(group)); },
   get key() { return ['classes','collections','catalogs'].map(g => this.unrestricted(g) ? 'all' : this.values(g).join(',')).join('|') + (this.isDefault() ? '|default' : ''); },
@@ -289,7 +289,7 @@ const MapFilters = {
   setTab(group, focus = false) {
     if (!['classes','collections','catalogs'].includes(group)) return;
     if (group !== this.activeGroup) this.setGroup(group,this.defaults(group));
-    $('mapFilters').querySelector('.map-filter-scroll').scrollTop = 0;
+    $('mapFilterScroll').scrollTop = 0;
     this.sync();
     if (focus) $('filterTab-'+group).focus({preventScroll:true});
   },
@@ -318,6 +318,17 @@ const MapFilters = {
     $('mapFilterStatus').textContent = this.loading ? 'Загружаем объекты выборки…' : this.loadError ? 'Часть объектов не загрузилась. Смените фильтр, чтобы повторить.' :
       this.narrow||this.photoMembers||this.planetHostsSelected ? (this.total ? 'Объектов: '+this.total : 'Нет объектов по выбранным условиям.') : '';
     $('mapFilterStatus').hidden = !$('mapFilterStatus').textContent;
+    this.syncScrollbar();
+  },
+  syncScrollbar() {
+    const scroll = $('mapFilterScroll'), bar = $('mapFilterScrollbar');
+    const view = scroll.clientHeight, max = scroll.scrollHeight - view;
+    bar.hidden = !(view > 0 && max > 0);
+    if (bar.hidden) return;
+    bar.max = String(max);
+    bar.value = String(scroll.scrollTop);
+    const rail = bar.clientHeight || view;
+    bar.style.setProperty('--filter-thumb', Math.min(rail, Math.max(26, rail * view / scroll.scrollHeight)) + 'px');
   },
   close() {
     const restoreFocus = document.activeElement?.closest('#mapFilters');
@@ -329,9 +340,42 @@ const MapFilters = {
     $('themePicker').hidden = true; $('themeBtn').setAttribute('aria-expanded','false');
     this.setTab(this.activeGroup);
     $('mapFilters').hidden = false; $('mapFilterBtn').setAttribute('aria-expanded','true');
+    this.syncScrollbar();
     $('filterTab-'+this.activeGroup).focus({preventScroll:true});
   },
   setup() {
+    const scroll = $('mapFilterScroll'), bar = $('mapFilterScrollbar');
+    scroll.onscroll = () => { bar.value = String(scroll.scrollTop); };
+    bar.oninput = () => { scroll.scrollTop = Number(bar.value); };
+    // Keep the pointer's position within the thumb while dragging.
+    let drag;
+    const scrollToPointer = event => {
+      scroll.scrollTop = (event.clientY - drag.origin) * drag.scale;
+    };
+    bar.onpointerdown = event => {
+      if (event.button !== 0 || !event.isPrimary) return;
+      const rect = bar.getBoundingClientRect();
+      const max = Number(bar.max);
+      const thumbHeight = parseFloat(bar.style.getPropertyValue('--filter-thumb'));
+      const travel = rect.height - thumbHeight;
+      if (!(travel > 0 && max > 0)) return;
+
+      const thumbTop = scroll.scrollTop / max * travel;
+      const grab = event.clientY - rect.top - thumbTop;
+      const offset = grab >= 0 && grab <= thumbHeight ? grab : thumbHeight / 2;
+      event.preventDefault();
+      bar.focus({preventScroll:true});
+      bar.setPointerCapture(event.pointerId);
+      drag = {origin:rect.top + offset, scale:max / travel};
+      scrollToPointer(event);
+    };
+    bar.onpointermove = event => {
+      if (bar.hasPointerCapture(event.pointerId)) scrollToPointer(event);
+    };
+    if (!this.scrollObserver) {
+      this.scrollObserver = new ResizeObserver(() => this.syncScrollbar());
+      this.scrollObserver.observe(scroll);
+    }
     for (const group of ['classes','collections','catalogs']) {
       const panel = $('filterPanel-'+group); panel.replaceChildren();
       for (const value of this.options(group)) {
@@ -366,9 +410,7 @@ const MapFilters = {
             input.onclick();
           };
         } else input.onchange = () => {
-          const onlyPlanetHosts = group === 'classes' && value === 'exoplanets' && input.checked;
-          this.setGroup(group, onlyPlanetHosts ? [value] :
-            this.options(group).filter(k => k === value ? input.checked : this.values(group).includes(k)));
+          this.setGroup(group,this.options(group).filter(k => k === value ? input.checked : this.values(group).includes(k)));
         };
       }
       $('filterTab-'+group).onclick = () => this.setTab(group);

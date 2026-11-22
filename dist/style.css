@@ -939,6 +939,16 @@ html[data-theme="dark"] .mission-builder{--muted:#b0b0b0}
 .map-filter-tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--ink)}
 .map-filter-tab-count{display:inline-block;margin-left:5px;font:9px var(--mono);color:var(--muted)}
 .map-filter-scroll{flex:1;min-height:0;padding-right:8px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:12px}
+.map-filter-body{display:flex;flex:1;min-height:0}
+#mapFilterScroll{min-width:0;scrollbar-width:none}
+#mapFilterScroll::-webkit-scrollbar{display:none}
+.map-filter-rail{display:flex;flex:0 0 10px;padding-bottom:12px}
+#mapFilterScrollbar{appearance:none;writing-mode:vertical-lr;direction:ltr;width:10px;min-height:0;margin:0;background:linear-gradient(var(--line),var(--line)) center/2px 100% no-repeat;cursor:pointer;touch-action:none}
+#mapFilterScrollbar::-webkit-slider-runnable-track{width:10px;height:100%}
+#mapFilterScrollbar::-webkit-slider-thumb{appearance:none;width:6px;height:var(--filter-thumb,26px);margin-left:2px;background:var(--muted)}
+#mapFilterScrollbar::-moz-range-thumb{width:6px;height:var(--filter-thumb,26px);border:none;border-radius:0;background:var(--muted)}
+#mapFilterScrollbar:hover::-webkit-slider-thumb{background:var(--ink)}
+#mapFilterScrollbar:hover::-moz-range-thumb{background:var(--ink)}
 .map-filter-toolbar{position:sticky;top:0;z-index:1;background:var(--paper);display:flex;align-items:center;gap:12px;min-height:52px;border-bottom:1px solid var(--line)}
 .map-filter-default{display:flex;flex:1;align-items:center;gap:12px;min-height:44px;text-align:left;cursor:pointer;font:12px var(--sans)}
 .map-filter-option{display:flex;align-items:center;gap:12px;min-height:48px;padding:12px 0;cursor:pointer}
@@ -1361,6 +1371,7 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
   #app[data-tutorial="propulsion"] #arrivalLabel { display: block; flex-basis: 100%; }
 }
 
+.info-pop.planet-tooltip{position:fixed;z-index:30;inset:auto;width:max-content;max-width:min(260px,calc(100vw - 16px));margin:0;padding:7px 10px;pointer-events:none;white-space:pre-line;line-height:1.45}
 .exoplanets h3 span{margin-left:6px;color:var(--muted);font-variant-numeric:tabular-nums}
 .exoplanet-icons{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 14px}
 #targetPlanets{gap:3px;margin:0 0 7px}

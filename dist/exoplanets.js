@@ -319,7 +319,7 @@ const Exoplanets = {
     return this.planetTitle(planet, this.planets(this.system(host)));
   },
   iconsHTML(planets) {
-    return planets.map(p => '<span class="exoplanet-icon ' + p.type + '" aria-hidden="true" title="' +
+    return planets.map(p => '<span class="exoplanet-icon ' + p.type + '" aria-hidden="true" data-planet-tooltip="' +
       SkyGuide.escape(this.planetTitle(p, planets)) + '"></span>').join('');
   },
   renderTargetIcons(o) {
@@ -350,3 +350,69 @@ const Exoplanets = {
   },
 };
 globalThis.Exoplanets = Exoplanets;
+
+const ExoplanetTooltip = {
+  active: null,
+
+  show(node, text, anchor) {
+    if (this.active?.node && this.active.node !== node) this.hide();
+    if (!this.active || node.textContent !== text) {
+      UIContent.text(node, text);
+      node.hidden = false;
+      this.bounds = node.getBoundingClientRect();
+    }
+    const pad = 8, gap = 10;
+    const maxX = (window.innerWidth || width) - this.bounds.width - pad;
+    const maxY = (window.innerHeight || height) - this.bounds.height - pad;
+    const below = anchor.bottom + gap, above = anchor.top - this.bounds.height - gap;
+    UIPatch.style(node, 'left', clamp(anchor.left, pad, Math.max(pad, maxX)) + 'px');
+    UIPatch.style(node, 'top', clamp(below > maxY ? above : below, pad, Math.max(pad, maxY)) + 'px');
+  },
+  showMap(hit, x, y, clientX, clientY) {
+    const node = $('planetTooltip');
+    this.show(node, Exoplanets.hoverTitle(hit), {left:clientX + 12, top:clientY, bottom:clientY});
+    this.active = {node, hit, x, y};
+  },
+  hideMap() {
+    if (this.active?.hit) this.hide();
+  },
+  hide() {
+    if (!this.active) return;
+    this.active.node.hidden = true;
+    this.active = null;
+  },
+  refresh() {
+    if (this.active?.icon && !this.active.icon.isConnected) this.hide();
+    if (!this.active?.hit) return;
+    const {hit, x, y} = this.active;
+    if (Exoplanets.hit(x, y)?.planet !== hit.planet) {
+      this.hide();
+      MapPointer.pending = true;
+    }
+  },
+  setup() {
+    const iconAt = target => target?.closest?.('[data-planet-tooltip]');
+    document.addEventListener('pointerover', e => {
+      if (e.pointerType === 'touch') return;
+      const icon = iconAt(e.target);
+      if (!icon) return;
+      const node = $(icon.closest('dialog') ? 'planetDialogTooltip' : 'planetTooltip');
+      this.show(node, icon.dataset.planetTooltip, icon.getBoundingClientRect());
+      this.active = {node, icon};
+    });
+    document.addEventListener('pointerout', e => {
+      const icon = this.active?.icon;
+      if (icon && iconAt(e.target) === icon && iconAt(e.relatedTarget) !== icon) this.hide();
+    });
+    document.addEventListener('pointerdown', () => this.hide(), true);
+    document.addEventListener('scroll', () => {
+      const {node, icon} = this.active || {};
+      if (icon?.matches(':hover')) this.show(node, icon.dataset.planetTooltip, icon.getBoundingClientRect());
+      else this.hide();
+    }, true);
+    $('infoDialog').addEventListener('close', () => this.hide());
+    window.addEventListener('blur', () => this.hide());
+    window.addEventListener('resize', () => this.hide());
+  },
+};
+globalThis.ExoplanetTooltip = ExoplanetTooltip;

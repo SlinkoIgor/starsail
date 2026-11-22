@@ -249,6 +249,7 @@ function closeCatalog() {
   Route.picking = false;
 }
 function showDialog(html, library = false) {
+  globalThis.ExoplanetTooltip?.hide();
   ExtendedCatalog.systemViewRequest++;
   MapFilters.close();
   closeMenu();
