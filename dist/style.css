@@ -1205,7 +1205,7 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 #app[data-tutorial="acceleration"] .acceleration-cell,
 #app[data-tutorial="velocity"] .velocity-cell,
 #app[data-tutorial="dilation"] .dilation-cell,
-#app[data-tutorial="propulsion"] #arrivalEstimate {
+#app[data-tutorial="propulsion"] :is(#distanceRow, #arrivalEstimate) {
   --muted: var(--tutorial-ink);
   --ink: var(--tutorial-ink);
   --line: var(--tutorial-ink);
@@ -1235,8 +1235,7 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
   width: min(380px, calc(100vw - 20px));
 }
 #app[data-tutorial="clocks"] .tutorial-card { width: min(530px, calc(100vw - 20px)); }
-#app[data-tutorial="clocks"] #tutorialText { white-space: pre-line; }
-.tutorial-copy { padding: 14px 16px 12px; }
+.tutorial-copy { padding: 14px 16px; }
 .tutorial-heading {
   display: flex;
   align-items: center;
@@ -1252,6 +1251,7 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
   text-transform: uppercase;
 }
 .tutorial-copy p { margin: 0; }
+.tutorial-copy p + p { margin-top: 7px; }
 .tutorial-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1301,9 +1301,6 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="clocks"]) .telemetry,
 #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="propulsion"]) .flight-card {
   display: none;
-}
-#app[data-tutorial="welcome"] #map, #app[data-tutorial="time"] #map, #app[data-tutorial="clocks"] #map {
-  pointer-events: none;
 }
 #app[data-tutorial-parts~="welcome"] .map-sidebar { top: 140px; }
 #app[data-tutorial-parts~="welcome"] .map-rails { flex-direction: column; }

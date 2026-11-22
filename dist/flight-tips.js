@@ -106,56 +106,75 @@ const ExpeditionTutorial = {
   lessons: {
     welcome: {
       title: 'Добро пожаловать на «Ковчег»',
-      text: () => (OrbitalMotion.onEarth(state)
-        ? '«Ковчег» начинает путь с Земли. После вылета вернуться в Солнечную систему можно будет только к Солнцу. '
-        : '') + 'На этом корабле можно посетить ближайшую звезду или пересечь всю Вселенную. Познакомьтесь с кораблём и проложите курс.',
+      text: () => '«Ковчег» — межзвёздный корабль. На нём можно долететь до соседней звезды или пересечь всю Вселенную.\n' +
+        (OrbitalMotion.onEarth(state) ? 'Экспедиция стартует с Земли. ' : '') +
+        'Обучение покажет приборы корабля и поможет проложить первый курс.',
     },
     time: {
       title: 'Темп времени', anchor: 'timeControls',
-      text: 'Попробуйте разные темпы. При 1× за секунду проходит год на борту, при 0,1× тот же год занимает десять секунд. Ноль ставит время на паузу.',
+      text: 'Регулятор задаёт ход времени. При 1× год на борту проходит за секунду, при 0,1× — за десять секунд. Отметка 0 ставит время на паузу.\nПопробуйте переключить темп.',
     },
     clocks: {
       title: 'Часы экспедиции', anchor: 'tutorialClocks',
-      text: () => 'Время на корабле — год по бортовым часам.\nВремя наблюдателя — год по часам на Земле.\nВозраст Вселенной — время с Большого взрыва. На старте — ' + compact(INITIAL_UNIVERSE_AGE) + ' лет.',
+      text: () => 'Время на корабле — год по бортовым часам.\nВремя наблюдателя — год по часам тех, кто остался на Земле.\nВозраст Вселенной — время от Большого взрыва: на старте ' + compact(INITIAL_UNIVERSE_AGE) + ' лет.',
     },
     zoom: {
       title: 'Масштаб карты', anchor: 'zoomControls',
-      text: 'Выберите отметку «Звёзды», чтобы увидеть соседей Солнца. Колесом мыши можно плавно менять масштаб. Линейка слева внизу показывает расстояние на карте.',
+      text: 'Выберите отметку «Звёзды», чтобы увидеть соседей Солнца. Колесо мыши меняет масштаб плавно.\nЛинейка слева внизу показывает размер клетки сетки.',
     },
     mass: {
       title: 'Масса корабля', anchor: 'massReading',
-      text: 'Сам «Ковчег» весит 1 кг. На старте в баке ещё 1 кг рабочего вещества. Фотонный двигатель расходует его на разгон и торможение.',
+      text: 'Масса корпуса «Ковчега» — всего 1 кг. Ещё 1 кг на старте — топливо в баке: фотонный двигатель тратит его на разгон и торможение.',
     },
     acceleration: {
       title: 'Ускорение', anchor: 'accelerationReading',
-      text: () => 'Шкала показывает ускорение, которое ощущается на борту. Справа — разгон до ' + $('accelerationMax').textContent + ', слева — торможение до ' + $('accelerationMin').textContent + '. Один g равен ускорению свободного падения на Земле.',
+      text: () => 'Шкала показывает ускорение, которое ощущается на борту. Вправо от нуля — разгон до ' + $('accelerationMax').textContent + ', влево — торможение до ' + $('accelerationMin').textContent + '.\nОдин g равен ускорению свободного падения на Земле.',
     },
     velocity: {
       title: 'Скорость', anchor: 'velocityReading',
-      text: 'Здесь скорость «Ковчега» показана в процентах от скорости света. Чем ближе корабль к скорости света, тем важнее каждый следующий знак после запятой.',
+      text: 'Скорость «Ковчега» показана в процентах от скорости света (c). Достичь скорости света корабль не может. Шкала логарифмическая: каждое деление добавляет ещё одну девятку.',
     },
     dilation: {
-      title: 'Год на корабле', anchor: 'timeDilationRow',
-      text: 'Пока корабль покоится, часы на борту и на Земле идут в одном темпе. На большой скорости часы расходятся. Эта шкала показывает, сколько лет наблюдателя приходится на один год на борту корабля.',
+      title: 'Замедление времени', anchor: 'timeDilationRow',
+      text: 'Пока корабль стоит, часы на борту и на Земле идут с одинаковой скоростью. Чем ближе скорость к световой, тем медленнее идут бортовые часы.\nШкала показывает, сколько лет проходит на Земле за один год на корабле.',
     },
     destination: {
       title: 'Выберите цель',
-      text: 'Летим к Проксиме Центавра — ближайшей к Солнцу звезде. Нажмите на выделенную звезду на карте.',
+      text: 'Первая цель — Проксима Центавра, ближайшая к Солнцу звезда. Она выделена на карте: нажмите на неё.',
     },
     propulsion: {
-      title: 'Длительность перелёта', anchor: 'arrivalEstimate',
+      title: 'Расстояние и время в пути', anchor: 'arrivalEstimate',
       text: () => QuickFlight.issueReason ||
-        'Время в пути до Проксимы по бортовым часам — ' + $('arrivalProper').textContent +
-        ', по часам наблюдателя на Земле — ' + $('arrivalEarth').textContent + '.',
+        'До Проксимы ' + $('targetDistance').textContent + '. Световой год — путь, который свет проходит за год.\n' +
+        '«Ковчег» будет в пути ' + $('arrivalProper').textContent + ' по бортовым часам и ' +
+        $('arrivalEarth').textContent + ' по часам на Земле: в полёте бортовые часы отстают.',
     },
     launch: {
       title: 'Полёт к Проксиме', anchor: 'launchBtn',
-      text: 'Нажмите «Лететь» в карточке звезды. На карте вы увидите перелёт, а на приборах — как меняются скорость корабля и ход его часов.',
+      text: () => {
+        const seconds = ExpeditionTutorial.flightSeconds();
+        return 'Нажмите «Лететь» в карточке звезды. Следите за картой и приборами: в полёте меняются скорость, масса и ход часов.' +
+          (seconds ? (speed === 1 ? ' При темпе 1× перелёт займёт ' : ' Выберите темп 1× — тогда перелёт займёт ') + seconds + '.' : '');
+      },
     },
     flight: {
       title: 'Учебный перелёт завершён', anchor: 'arrivalEstimate',
-      text: () => state.current === 'proxima' ? 'Вы у Проксимы Центавра. В карточке звезды указано, сколько времени занял перелёт.' : 'Теперь можно завершить обучение и продолжить экспедицию.',
+      text: () => state.current === 'proxima'
+        ? 'Вы у Проксимы Центавра. В карточке звезды — время в пути: на борту прошло меньше, чем на Земле.'
+        : 'Теперь можно завершить обучение и продолжить экспедицию.',
     },
+  },
+  flightSeconds() {
+    const years = FlightEstimate.get()?.proper;
+    if (!(years > 0)) return '';
+    const n = Math.max(1, Math.round(years));
+    return 'около ' + n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'секунды' : 'секунд');
+  },
+  union(...rects) {
+    return {
+      left: Math.min(...rects.map(r => r.left)), right: Math.max(...rects.map(r => r.right)),
+      top: Math.min(...rects.map(r => r.top)), bottom: Math.max(...rects.map(r => r.bottom)),
+    };
   },
   render() {
     this.layout();
@@ -167,7 +186,7 @@ const ExpeditionTutorial = {
     let body = typeof lesson.text === 'function' ? lesson.text() : lesson.text;
     let action = 'Далее', waiting = false;
     let anchor = lesson.anchor && $(lesson.anchor).getBoundingClientRect();
-    let sides = ['above', 'below', 'right', 'left'];
+    let sides = ['above', 'below', 'right', 'left'], frame;
     if (step === 'welcome') {
       action = 'Начать обучение';
       UIPatch.style(card, 'left', '');
@@ -183,42 +202,55 @@ const ExpeditionTutorial = {
         waiting = offscreen && !!cameraGoal;
         action = offscreen ? 'Показать на карте' : '';
       } else {
-        body = 'Чтобы отправиться к звезде, выберите её на карте и нажмите «Лететь» в карточке. Теперь можно продолжить свою экспедицию.';
+        body = 'Чтобы отправиться к звезде, выберите её на карте и нажмите «Лететь» в карточке. Теперь можно продолжить экспедицию.';
         action = 'Готово';
         anchor = {left:width / 2, right:width / 2, top:height / 2, bottom:height / 2};
       }
     } else if (step === 'propulsion' || step === 'launch' || step === 'flight') {
       if (step === 'flight') action = 'Завершить обучение';
       sides = ['left', 'above', 'below', 'right'];
+      frame = $('flightCard').getBoundingClientRect();
+      if (step === 'propulsion') anchor = this.union($('distanceRow').getBoundingClientRect(), anchor);
       if (step === 'launch') {
         action = $('launchBtn').disabled ? 'Готово' : '';
-        if (!action && speed > 1) body += ' Выберите темп 1×, чтобы рассмотреть разгон.';
-        if (action) body = QuickFlight.issueReason || 'Для этого перелёта сейчас не хватает рабочего вещества. Завершите обучение, чтобы вернуться к планированию.';
+        if (action) body = QuickFlight.issueReason || 'Для этого перелёта сейчас не хватает топлива. Завершите обучение, чтобы вернуться к планированию.';
       }
     }
     UIContent.text($('tutorialTitle'), lesson.title);
-    UIContent.text($('tutorialText'), body);
+    UIContent.html($('tutorialText'), body.split('\n').map(line => '<p>' + SkyGuide.escape(line) + '</p>').join(''));
     const next = $('tutorialNext'), shortcut = step === 'welcome' || action === 'Далее';
-    UIContent.text(next, shortcut ? action + ' (Space)' : action);
+    UIContent.text(next, shortcut ? action + ' (Пробел)' : action);
     UIPatch.set(next, 'ariaKeyShortcuts', shortcut ? 'Space' : null);
     UIPatch.set(next, 'hidden', !action);
     UIPatch.set($('skipTutorial'), 'hidden', step !== 'welcome');
     UIPatch.style(card, 'visibility', waiting ? 'hidden' : '');
-    if (anchor && !waiting) this.place(card, anchor, sides);
+    if (anchor && !waiting) this.place(card, anchor, sides, frame);
   },
-  place(card, anchor, sides) {
-    const box = card.getBoundingClientRect(), gap = 26, pad = 10;
+  place(card, anchor, sides, frame = anchor) {
+    const box = card.getBoundingClientRect(), gap = 26, pad = width < 700 ? 10 : 24;
+    const hud = document.querySelector('.telemetry')?.getBoundingClientRect();
+    const floor = hud?.height > 0 && frame.bottom <= hud.top ? hud.top : height;
     const room = {
-      right: width - anchor.right - box.width, left: anchor.left - box.width,
-      below: height - anchor.bottom - box.height, above: anchor.top - box.height,
+      right: width - frame.right - box.width, left: frame.left - box.width,
+      below: floor - frame.bottom - box.height, above: frame.top - box.height,
     };
-    const fits = sides.filter(s => room[s] >= gap + pad);
-    if (!fits.length) fits.push(sides.reduce((a,b) => room[b] > room[a] ? b : a));
+    const rail = document.querySelector('.map-rails')?.getBoundingClientRect();
     const cx = (anchor.left + anchor.right) / 2, cy = (anchor.top + anchor.bottom) / 2;
-    const side = fits[0], vertical = side === 'above' || side === 'below';
-    const x = vertical ? cx - box.width / 2 : side === 'right' ? anchor.right + gap : anchor.left - gap - box.width;
-    const y = !vertical ? cy - box.height / 2 : side === 'below' ? anchor.bottom + gap : anchor.top - gap - box.height;
-    const left = clamp(x, pad, width - box.width - pad), top = clamp(y, pad, height - box.height - pad);
+    const spot = side => {
+      const vertical = side === 'above' || side === 'below';
+      const x = vertical ? cx - box.width / 2 : side === 'right' ? frame.right + gap : frame.left - gap - box.width;
+      const y = !vertical ? cy - box.height / 2 : side === 'below' ? frame.bottom + gap : frame.top - gap - box.height;
+      let left = clamp(x, pad, width - box.width - pad);
+      const top = clamp(y, pad, floor - box.height - pad);
+      const blocked = () => rail?.width > 0 && left < rail.right + 12 && left + box.width > rail.left &&
+        top < rail.bottom + 8 && top + box.height > rail.top;
+      const aside = rail && rail.right + 12;
+      if (vertical && blocked() && cx - aside >= 12 && aside + box.width <= width - pad) left = aside;
+      return {side, vertical, left, top, clear: !blocked()};
+    };
+    const fits = sides.filter(s => room[s] >= gap + pad).map(spot);
+    const {side, vertical, left, top} = fits.find(s => s.clear) || fits[0] ||
+      spot(sides.reduce((a,b) => room[b] > room[a] ? b : a));
     if (card.dataset.side !== side) card.dataset.side = side;
     UIPatch.style(card, 'left', Math.round(left) + 'px');
     UIPatch.style(card, 'top', Math.round(top) + 'px');

@@ -28,8 +28,9 @@ function assertOnEarth(){
  assert.deepEqual(FlightView.ship(),OrbitalMotion.planetPoint(earthOrbit,OrbitalMotion.phase(earthOrbit)));
 }
 assert.equal(object('planet-ЗЕМЛЯ')?.navigable,undefined);
-assert.match($('tutorialText').textContent,/с Земли/);
+assert.ok($('tutorialText').innerHTML.includes('</p><p>Экспедиция стартует с Земли. '));
 assert.equal($('shipLocationFrom').textContent,'Стоянка · Земля');
+const turns=[];ctx.rotate=angle=>turns.push(angle);
 for(const years of [0,.25,.5]){
  Simulation.tick(years);assertOnEarth();
  MapLabels.begin();OrbitalMotion.draw();drawShip(0);MapLabels.draw();
@@ -38,6 +39,10 @@ for(const years of [0,.25,.5]){
  assert.equal(MapLabels.overlaps(pair[0][0],pair[1][0]),false);
  assert.ok(pair.every(([q])=>Math.hypot(q.x-screen(state.ship).x,q.y-screen(state.ship).y)<90));
 }
+assert.deepEqual(turns,[0,0,0],'a ship parked on Earth keeps its resting heading while the planet moves');
+state.selected='planet-МАРС';drawShip(0);assert.equal(turns.pop(),0,'a planet is not a heading target');
+state.selected='proxima';drawShip(0);assert.notEqual(turns.pop(),0,'a flight target still turns the ship');
+state.selected='sol';delete ctx.rotate;
 assert.notDeepEqual(state.ship.p3,firstTutorial.ship.p3);
 state=restore(firstTutorial);assertOnEarth();
 assert.equal(speed,.1);assert.equal(paused,false);
@@ -46,7 +51,7 @@ assert.equal(state.startYear,new Date().getFullYear());
 assert.equal($('shipClock').textContent,String(state.startYear));
 assert.equal($('earthClock').textContent,String(state.startYear));
 assert.equal($('app').dataset.tutorial,'welcome');assert.equal($('tutorialCard').hidden,false);
-assert.equal($('tutorialTitle').textContent,'Добро пожаловать на «Ковчег»');assert.equal($('tutorialNext').textContent,'Начать обучение (Space)');
+assert.equal($('tutorialTitle').textContent,'Добро пожаловать на «Ковчег»');assert.equal($('tutorialNext').textContent,'Начать обучение (Пробел)');
 assert.equal($('skipTutorial').hidden,false);
 Notices.render('Проверка связи.');renderUI();
 assert.equal($('toast').textContent,'Проверка связи.');assert.equal($('tutorialCard').hidden,false);
@@ -59,16 +64,36 @@ globalThis.localStorage=storage();
 ExpeditionTutorial.openSession(false);
 assert.equal(state.tutorialStep,'welcome');
 assert.equal(ExpeditionTutorial.allows('zoom'),false);
+const solarLimit=SolarView.limit(),solarFrame=()=>{
+ const sun=screen(object('sol'));
+ assert.ok(Math.abs(sun.x-width/2)<1e-6&&Math.abs(sun.y-cameraViewportHeight()/2)<1e-6,'the Sun stays centred at the limit');
+ for(const q of OrbitalMotion.planets)for(let n=0;n<72;n++){
+  const p=screen(OrbitalMotion.planetPoint(q,n/72*2*Math.PI));
+  assert.ok(p.x>0&&p.x<width&&p.y>0&&p.y<cameraViewportHeight(),q.name+' orbit fits in the widest tutorial view');
+ }
+};
+assert.ok(solarLimit>SOLAR_CAMERA_SPAN&&solarLimit<zoomStops.at(-1).span);
+assert.equal(clampCameraSpan(1e9),solarLimit);
+zoomAtPointer({preventDefault(){},deltaY:220,clientX:40,clientY:60});
+assert.ok(cam.span>SOLAR_CAMERA_SPAN&&cam.span<solarLimit,'the first tutorial steps allow zooming out');
+{const sun=screen(object('sol'));assert.ok(sun.x>0&&sun.x<width&&sun.y>0&&sun.y<cameraViewportHeight());}
+for(let i=0;i<40;i++)zoomAtPointer({preventDefault(){},deltaY:220,clientX:40,clientY:60});
+assert.equal(cam.span,solarLimit);solarFrame();
+goCamera(cam.x+1,cam.y+1,1e6);assert.equal(cameraGoal.span,solarLimit);cam={...cameraGoal};cameraGoal=null;solarFrame();
+for(let i=0;i<60;i++)zoomAtPointer({preventDefault(){},deltaY:-220,clientX:width/2,clientY:cameraViewportHeight()/2});
+assert.equal(cam.span,minimumCameraSpan());
+goCamera(...Object.values(centeredCamera(MapLayout.project(object('sol')),SOLAR_CAMERA_SPAN)));cam={...cameraGoal};cameraGoal=null;assertSolarView();
 $('menu').hidden=false;assert.equal(space(),false);assert.equal(state.tutorialStep,'welcome');
 $('menu').hidden=true;assert.equal(space(),true);
-assert.equal($('tutorialNext').textContent,'Далее (Space)');assert.equal(paused,false);
+assert.equal($('tutorialNext').textContent,'Далее (Пробел)');assert.equal(paused,false);
 assert.equal(space({repeat:true}),true);assert.equal(space({shiftKey:true}),false);
 assert.equal(state.tutorialStep,'time');assert.equal($('skipTutorial').hidden,true);
 setTimeRate(10);ExpeditionTutorial.openSession(true);
 assert.equal(state.timeScale,10,'resuming the first step keeps the selected rate');
 assert.equal(space(),true);
 assert.equal(state.tutorialStep,'clocks');assert.equal($('app').dataset.tutorial,'clocks');
-assert.match($('tutorialText').textContent,/13,8 млрд лет/);
+assert.match($('tutorialText').innerHTML,/13,8 млрд лет/);assert.equal($('tutorialText').innerHTML.split('<p>').length,4);
+assert.equal(SolarView.limit(),solarLimit,'the limit holds until the scale step');
 state=restore(FlightHistory.snapshot());ExpeditionTutorial.openSession(true);
 assert.equal(state.tutorialStep,'clocks');assert.equal(state.timeScale,10);assert.deepEqual(state.quests.active,[]);
 for(const step of ['zoom','mass','acceleration','velocity','dilation','destination']){
@@ -76,6 +101,7 @@ for(const step of ['zoom','mass','acceleration','velocity','dilation','destinati
  assert.equal(state.tutorialStep,step);assert.equal($('skipTutorial').hidden,true);
  assert.ok($('app').dataset.tutorialParts.split(' ').includes('clocks'));
  assert.ok(ExpeditionTutorial.allows('zoom'));
+ assert.equal(SolarView.limit(),null);assert.ok(clampCameraSpan(1e99)>=zoomStops.at(-1).span);
 }
 ExpeditionTutorial.openSession(true);
 assert.equal(state.tutorialStep,'destination','refresh in the same session resumes the current step');
@@ -91,12 +117,16 @@ const savedOptions=JSON.stringify(state.flightSetup);
 select('proxima');assert.equal($('app').dataset.tutorial,'propulsion');
 assert.equal(ExpeditionTutorial.target(object('proxima')),false);
 for(const id of ['arrivalProper','arrivalEarth']){
- const duration=$(id).textContent;assert.ok(duration && duration!=='—');assert.ok($('tutorialText').textContent.includes(duration));
+ const duration=$(id).textContent;assert.ok(duration && duration!=='—');assert.ok($('tutorialText').innerHTML.includes(duration));
 }
+assert.equal($('tutorialTitle').textContent,'Расстояние и время в пути');
+assert.ok($('tutorialText').innerHTML.includes('До Проксимы '+$('targetDistance').textContent+'.'));
 assert.deepEqual(state.quests.active,[],'selecting the star is still part of the tutorial');
 const guided=FlightSetup.read();
 assert.ok(guided.engine && !guided.sail && !guided.collector && !guided.burst && guided.brakeEngine && guided.brakeSail);
-assert.equal(space(),true);assert.equal(state.tutorialStep,'launch');assert.equal(space(),false);assert.equal(state.flight,null);
+assert.equal(space(),true);assert.equal(state.tutorialStep,'launch');assert.equal(space(),false);
+assert.match($('tutorialText').innerHTML,/Выберите темп 1× — тогда перелёт займёт около [0-9]+ секунд/);
+assert.equal($('tutorialText').innerHTML.split('<p>').length,2,'the launch hint is one paragraph');assert.equal(state.flight,null);
 assertOnEarth();
 $('launchBtn').onclick();assert.equal($('tutorialCard').hidden,true);
 const departure=physicalEarth(),departureOnMap=OrbitalMotion.planetPoint(earthOrbit,OrbitalMotion.phase(earthOrbit));
@@ -117,6 +147,7 @@ FlightHistory.cancel();assertOnEarth();assert.equal(state.tutorialStep,'launch')
 $('launchBtn').onclick();Simulation.tick(state.flight.mission.proper*1.00001);renderUI();
 assert.equal(state.current,'proxima');assert.equal(state.tutorialStep,'flight');
 assert.equal(Quests.pending,null);assert.deepEqual(state.quests.active,[]);assert.equal($('tutorialNext').textContent,'Завершить обучение');
+assert.equal($('tutorialText').innerHTML,'<p>Вы у Проксимы Центавра. В карточке звезды — время в пути: на борту прошло меньше, чем на Земле.</p>');
 $('tutorialNext').onclick();assert.equal(state.tutorialStep,null);assert.deepEqual(state.quests.active,['neighbours']);
 assert.equal(state.quests.starterPending,undefined);
 // An already airborne tutorial from the old launch behaviour can resume on update.
@@ -128,7 +159,7 @@ assert.equal(state.tutorialStep,null,'explicitly leaving during the flight survi
 setTimeRate(0);
 const oldExpedition=state,oldFlight=state.flight,number=state.expedition;
 $('startTutorial').onclick();assert.equal($('infoDialog').open,true);
-assert.ok($('dialogContent').innerHTML.includes('<h2>Начать обучение, текущий прогресс будет сброшен</h2>'));
+assert.ok($('dialogContent').innerHTML.includes('<h2>Начать обучение?</h2><p>Текущий прогресс будет сброшен.</p>'));
 $('closeDialog').onclick();
 assert.equal(state,oldExpedition);assert.equal(state.flight,oldFlight);assert.equal(state.tutorialStep,null);
 $('startTutorial').onclick();$('confirmReset').onclick();

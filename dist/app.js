@@ -79,6 +79,7 @@ function frame(now) {
       cam.x = c.x;
       cam.y = c.y;
     }
+    SolarView.constrain();
     updateZoomControl();
     MapLayers.update(now);
     ExtendedCatalog.update(now);
@@ -188,7 +189,6 @@ const MapPointer = {
 };
 function zoomAtPointer(e) {
   e.preventDefault();
-  if (!ExpeditionTutorial.allows('zoom')) return;
   cameraGoal = null;
   const factor = Math.exp(clamp(e.deltaY, -220, 220) * 0.006),
     span = clampCameraSpan(cam.span * factor);
@@ -203,6 +203,7 @@ function zoomAtPointer(e) {
     cam.x += before.x - after.x;
     cam.y += before.y - after.y;
   }
+  SolarView.constrain();
   MapPointer.heading = true;
 }
 canvas.addEventListener('wheel', zoomAtPointer, { passive: false });
@@ -265,7 +266,7 @@ canvas.addEventListener('pointermove', (e) => {
     }
     pointer.x = e.clientX;
     pointer.y = e.clientY;
-  } else MapPointer.move(e.clientX, e.clientY);
+  } else if (ExpeditionTutorial.allows('zoom')) MapPointer.move(e.clientX, e.clientY);
 });
 canvas.addEventListener('pointerup', (e) => {
   if (!pointer.down || e.pointerId !== pointer.id) return;
@@ -467,7 +468,7 @@ $('infoDialog').addEventListener('click', (e) => {
 });
 function showExpeditionReset(tutorial = false) {
   const message = tutorial
-    ? '<h2>Начать обучение, текущий прогресс будет сброшен</h2>'
+    ? '<h2>Начать обучение?</h2><p>Текущий прогресс будет сброшен.</p>'
     : '<h2>Снова от Солнца?</h2><p>Текущий прогресс будет сброшен.</p>';
   const action = tutorial ? 'Начать обучение' : 'Начать экспедицию';
   showDialog(
@@ -515,7 +516,6 @@ window.addEventListener('keydown', (e) => {
       if (!e.repeat) ExpeditionTutorial.advance();
       return;
     }
-    if (['+', '=', '-'].includes(e.key) && !ExpeditionTutorial.allows('zoom')) return;
   }
   if (
     (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey &&

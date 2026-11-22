@@ -63,7 +63,7 @@ function world(x, y) {
 function goCamera(x, y, span, instant = false, keepFollow = false) {
   if (!keepFollow && followShip) releaseShipCamera();
   span = clampCameraSpan(span);
-  cameraGoal = keepFollow && followShip ? shipCamera(span) : { x, y, span };
+  cameraGoal = keepFollow && followShip ? shipCamera(span) : SolarView.constrain({ x, y, span });
   if (instant) {
     cam = { ...cameraGoal };
     cameraGoal = null;
@@ -299,8 +299,44 @@ function minimumCameraSpan() {
   const planets = globalThis.Exoplanets;
   return planets?.byHost.has(state?.selected) ? planets.minimumSpan(object(state.selected)) : SOLAR_CAMERA_SPAN;
 }
+const SolarView = {
+  margin: 1.25,
+  extents: null,
+  box() {
+    const radial = !!globalThis.MapRadial?.active();
+    if (this.extents?.radial !== radial) {
+      const sun = MapLayout.project(object('sol'));
+      let x = 0, y = 0;
+      for (const q of OrbitalMotion.planets)
+        for (let n = 0; n < 72; n++) {
+          const p = OrbitalMotion.planetPoint(q, n / 72 * 2 * Math.PI);
+          x = Math.max(x, Math.abs(p.x - sun.x));
+          y = Math.max(y, Math.abs(p.y - sun.y));
+        }
+      this.extents = { radial, x, y };
+    }
+    return this.extents;
+  },
+  limit() {
+    const step = state?.tutorialStep, viewportHeight = cameraViewportHeight();
+    if (!step || TUTORIAL_STEPS.indexOf(step) >= TUTORIAL_STEPS.indexOf('zoom') ||
+        !(width > 0 && viewportHeight > 0)) return null;
+    const box = this.box();
+    return Math.max(SOLAR_CAMERA_SPAN, 2 * this.margin * Math.max(box.x, box.y * width / viewportHeight));
+  },
+  constrain(view = cam) {
+    const limit = this.limit();
+    if (!limit) return view;
+    const home = centeredCamera(MapLayout.project(object('sol')), view.span),
+      slack = Math.max(0, limit - view.span) / 2,
+      ratio = cameraViewportHeight() / width;
+    view.x = clamp(view.x, home.x - slack, home.x + slack);
+    view.y = clamp(view.y, home.y - slack * ratio, home.y + slack * ratio);
+    return view;
+  },
+};
 function clampCameraSpan(span) {
-  return clamp(span, minimumCameraSpan(), MAX_CAMERA_SPAN);
+  return clamp(span, minimumCameraSpan(), SolarView.limit() ?? MAX_CAMERA_SPAN);
 }
 function zoomInterpolate(input, from, to) {
   const n = clamp(input, zoomStops[0][from], zoomStops.at(-1)[from]);
