@@ -123,6 +123,11 @@ function renderFlightProfile(eta) {
     UIContent.text($('' + prefix + 'Peak'), q ? fmt(q.maxG, 2) + ' g' : '—');
   }
 }
+function renderTargetHeading(target) {
+  UIContent.text($('targetName'), target.name);
+  UIContent.text($('targetType'), objectTypeText(target));
+  globalThis.Exoplanets?.renderTargetIcons(target);
+}
 function renderUI() {
   if(state.flight?.routeIssue)paused=true;
   if(Route.feedbackPending){Route.renderFeedback();return;}
@@ -177,8 +182,7 @@ function renderPanels() {
     f.summary = { distance: f.distance, proper: estimate?.proper, earth: estimate?.earth };
   }
   UIContent.text($('distanceCaption'), 'РАССТОЯНИЕ ДО ЦЕЛИ');
-  UIContent.text($('targetName'), target.name);
-  UIContent.text($('targetType'), objectTypeText(target));
+  renderTargetHeading(target);
   UIPatch.toggle($('flightCard'), 'in-flight', active);
   const d = target.navigable
     ? (f?.summary?.distance ?? f?.distance ?? Cosmology.physicalDistance(state.ship, target))

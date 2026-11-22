@@ -42,7 +42,7 @@ function catalogRows(items, total, loading = false, error = '') {
   $('catalogCount').textContent =
     total.toLocaleString('ru-RU') +
     ' / ' +
-    ExtendedCatalog.total.toLocaleString('ru-RU') +
+    (ExtendedCatalog.total + (globalThis.Exoplanets?.newCount || 0)).toLocaleString('ru-RU') +
     (loading ? ' · поиск…' : '');
   $('catalogList').replaceChildren();
   if (!items.length) {
@@ -162,12 +162,16 @@ function renderCatalog() {
           MapDetails.searchKey(
             `${o.name} ${(o.aliases || []).join(' ')} ${o.type} ${MapDetails.typeName(o)} ${o.id} ${o.ngc || ''} ${o.hip || ''} ${o.hd || ''} ${o.gliese || ''}`,
           ).includes(term)),
-    )
-    .sort(
-      (a, b) =>
-        catalogMatchRank(b, term, exact) - catalogMatchRank(a, term, exact) ||
-        (a.d ?? Infinity) - (b.d ?? Infinity),
     );
+  const coreIds = new Set(core.map(o => o.id));
+  for (const entry of globalThis.Exoplanets?.search(term, searchFilter) || []) {
+    if (!coreIds.has(entry.id)) core.push(entry);
+  }
+  core.sort(
+    (a, b) =>
+      catalogMatchRank(b, term, exact) - catalogMatchRank(a, term, exact) ||
+      (a.d ?? Infinity) - (b.d ?? Infinity),
+  );
   catalogRows(core.slice(0, limit), core.length, true);
   if (typeof fetch !== 'function' && !globalThis.PARUS_CATALOG_FILES) {
     catalogRows(core.slice(0, limit), core.length);
@@ -185,7 +189,8 @@ function renderCatalog() {
             a.id.localeCompare(b.id),
         )
         .slice(0, limit);
-      catalogRows(items, core.length + result.total);
+      const overlap = result.items.filter(o => ids.has(o.id)).length;
+      catalogRows(items, core.length + result.total - overlap);
     })
     .catch((e) => {
       if (revision === catalogRevision)
@@ -1074,6 +1079,7 @@ function showObject(id = state.selected) {
         '</p></section>'
       : '') +
     (actions ? '<div class="object-actions">' + actions + '</div>' : '');
+  html += globalThis.Exoplanets?.cardHTML(o) || '';
   const orbits = stellarOrbitFacts(system),
     named = !!system && !!componentNote && componentNote.includes(system.name);
   html += section(
@@ -1261,6 +1267,7 @@ function showObject(id = state.selected) {
       NuclearStars.focus();
     };
   if (system) $('viewSystem').onclick = () => ExtendedCatalog.showSystem(o.id);
+  if (globalThis.Exoplanets?.orbits(o).length) $('viewExoplanets').onclick = () => Exoplanets.focus(o);
   if (!o.region && (g || o.id === 'sgr'))
     $('viewGalaxy').onclick = () => {
       const shape = g || GALAXIES[0];

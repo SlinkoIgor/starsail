@@ -527,7 +527,8 @@ function drawObjects() {
   };
   const candidates = new Map(),
     views = new Map();
-  for (const source of [OBJECTS, ExtendedCatalog.pinned.values(), globalThis.MapFilters?.objects.values() || []])
+  for (const source of [globalThis.Exoplanets?.visibleHosts() || [], OBJECTS,
+    ExtendedCatalog.pinned.values(), globalThis.MapFilters?.objects.values() || []])
     for (const o of source) candidates.set(o.id, o);
   for (const source of [ExtendedCatalog.visible, MapLayers.visible])
     for (const o of source) {

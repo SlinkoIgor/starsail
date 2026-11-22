@@ -62,10 +62,8 @@ function world(x, y) {
 }
 function goCamera(x, y, span, instant = false, keepFollow = false) {
   if (!keepFollow && followShip) releaseShipCamera();
-  cameraGoal =
-    keepFollow && followShip
-      ? shipCamera(clamp(span, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN))
-      : { x, y, span: clamp(span, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN) };
+  span = clampCameraSpan(span);
+  cameraGoal = keepFollow && followShip ? shipCamera(span) : { x, y, span };
   if (instant) {
     cam = { ...cameraGoal };
     cameraGoal = null;
@@ -134,7 +132,7 @@ function focusPoint(id) {
 // Scale-rail zoom-in keeps the selected object on screen and brings it to the centre.
 // Ship following keeps its own anchor; zooming out leaves the view as before.
 function zoomTowardSelection(span, instant = false) {
-  span = clamp(span, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN);
+  span = clampCameraSpan(span);
   const p = !followShip && span < (cameraGoal || cam).span && focusPoint(state.selected);
   if (!p) return false;
   if (instant) {
@@ -271,7 +269,7 @@ const SOLAR_CAMERA_SPAN = 0.00006;
 const GRID_TARGET_PIXELS = 128;
 // Presets and handle share the same piecewise logarithmic scale.
 const zoomStops = [
-  { value: 0, span: SOLAR_CAMERA_SPAN },
+  { value: 0, get span() { return minimumCameraSpan(); } },
   { value: 1, span: 24 },
   { value: 2, span: 130000 },
   { value: 3, span: 3e7 },
@@ -297,6 +295,13 @@ const zoomStops = [
     },
   },
 ];
+function minimumCameraSpan() {
+  const planets = globalThis.Exoplanets;
+  return planets?.byHost.has(state?.selected) ? planets.minimumSpan(object(state.selected)) : SOLAR_CAMERA_SPAN;
+}
+function clampCameraSpan(span) {
+  return clamp(span, minimumCameraSpan(), MAX_CAMERA_SPAN);
+}
 function zoomInterpolate(input, from, to) {
   const n = clamp(input, zoomStops[0][from], zoomStops.at(-1)[from]);
   const i = Math.max(
@@ -324,7 +329,7 @@ function gridUnit() {
 function updateZoomControl() {
   const span = cam.span;
   $('zoomSlider').value = String(zoomInterpolate(span, 'span', 'value'));
-  UIPatch.attr($('zoomSlider'), 'aria-valuetext', 'Ширина карты: ' + distanceText(span));
+  UIPatch.attr($('zoomSlider'), 'aria-valuetext', 'Ширина карты: ' + scaleDistanceText(span));
 
   const measure = gridMetrics();
   UIContent.text($('zoomDivision'), scaleDistanceText(measure.unit));

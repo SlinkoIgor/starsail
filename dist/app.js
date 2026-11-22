@@ -98,6 +98,7 @@ function frame(now) {
       NuclearStars.draw();
       drawObjects();
       ExtendedCatalog.draw();
+      globalThis.Exoplanets?.draw();
       GalacticTraffic.draw();
       drawShip(now);
       MapLabels.draw();
@@ -165,7 +166,14 @@ const MapPointer = {
     const r = this.rect(),
       x = this.hoverX - r.left,
       y = this.hoverY - r.top,
-      visits = MapVisits.hit(x, y);
+      planet = !state.tutorialStep && !zenMode && globalThis.Exoplanets?.hit(x, y);
+    if (planet) {
+      hover = null;
+      this.title(Exoplanets.hoverTitle(planet));
+      this.cursor('pointer');
+      return;
+    }
+    const visits = MapVisits.hit(x, y);
     this.title(MapVisits.title(visits));
     hover =
       (visits && visits.objects.length === 1 ? visits.objects[0] : null) ||
@@ -183,7 +191,7 @@ function zoomAtPointer(e) {
   if (!ExpeditionTutorial.allows('zoom')) return;
   cameraGoal = null;
   const factor = Math.exp(clamp(e.deltaY, -220, 220) * 0.006),
-    span = clamp(cam.span * factor, SOLAR_CAMERA_SPAN, MAX_CAMERA_SPAN);
+    span = clampCameraSpan(cam.span * factor);
   if (followShip) cam = shipCamera(span);
   else {
     const r = MapPointer.rect(),
@@ -205,6 +213,8 @@ function pickMapTarget(e) {
     y = e.clientY - r.top;
   const tutorialTarget = ExpeditionTutorial.mapTargetPoint();
   if (tutorialTarget && Math.hypot(x - tutorialTarget.x, y - tutorialTarget.y) <= 14) return {id:'proxima'};
+  const planet = !state.tutorialStep && !zenMode && globalThis.Exoplanets?.hit(x, y);
+  if (planet) return {planet};
   const visits = MapVisits.hit(x, y);
   if (visits) return visits.objects.length > 1 ? { visits } : { id: visits.objects[0].id };
   const traffic = GalacticTraffic.hit(x, y);
@@ -220,6 +230,7 @@ function pickMapTarget(e) {
 }
 canvas.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || !ExpeditionTutorial.allows('zoom')) return;
+  const r = MapPointer.rect();
   pointer = {
     down: true,
     x: e.clientX,
@@ -228,6 +239,9 @@ canvas.addEventListener('pointerdown', (e) => {
     startY: e.clientY,
     moved: false,
     id: e.pointerId,
+    // Read the rendered position at press time so a moving planet keeps
+    // the click even if a frame is drawn before release.
+    planet: !state.tutorialStep && !zenMode && globalThis.Exoplanets?.hit(e.clientX - r.left, e.clientY - r.top),
   };
   canvas.setPointerCapture(e.pointerId);
   cameraGoal = null;
@@ -256,7 +270,7 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerup', (e) => {
   if (!pointer.down || e.pointerId !== pointer.id) return;
   if (!pointer.moved) {
-    const { id, traffic, visits } = pickMapTarget(e);
+    const { id, traffic, visits, planet } = pointer.planet ? {planet:pointer.planet} : pickMapTarget(e);
     if (state.tutorialStep) {
       if (ExpeditionTutorial.target(object(id))) select(id);
       pointer.down = false;
@@ -264,7 +278,8 @@ canvas.addEventListener('pointerup', (e) => {
     }
     doubleClickTarget = id && id === clickedMapTarget ? id : null;
     clickedMapTarget = id || null;
-    if (visits) MapVisits.focus(visits);
+    if (planet) Exoplanets.show(planet);
+    else if (visits) MapVisits.focus(visits);
     else if (traffic) { if (!zenMode) GalacticTraffic.show(traffic); }
     else if (id) {
       select(id,false,{deferPreview:true,routeAnchor:!e.shiftKey});

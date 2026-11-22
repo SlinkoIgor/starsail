@@ -10,6 +10,7 @@ const MapFilters = {
     'naked-eye': ['Звёзды, видимые глазом', 'Каталожная яркость V ≤ 6 с Земли. Нужны тёмное небо и подходящая широта; неразрешённая пара не считается двумя видимыми звёздами.', ['star']],
     messier: ['Объекты Мессье · M1–M110', 'Все 110 обозначений Мессье. M40 и M73 — оптические группы без единой дальности: карта и полёт привязаны к указанной в карточке опорной звезде. M24 — звёздное облако с диапазоном глубин.', ['star', 'stellar-cluster', 'nebula', 'galaxy']],
     nearby: ['Соседи Солнца · до 25 св. лет', 'Звёзды с известной каталожной дальностью не более 25 световых лет от Солнца.', ['star', 'home']],
+    exoplanets: ['Звёзды с планетами', 'Звёзды и пульсары с подтверждёнными экзопланетами по NASA Exoplanet Archive.', ['star', 'pulsar']],
     multiple: ['Двойные и кратные звёзды', 'Компоненты систем, представленных в каталоге. Принадлежность к системе не означает, что её орбита известна.', ['star']],
     remnants: ['Компактные объекты', 'Белые карлики, пульсары и чёрные дыры, включая сверхмассивные. Белые карлики определяются по собственному классу или спектру.', ['star', 'pulsar', 'blackhole']],
     'pre-telescope': ['Известны до Галилея · до 1609', 'Туманности, скопления и галактики из исторической таблицы SEDS, известные до телескопических наблюдений Галилея. Это проверенная часть атласа, а не полный список древнего неба.', ['star', 'stellar-cluster', 'nebula', 'galaxy']],
@@ -24,7 +25,7 @@ const MapFilters = {
     'early-universe': ['Ранняя Вселенная · z ≥ 6', 'Галактики и квазары с каталожным красным смещением z ≥ 6. Метод измерения и неопределённость сохраняются в исходных карточках.', ['galaxy', 'quasar']],
   },
   get catalogs() { return CatalogRegistry.filters; },
-  classNames: {'star':'Звёзды',pulsar:'Пульсары',blackhole:'Чёрные дыры',quasar:'Квазары',nebula:'Туманности',galaxy:'Галактики','stellar-cluster':'Звёздные скопления','galaxy-cluster':'Скопления галактик',structure:'Мегаструктуры',void:'Войды',horizon:'Горизонт'},
+  classNames: {'star':'Звёзды','exoplanets':'Звёзды с планетами',pulsar:'Пульсары',blackhole:'Чёрные дыры',quasar:'Квазары',nebula:'Туманности',galaxy:'Галактики','stellar-cluster':'Звёздные скопления','galaxy-cluster':'Скопления галактик',structure:'Мегаструктуры',void:'Войды',horizon:'Горизонт'},
   tab: 'classes',
   activeGroup: 'classes',
   selection: null,
@@ -42,8 +43,10 @@ const MapFilters = {
   options(group) {
     return group === 'classes' ? Object.keys(this.classNames) : Object.keys(this[group]).filter(k => k !== 'all');
   },
+  // Exoplanet hosts are indexed directly by their dedicated catalogue.
+  indexedCollections() { return this.options('collections').filter(k => k !== 'exoplanets'); },
   defaults(group) {
-    return group === 'classes' ? this.options(group).filter(k => k !== 'void') :
+    return group === 'classes' ? this.classes.filter(k => k !== 'all' && k !== 'void') :
       group === 'catalogs' ? CatalogRegistry.entries.filter(e => e.defaultSelected).map(e => e.id) : [];
   },
   values(group) { return this.selection?.[group] || this.defaults(group); },
@@ -54,7 +57,15 @@ const MapFilters = {
   // The ordinary overview selects sources with ordinary records, hiding bulk envelopes.
   // Explicit class/source choices expose the complete matching records.
   defaultHidden(o) { return CatalogRegistry.defaultHidden(o); },
-  all(group) { return this.values(group).length === this.options(group).length; },
+  all(group) {
+    const values = this.values(group);
+    return group === 'classes' ? this.classes.every(k => k === 'all' || values.includes(k)) :
+      values.length === this.options(group).length;
+  },
+  get planetHostsSelected() {
+    return this.collection === 'exoplanets' ||
+      this.activeGroup === 'classes' && !this.unrestricted('classes') && this.values('classes').includes('exoplanets');
+  },
   unrestricted(group) { return group !== this.activeGroup || (group === 'collections' ? this.values(group).length === 0 : this.all(group)); },
   get key() { return ['classes','collections','catalogs'].map(g => this.unrestricted(g) ? 'all' : this.values(g).join(',')).join('|') + (this.isDefault() ? '|default' : ''); },
   get count() { return this.isDefault() ? 0 : 1; },
@@ -66,8 +77,18 @@ const MapFilters = {
   allowsCategory(category) {
     const kind = category === 'home' ? 'star' : ['filament','supercluster','wall','ring','arc'].includes(category) ? 'structure' : category;
     if (this.isDefault() && (kind === 'void' || category === 'supercluster')) return false;
-    return (this.unrestricted('classes') || this.values('classes').includes(kind)) && ['collections','catalogs'].every(g =>
+    const classes = this.values('classes');
+    return (this.unrestricted('classes') || classes.includes(kind) || this.allowsPlanetHostClass(classes, kind)) &&
+      ['collections','catalogs'].every(g =>
       this.unrestricted(g) || this.values(g).some(k => this[g][k][2]?.includes(category)));
+  },
+  allowsPlanetHostClass(classes, kind) {
+    return classes.includes('exoplanets') && this.collections.exoplanets[2].includes(kind);
+  },
+  matchesClass(o, classes) {
+    const kind = this.classOf(o);
+    return classes.includes(kind) || this.allowsPlanetHostClass(classes, kind) &&
+      (!o.id || this.matchesCollection(o, 'exoplanets'));
   },
   snapshot() {
     const values = group => this.unrestricted(group) ? null : this.values(group);
@@ -80,13 +101,13 @@ const MapFilters = {
       let f = memo.get('filters');
       if (!f) memo.set('filters', f = this.snapshot());
       if (f.isDefault && this.defaultHidden(o)) return false;
-      if (f.classes && !f.classes.includes(this.classOf(o))) return false;
+      if (f.classes && !this.matchesClass(o, f.classes)) return false;
       if (!o?.id) return true;
       return (!f.collections || f.collections.some(k => this.matchesCollection(o, k))) &&
         (!f.catalogs || f.catalogs.some(k => this.matchesCatalog(o, k)));
     }
     if (this.isDefault() && this.defaultHidden(o)) return false;
-    if (!this.unrestricted('classes') && !this.values('classes').includes(this.classOf(o))) return false;
+    if (!this.unrestricted('classes') && !this.matchesClass(o, this.values('classes'))) return false;
     if (!o?.id) return true; // Category probes have no individual source metadata.
     return (this.unrestricted('collections') || this.values('collections').some(k => this.matchesCollection(o, k))) &&
       (this.unrestricted('catalogs') || this.values('catalogs').some(k => this.matchesCatalog(o, k)));
@@ -106,6 +127,7 @@ const MapFilters = {
       case 'messier': return /^(?:0?[1-9]|[1-9]\d|10\d|110)$/.test(String(o.messier || '').replace(/^0+(?=\d)/, ''));
       case 'nearby': return ['star', 'home'].includes(o.kind) && !o.synthetic &&
         Number.isFinite(o.d) && o.d >= 0 && o.d <= 25;
+      case 'exoplanets': return o.id === 'sol' || !o.synthetic && !!globalThis.Exoplanets?.system(o);
       case 'multiple': return o.kind === 'star' && !o.synthetic &&
         !!(o.stellarSystem || o.boundSystemPrimary || ExtendedCatalog.systemByMember.has(o.id));
       case 'remnants': return ['pulsar', 'blackhole'].includes(o.kind) ||
@@ -151,11 +173,18 @@ const MapFilters = {
   refreshSelection() {
     const revision = ++this.revision;
     this.objects.clear(); this.promoted.clear(); this.photoMembers=null; this.narrow = false; this.loading = false; this.loadError = false;
-    this.masks = {collections:this.options('collections').reduce((mask,k,i)=>mask | (this.values('collections').includes(k)?1<<i:0),0)};
+    if (this.planetHostsSelected) {
+      this.promoted = new Set(globalThis.Exoplanets?.mapHosts().keys());
+      if (this.collection === 'exoplanets' || this.values('classes').length === 1) {
+        this.total = this.promoted.size;
+        return;
+      }
+    }
+    this.masks = {collections:this.indexedCollections().reduce((mask,k,i)=>mask | (this.values('collections').includes(k)?1<<i:0),0)};
     const data = typeof MAP_FILTER_DATA === 'undefined' ? null : MAP_FILTER_DATA;
     // Never infer a small complete selection from whichever tiles happen to be loaded.
     if (!data || data.version !== 3 || data.catalogRevision !== EXTENDED_BOOT.revision ||
-        data.collections.join() !== this.options('collections').join() ||
+        data.collections.join() !== this.indexedCollections().join() ||
         data.catalogs.join() !== this.options('catalogs').join()) return;
     if (this.activeGroup==='collections' && this.values('collections').includes('photos') &&
         (data.photoRevision!==SKY_PHOTO_INDEX.revision || data.guideRevision!==SKY_GUIDE_DATA.revision ||
@@ -163,7 +192,14 @@ const MapFilters = {
           (typeof WIKIPEDIA_INDEX!=='undefined'&&data.wikipediaRevision!==WIKIPEDIA_INDEX.revision) || !Array.isArray(data.photoIds))) return;
     const buckets = data.buckets.filter(b => this.bucketMatches(b));
     const core = OBJECTS.filter(o => !o.atlasOnly && !o.supersededBy && !MapGeometry.unlocated(o) && !this.anchor(o) && this.matches(o));
-    this.total = core.length + buckets.reduce((n,b) => n + b[3], 0);
+    let extraHosts = 0;
+    if (this.planetHostsSelected) {
+      const classes = this.values('classes');
+      for (const o of globalThis.Exoplanets?.mapHosts().values() || [])
+        if (!ExtendedCatalog.coreIndex.has(o.id) && (o.exoplanetHost || !classes.includes(this.classOf(o))))
+          extraHosts++;
+    }
+    this.total = core.length + extraHosts + buckets.reduce((n,b) => n + b[3], 0);
     if(this.activeGroup==='collections'&&this.values('collections')[0]==='photos')this.photoMembers=new Set(data.photoIds);
     const limit=this.selectionLimit(), indexedLimit=this.activeGroup==='collections' && this.values('collections').length===1 ?
       data.collectionLimits?.[this.values('collections')[0]] || data.limit : data.limit;
@@ -214,6 +250,7 @@ const MapFilters = {
     ExtendedCatalog.systemView = null;
     hover = null;
     hitObjects = [];
+    if (globalThis.Exoplanets) Exoplanets.hits.length = 0;
     RegionMap.hits = [];
     RegionMap.renderCache = null;
     if (globalThis.MapAnnotations) MapAnnotations.hits = [];
@@ -222,9 +259,11 @@ const MapFilters = {
   },
   change(classFilter, collection, catalog, save = true, activeGroup) {
     this.selection = Object.fromEntries([['classes',classFilter],['collections',collection],['catalogs',catalog]].map(([g,v]) => {
-      const valid = this.options(g), values = Array.isArray(v) ? v : v === 'all' ? (g === 'collections' ? [] : valid) : valid.includes(v) ? [v] : this.defaults(g);
+      const valid = this.options(g);
+      const all = g === 'classes' ? this.classes.filter(k => k !== 'all') : g === 'catalogs' ? valid : [];
+      const values = Array.isArray(v) ? v : v === 'all' ? all : valid.includes(v) ? [v] : this.defaults(g);
       // Old unions become one choice; a formerly complete set stays unrestricted.
-      if (g === 'collections') return [g,valid.every(k => values.includes(k)) ? [] : values.filter(k => valid.includes(k)).slice(0,1)];
+      if (g === 'collections') return [g,this.indexedCollections().every(k => values.includes(k)) ? [] : values.filter(k => valid.includes(k)).slice(0,1)];
       return [g,valid.filter(k => values.includes(k))];
     }));
     // Legacy combined preferences keep the most specific mode: collection, source, class.
@@ -234,7 +273,9 @@ const MapFilters = {
     this.tab = this.activeGroup;
     for (const group of ['classes','collections','catalogs'])
       if (group !== this.activeGroup) this.selection[group] = this.defaults(group);
-    filter = this.activeGroup === 'classes' && this.values('classes').length === 1 ? this.values('classes')[0] : 'all';
+    const [singleClass] = this.values('classes');
+    filter = this.activeGroup === 'classes' && this.values('classes').length === 1 && singleClass !== 'exoplanets'
+      ? singleClass : 'all';
     this.collection = this.unrestricted('collections') ? 'all' : this.values('collections').join(',');
     this.invalidate(); this.refreshSelection(); this.sync();
     if (save) {
@@ -275,7 +316,7 @@ const MapFilters = {
     $('mapFilterDefault').title = this.tab === 'catalogs' ? 'Выставить каталоги по умолчанию' : 'Восстановить классы объектов по умолчанию';
     $('mapFilterDefault').setAttribute('aria-controls', this.options(this.tab).map(k => 'map-filter-'+this.tab+'-'+k).join(' '));
     $('mapFilterStatus').textContent = this.loading ? 'Загружаем объекты выборки…' : this.loadError ? 'Часть объектов не загрузилась. Смените фильтр, чтобы повторить.' :
-      this.narrow||this.photoMembers ? (this.total ? 'Объектов: '+this.total : 'Нет объектов по выбранным условиям.') : '';
+      this.narrow||this.photoMembers||this.planetHostsSelected ? (this.total ? 'Объектов: '+this.total : 'Нет объектов по выбранным условиям.') : '';
     $('mapFilterStatus').hidden = !$('mapFilterStatus').textContent;
   },
   close() {
@@ -301,6 +342,10 @@ const MapFilters = {
         input.value = value; input.dataset.filterGroup = group;
         input.id = 'map-filter-'+group+'-'+value;
         const title = document.createElement('strong'); title.textContent = group === 'classes' ? this.classNames[value] : this[group][value][0]; text.append(title);
+        if (group === 'classes' && value === 'exoplanets') {
+          label.title = this.collections.exoplanets[1];
+          input.setAttribute('aria-description', label.title);
+        }
         if (group !== 'classes') {
           label.title = this[group][value][1] + (group === 'collections' ? ' Повторное нажатие снимает подборку.' : '');
           input.setAttribute('aria-description', label.title);
@@ -320,7 +365,11 @@ const MapFilters = {
             event.preventDefault();
             input.onclick();
           };
-        } else input.onchange = () => this.setGroup(group,this.options(group).filter(k => k === value ? input.checked : this.values(group).includes(k)));
+        } else input.onchange = () => {
+          const onlyPlanetHosts = group === 'classes' && value === 'exoplanets' && input.checked;
+          this.setGroup(group, onlyPlanetHosts ? [value] :
+            this.options(group).filter(k => k === value ? input.checked : this.values(group).includes(k)));
+        };
       }
       $('filterTab-'+group).onclick = () => this.setTab(group);
       $('filterTab-'+group).onkeydown = event => {

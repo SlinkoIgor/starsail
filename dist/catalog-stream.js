@@ -195,6 +195,7 @@ const ExtendedCatalog = {
       globalThis.MapLayers?.get(id) ||
       this.visibleMap.get(id) ||
       globalThis.Quests?.objects.get(id) ||
+      globalThis.Exoplanets?.catalogHost(id) ||
       this.identityTarget(id)
     );
   },
@@ -214,7 +215,7 @@ const ExtendedCatalog = {
       (!o.galaxyMember || o.bulkGalaxyMember) &&
       (o.bulkGalaxyMember ||
         o.streamed ||
-        (o.kind === 'star' && o.d > 0 && o.d <= 50 && !this.foreground.has(o.id))) &&
+        (o.kind === 'star' && !o.exoplanetHost && o.d > 0 && o.d <= 50 && !this.foreground.has(o.id))) &&
       MapDetails.mass(o) === null
     );
   },

@@ -3,7 +3,7 @@ const harness = fs.readFileSync('tests/verify-map.mjs','utf8').split('\nrun(`')[
 const {context,run} = await import('data:text/javascript,'+encodeURIComponent(harness)+'#map-collections');
 run(['distant-catalog-data','distant-catalog'].map(n=>fs.readFileSync('dist/'+n+'.js','utf8')).join('\n'));
 run(`
-assert.equal(Object.keys(MapFilters.collections).length-1,16,'historical and photographic collections');
+assert.equal(MapFilters.indexedCollections().length,16,'historical and photographic collections');
 assert.equal(SkyPhotos.cache.size,0,'photo collection works before lazy publisher metadata');
 for(const id of ['sirius','proxima','hyg-27253','lmc','andromeda','orion','sgr'])
  assert.ok(MapFilters.matchesCollection(object(id),'photos'),'own observatory image: '+id);
