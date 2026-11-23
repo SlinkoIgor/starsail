@@ -70,8 +70,29 @@ context.PARUS_CATALOG_FILES=Object.fromEntries(Object.values(index.files).map(e=
 run('Wikipedia.failed.clear();');
 await run("Wikipedia.ensure(object('local-void'))");
 assert.ok(run("Wikipedia.media(object('local-void')).length>0"),'retry and standalone embedded metadata');
-execFileSync('python3',['-c',String.raw`
+execFileSync('python3',['-B','-c',String.raw`
 import importlib.util
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+sys.path.insert(0, 'data-tools')
+from generated_output import write_generated
+
+# A writable checkout must still report an outdated or missing shard.
+with TemporaryDirectory() as tmp:
+    shard = Path(tmp) / 'shard.json'
+    for original in (None, b'outdated'):
+        if original is not None:
+            shard.write_bytes(original)
+        try:
+            write_generated(shard, 'expected', check=True)
+        except SystemExit as error:
+            assert str(shard) in str(error)
+        else:
+            raise AssertionError('A stale or missing shard passed verification')
+        assert (shard.read_bytes() if shard.exists() else None) == original
+
 spec=importlib.util.spec_from_file_location('wiki','data-tools/fetch-wikipedia-media.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 assert m.key('NGC 0001')==m.key('NGC1')
@@ -99,8 +120,5 @@ class Categories:
   return [{'ns':14,'title':'Category:Milky Way Subgroup'},{'ns':0,'title':'Local Group'}] if title=='Local Group' else [{'ns':0,'title':'A satellite'},{'ns':14,'title':'Category:Milky Way'}]
 assert m.subgroup_articles(Categories())=={'Milky Way':{'deep-sky'},'A satellite':{'deep-sky'}}, 'subgroup members and their main category topics must be discovered alongside direct category members'
 `]);
-const paths=['dist/wikipedia-index.js',...Object.values(index.files).map(e=>'dist/'+e.url.split('?')[0]),'data-tools/sky-sources/wikipedia-audit.json'];
-const before=paths.map(p=>fs.readFileSync(p));
-execFileSync('python3',['data-tools/build-wikipedia-media.py']);
-paths.forEach((p,i)=>assert.ok(before[i].equals(fs.readFileSync(p)),'deterministic offline build: '+p));
+execFileSync('python3', ['-B', 'data-tools/build-wikipedia-media.py', '--check']);
 console.log('PASS Wikipedia: exact typed identities, attributed images, requested maps, links, restored cards, lazy loading, failure/retry, standalone and deterministic rebuild');

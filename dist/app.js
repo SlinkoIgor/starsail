@@ -8,6 +8,7 @@ try {
 } catch {
   state = initial({deferStarterQuest: true});
 }
+Cosmology.sync(state);
 ExpeditionTutorial.openSession(hasSavedExpedition);
 GameAnalytics.start();
 FlightSetup.sync();
@@ -212,6 +213,66 @@ function zoomAtPointer(e) {
 }
 canvas.addEventListener('wheel', zoomAtPointer, { passive: false });
 let clickedMapTarget = null, doubleClickTarget = null;
+const MapTouch = {
+  points: new Map(), pinch: null, lastTap: null,
+  doubleTap(e, id) {
+    const previous = this.lastTap;
+    this.lastTap = id ? {id, time:e.timeStamp, x:e.clientX, y:e.clientY} : null;
+    if (!id || previous?.id !== id || e.timeStamp-previous.time > 350 ||
+        Math.hypot(e.clientX-previous.x,e.clientY-previous.y) > 24) return false;
+    this.lastTap = null;
+    return true;
+  },
+  geometry() {
+    const [a, b] = [...this.points.values()], r = MapPointer.rect();
+    return {x:(a.x+b.x)/2-r.left, y:(a.y+b.y)/2-r.top, distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y))};
+  },
+  start(e) {
+    if (e.pointerType !== 'touch') return false;
+    this.points.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (this.points.size < 2) return false;
+    canvas.setPointerCapture(e.pointerId);
+    const p = this.geometry();
+    this.pinch = {distance:p.distance, anchor:world(p.x,p.y)};
+    releaseShipCamera();
+    cameraGoal = null;
+    pointer.down = false;
+    pointer.moved = true;
+    clickedMapTarget = doubleClickTarget = null;
+    this.lastTap = null;
+    MapPointer.leave();
+    return true;
+  },
+  move(e) {
+    if (!this.points.has(e.pointerId)) return false;
+    this.points.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (!this.pinch) return false;
+    const p = this.geometry();
+    cam.span = clampCameraSpan(cam.span * (this.pinch.distance / p.distance));
+    this.pinch.distance = p.distance;
+    const at = world(p.x,p.y);
+    cam.x += this.pinch.anchor.x-at.x;
+    cam.y += this.pinch.anchor.y-at.y;
+    SolarView.constrain();
+    MapPointer.heading = true;
+    return true;
+  },
+  end(e) {
+    this.points.delete(e.pointerId);
+    if (!this.pinch) return false;
+    // Neither finger of a pinch may turn into a tap or a double-tap launch.
+    if (this.points.size < 2) {
+      this.pinch = null;
+      const [id, p] = this.points.entries().next().value || [];
+      if (p) pointer = {down:true, moved:true, id, x:p.x, y:p.y, startX:p.x, startY:p.y};
+      else pointer.down = false;
+    } else {
+      const p = this.geometry();
+      this.pinch = {distance:p.distance, anchor:world(p.x,p.y)};
+    }
+    return true;
+  },
+};
 function pickMapTarget(e) {
   const r = canvas.getBoundingClientRect(),
     x = e.clientX - r.left,
@@ -234,7 +295,8 @@ function pickMapTarget(e) {
   return { id: target?.navigationId || target?.id };
 }
 canvas.addEventListener('pointerdown', (e) => {
-  if (e.button !== 0 || !ExpeditionTutorial.allows('zoom')) return;
+  if (e.button !== 0) return;
+  if (MapTouch.start(e)) return;
   const r = MapPointer.rect();
   pointer = {
     down: true,
@@ -252,11 +314,13 @@ canvas.addEventListener('pointerdown', (e) => {
   cameraGoal = null;
 });
 canvas.addEventListener('pointermove', (e) => {
+  if (MapTouch.move(e)) return;
   if (pointer.down && e.pointerId === pointer.id) {
     const dx = e.clientX - pointer.x,
       dy = e.clientY - pointer.y;
     if (!pointer.moved && Math.hypot(e.clientX - pointer.startX, e.clientY - pointer.startY) > 5) {
       pointer.moved = true;
+      MapTouch.lastTap = null;
       clickedMapTarget = doubleClickTarget = null;
       // Inspecting or dismissing a card is still compatible with ship focus.
       // Only an actual map drag releases the anchor before changing the scale.
@@ -265,6 +329,7 @@ canvas.addEventListener('pointermove', (e) => {
     if (pointer.moved) {
       cam.x -= (dx * cam.span) / width;
       cam.y -= (dy * cam.span) / width;
+      SolarView.constrain();
       MapPointer.cursor('grabbing');
       MapPointer.heading = true;
     }
@@ -273,14 +338,16 @@ canvas.addEventListener('pointermove', (e) => {
   } else if (ExpeditionTutorial.allows('zoom')) MapPointer.move(e.clientX, e.clientY);
 });
 canvas.addEventListener('pointerup', (e) => {
+  if (MapTouch.end(e)) return;
   if (!pointer.down || e.pointerId !== pointer.id) return;
-  if (!pointer.moved) {
+  if (!pointer.moved && ExpeditionTutorial.allows('zoom')) {
     const { id, traffic, visits, planet } = pointer.planet ? {planet:pointer.planet} : pickMapTarget(e);
     if (state.tutorialStep) {
       if (ExpeditionTutorial.target(object(id))) select(id);
       pointer.down = false;
       return;
     }
+    if (!id) MapTouch.lastTap = null;
     doubleClickTarget = id && id === clickedMapTarget ? id : null;
     clickedMapTarget = id || null;
     if (planet) Exoplanets.show(planet);
@@ -292,19 +359,26 @@ canvas.addEventListener('pointerup', (e) => {
         doubleClickTarget = clickedMapTarget = null;
         planRoutePoint(id,{deferPreview:true});
       }
+      if (e.pointerType === 'touch' && MapTouch.doubleTap(e, id)) {
+        doubleClickTarget = id;
+        launchMapTarget(e);
+        clickedMapTarget = doubleClickTarget = null;
+      }
     }
     else FlightQueue.dismiss();
   }
   pointer.down = false;
   MapPointer.cursor('crosshair');
 });
-canvas.addEventListener('pointercancel', () => {
+canvas.addEventListener('pointercancel', (e) => {
+  MapTouch.end(e);
+  MapTouch.lastTap = null;
   pointer.down = false;
   clickedMapTarget = doubleClickTarget = null;
   MapPointer.cursor('crosshair');
 });
 canvas.addEventListener('pointerleave', () => MapPointer.leave());
-canvas.addEventListener('dblclick', (e) => {
+function launchMapTarget(e) {
   if (state.tutorialStep || e.button !== 0 || e.shiftKey || pointer.moved || !doubleClickTarget) return;
   const { id } = pickMapTarget(e), target = object(id);
   if (id !== doubleClickTarget || !target?.navigable) return;
@@ -321,6 +395,9 @@ canvas.addEventListener('dblclick', (e) => {
   launchSelectedTarget();
   if(state.flight)FlightTips.use('double-click');
   else Route.flushFeedback();
+}
+canvas.addEventListener('dblclick', (e) => {
+  if (!e.sourceCapabilities?.firesTouchEvents) launchMapTarget(e);
 });
 
 $('shipBtn').onclick = focusShip;
@@ -548,7 +625,7 @@ window.addEventListener('keydown', (e) => {
     else if (state.flight) FlightHistory.cancel();
     else if (state.itinerary.length) Route.undo();
     else if (state.selected != null) {
-      clickedMapTarget = doubleClickTarget = null;
+      clickedMapTarget = doubleClickTarget = MapTouch.lastTap = null;
       MapPointer.leave();
       if (cameraGoal?.focus === state.selected) cameraGoal = null;
       select(null);

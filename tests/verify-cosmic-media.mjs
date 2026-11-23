@@ -63,9 +63,7 @@ for(const id of [...nuclei.map(o=>o.id),...UniverseMap.areas.map(o=>o.id),...meg
 }
 for(const category of ['quasar','structure','wall','ring','arc','void','horizon'])assert.ok(MapFilters.allowsCategory(category));
 `);
-const before=['dist/cosmic-catalog.js','dist/sky-guide-data.js'].map(p=>fs.readFileSync(p));
-execFileSync('python3',['data-tools/build-quasar-catalog.py']);
-execFileSync('python3',['data-tools/build-sky-guide.py']);
-for(const [i,p] of ['dist/cosmic-catalog.js','dist/sky-guide-data.js'].entries())assert.ok(before[i].equals(fs.readFileSync(p)),'deterministic offline build '+p);
+execFileSync('python3', ['-B', 'data-tools/build-quasar-catalog.py', '--check']);
+execFileSync('python3', ['-B', 'data-tools/build-sky-guide.py', '--check']);
 console.log('PASS 16 added quasars: independent source coordinates/comoving distances, redshift errors, own photographs, ordinary density, projections and save restoration');
 console.log('PASS seven epoch galleries, 17 named megastructures/voids, honest diagram/map/reconstruction captions, all visual classes in filters and deterministic offline builds');

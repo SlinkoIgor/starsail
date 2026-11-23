@@ -17,7 +17,7 @@ context.webbStreamRow=JSON.parse(fs.readFileSync(catalogueRoot+'/'+webbStreamEnt
 assert.ok(index.photoCount>6000&&frozen.inputCount>=9000);
 assert.equal(frozen.filterSummary.accepted,frozen.records.length);
 assert.equal(frozen.inputCount,frozen.filterSummary.accepted+Object.values(frozen.filterSummary.rejected).reduce((a,b)=>a+b,0),'every imported record is retained or has a recorded rejection reason');
-execFileSync('python3',['-c',`
+execFileSync('python3',['-B','-c',`
 import importlib.util,json,sys
 sys.path.insert(0,'data-tools')
 spec=importlib.util.spec_from_file_location('photos','data-tools/build-sky-photos.py')
@@ -244,7 +244,5 @@ context.PARUS_CATALOG_FILES=Object.fromEntries(Object.values(index.files).map(e=
 context.fetch=async()=>{throw Error('Embedded Webb metadata must not use the network');};
 await run("SkyPhotos.ensure(object('whirlpool'))");assert.ok(run("SkyPhotos.cache.has('esawebb')"));
 console.log('PASS 2753 PHAT namespaces, direct Webb identities, chart order, shared lazy ESA loading, strict asset origin and embedded export');
-const files=['dist/sky-photos-index.js','data-tools/sky-sources/photo-target-audit.json',...Object.values(index.files).map(e=>'dist/'+e.url.split('?')[0])];
-const before=files.map(p=>fs.readFileSync(p));execFileSync('python3',['data-tools/build-sky-photos.py']);
-files.forEach((p,i)=>assert.ok(before[i].equals(fs.readFileSync(p))));
+execFileSync('python3', ['-B', 'data-tools/build-sky-photos.py', '--check']);
 console.log('PASS deterministic offline rebuild of the entire photo index and all metadata files');

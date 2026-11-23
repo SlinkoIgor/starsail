@@ -80,8 +80,7 @@ function routeViewport(avoidPanels = false) {
     // Leave room for the 18px waypoint rings around every visible panel.
     let spaces = [{ left: 20, top: 20, right: width - 20, bottom: viewportHeight - 20 }];
     const panels = document.querySelectorAll('.flight-card,.map-heading>.eyebrow,.map-heading h1,.ship-location,.map-actions,.map-controls,.map-scale' +
-      (state.tutorialStep ? ',.telemetry' : '') +
-      (['propulsion','launch'].includes(state.tutorialStep) ? ',#tutorialCard' : ''));
+      (state.tutorialStep ? ',.telemetry' : ''));
     for (const panel of panels) {
       const r = panel.getBoundingClientRect();
       if (!r.width || !r.height) continue;
@@ -98,15 +97,16 @@ function routeViewport(avoidPanels = false) {
     if (spaces.length) return spaces.sort((a, b) => area(b) - area(a))[0];
   }
   // Keep the route clear of the HUD, target card, heading and map buttons.
+  const mobile = width < 700 || FlightSetup.mobile();
   const right =
-    width >= 700
+    !mobile
       ? Math.min(width - pad, card.left > width * 0.45 ? card.left - pad : width - 350)
       : width - pad;
   const bottom =
-    width < 700
+    mobile
       ? Math.min(viewportHeight - pad, card.top > 100 ? card.top - pad : viewportHeight * 0.43)
       : viewportHeight - pad;
-  return { left: pad, top: 112, right: Math.max(pad + 100, right), bottom: Math.max(180, bottom) };
+  return { left: pad, top: mobile ? 64 : 112, right: Math.max(pad + 100, right), bottom: Math.max(180, bottom) };
 }
 function centeredCamera(p, span) {
   return {
@@ -165,7 +165,8 @@ function stepFocusedCamera(a) {
 function shipSurroundingsSpan() {
   const viewportHeight = cameraViewportHeight();
   if (width <= 0 || viewportHeight <= 0) return cam.span;
-  const ship = FlightView.ship(),
+  const maxSpan = zoomStops.at(-1).span,
+    ship = FlightView.ship(),
     halfWidth = Math.max(1, width / 2 - 48),
     halfHeight = Math.max(1, viewportHeight / 2 - 48),
     origin = canvas.getBoundingClientRect(),
@@ -186,12 +187,12 @@ function shipSurroundingsSpan() {
     if (globalThis.MapVisibility?.active && o.region && MapDetails.level(o) >= 3) continue;
     const p = MapLayout.project(o), dx = p.x - ship.x, dy = p.y - ship.y;
     if (!Number.isFinite(dx) || !Number.isFinite(dy)) continue;
-    let span = Math.max(0.00006, Math.abs(dx) * width / halfWidth * 1.03, Math.abs(dy) * width / halfHeight * 1.03);
+    let span = Math.max(SOLAR_CAMERA_SPAN, Math.abs(dx) * width / halfWidth * 1.03, Math.abs(dy) * width / halfHeight * 1.03);
     if (o.region && !(globalThis.MapVisibility?.active && MapSymbols.handles(o))) {
       if (o.region.shape === 'polyline') continue;
       span = Math.max(span, Math.max(o.region.major, o.region.minor) * Cosmology.regionScale(o) * width / 6 * 1.03);
     }
-    if (!Number.isFinite(span) || span > MAX_CAMERA_SPAN) continue;
+    if (!Number.isFinite(span) || span > maxSpan) continue;
     // A point travels along a straight screen ray while zooming. Add the scale
     // where it leaves each panel so covered neighbours can be considered again.
     const uncovered = panels.map(box => {
@@ -208,7 +209,7 @@ function shipSurroundingsSpan() {
       }
       return lo > 0 && lo <= hi ? 1.03 / lo : 0;
     });
-    for (const next of [span, ...uncovered.filter(s => s > span && s <= MAX_CAMERA_SPAN)])
+    for (const next of [span, ...uncovered.filter(s => s > span && s <= maxSpan)])
       candidates.push({ o, dx, dy, span: next });
   }
   candidates.sort((a, b) => a.span - b.span || a.o.id.localeCompare(b.o.id));
@@ -262,9 +263,6 @@ function releaseShipCamera() {
   followShip = false;
   updateShipButton();
 }
-// Numerical guard only: far beyond the atlas even at Cosmology's maximum a(t).
-// Wheel/keyboard zoom may continue past the unchanged preset rail.
-const MAX_CAMERA_SPAN = 1e100;
 const SOLAR_CAMERA_SPAN = 0.00006;
 const GRID_TARGET_PIXELS = 128;
 // Presets and handle share the same piecewise logarithmic scale.
@@ -285,13 +283,7 @@ const zoomStops = [
   {
     value: 6,
     get span() {
-      return globalThis.UniverseMap?.overview().span || 115e9;
-    },
-  },
-  {
-    value: 6.15,
-    get span() {
-      return globalThis.UniverseMap ? UniverseMap.overview().span * 1.3 : 1.4e11;
+      return globalThis.UniverseMap?.overview().span ?? 115e9 * Cosmology.scale();
     },
   },
 ];
@@ -336,7 +328,7 @@ const SolarView = {
   },
 };
 function clampCameraSpan(span) {
-  return clamp(span, minimumCameraSpan(), SolarView.limit() ?? MAX_CAMERA_SPAN);
+  return clamp(span, minimumCameraSpan(), SolarView.limit() ?? zoomStops.at(-1).span);
 }
 function zoomInterpolate(input, from, to) {
   const n = clamp(input, zoomStops[0][from], zoomStops.at(-1)[from]);
@@ -346,6 +338,7 @@ function zoomInterpolate(input, from, to) {
     ),
     a = zoomStops[i - 1],
     b = zoomStops[i];
+  if (n === b[from]) return b[to];
   const fraction =
     from === 'span'
       ? Math.log(n / a.span) / Math.log(b.span / a.span)
@@ -435,11 +428,11 @@ function fitRoute(target, {wholeRoute = false} = {}) {
 function fitCameraPoints(points, v, minimumSpan) {
   const minX = Math.min(...points.map(p => p.x)), maxX = Math.max(...points.map(p => p.x)),
     minY = Math.min(...points.map(p => p.y)), maxY = Math.max(...points.map(p => p.y));
-  const span = Math.max(
+  const span = clampCameraSpan(Math.max(
     minimumSpan,
     (((maxX - minX) * width) / (v.right - v.left)) * 1.25,
     (((maxY - minY) * width) / (v.bottom - v.top)) * 1.25,
-  );
+  ));
   goCamera(
     (minX + maxX) / 2 - (((v.left + v.right) / 2 - width * 0.43) * span) / width,
     (minY + maxY) / 2 -
@@ -475,6 +468,10 @@ function resize() {
   height = r.height;
   $('filamentZoom').dataset.zoom = String(zoomStops[4].span);
   hudHeight = state?.tutorialStep ? 0 : document.querySelector('.telemetry')?.getBoundingClientRect().height || 0;
+  if (width > 0 && height > 0) {
+    cam.span = clampCameraSpan(cam.span);
+    if (cameraGoal) cameraGoal.span = clampCameraSpan(cameraGoal.span);
+  }
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   // Assigning either bitmap dimension clears the canvas, even when unchanged.
   if (canvas.width !== Math.round(width * dpr)) canvas.width = Math.round(width * dpr);

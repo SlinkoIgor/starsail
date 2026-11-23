@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 import re
 
+from generated_output import build_parser, write_generated
+
 ROOT = Path(__file__).resolve().parents[1]
+args = build_parser().parse_args()
 source = json.loads((ROOT / 'data-tools/sky-sources/quasars.json').read_text())
 records = source['objects']
 assert len({q['id'] for q in records}) == len(records)
@@ -20,6 +23,5 @@ code += '// END GENERATED QUASARS'
 path = ROOT / 'dist/cosmic-catalog.js'
 text, count = re.subn(r'// BEGIN GENERATED QUASARS\n.*?// END GENERATED QUASARS', lambda _: code, path.read_text(), flags=re.S)
 assert count == 1
-if text != path.read_text():
-    path.write_text(text)
+write_generated(path, text, check=args.check)
 print(f'Photographed quasars: {len(records)} additive nuclei; source positions, redshifts and errors retained')

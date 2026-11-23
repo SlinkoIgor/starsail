@@ -209,7 +209,5 @@ for(const [id,visible] of [['barnard',true],['proxima',true],['andromeda',true],
 console.log('PASS exact observed-image identities, no companion misassignment, visible credits/bands, preferred Hubble/Webb/ESO plus DSS gallery, distant objects, escaped labels and native card integration');
 console.log('PASS automatic DSS for all '+photographicStars.length+' eligible stars and streamed identities; one carousel with two chart scales and unique SVG clips');
 `);
-const before=fs.readFileSync('dist/sky-guide-data.js');
-execFileSync('python3',['data-tools/build-sky-guide.py']);
-assert.ok(before.equals(fs.readFileSync('dist/sky-guide-data.js')));
+execFileSync('python3', ['-B', 'data-tools/build-sky-guide.py', '--check']);
 console.log('PASS offline sky-guide rebuild reproduces identical bytes without changing the scientific catalogue');

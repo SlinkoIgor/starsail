@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 import zlib
 
+from generated_output import build_parser, write_generated
+
 ROOT=Path(__file__).resolve().parents[1]
 
 
@@ -42,7 +44,7 @@ def validate_targets(frozen):
     return pointer['revision']
 
 
-def build():
+def build(*, check=False):
     frozen=json.loads((ROOT/'data-tools/sky-sources/media-sga.json').read_text())
     assert frozen['version']==1
     catalogue_revision=validate_targets(frozen)
@@ -72,18 +74,20 @@ def build():
         if not photos:continue
         payload=json.dumps(dict(version=1,photos=dict(sorted(photos.items()))),ensure_ascii=False,separators=(',',':'))+'\n'
         name=f'sky-imaging-{part:02d}.json';revision=hashlib.sha256(payload.encode()).hexdigest()[:12]
-        (ROOT/'dist'/name).write_text(payload);files[part]=dict(url=name+'?v='+revision,count=len(photos))
+        write_generated(ROOT / 'dist' / name, payload, check=check)
+        files[part]=dict(url=name+'?v='+revision,count=len(photos))
     index=dict(version=1,catalogueRevision=catalogue_revision,sourceCatalogueRevision=frozen['catalogueRevision'],photoCount=len(records),
         targets=dict(sorted(targets.items())),files=files)
     index['revision']=hashlib.sha256(json.dumps(index,separators=(',',':')).encode()).hexdigest()[:12]
     script="'use strict';\nconst SKY_IMAGING_INDEX="+json.dumps(index,separators=(',',':'))+';\n'
-    (ROOT/'dist/sky-imaging-index.js').write_text(script)
+    write_generated(ROOT / 'dist/sky-imaging-index.js', script, check=check)
     html=(ROOT/'dist/index.html').read_text()
     for name in ['sky-imaging-index','sky-imaging']:
         digest=hashlib.sha256((ROOT/'dist'/f'{name}.js').read_bytes()).hexdigest()[:12]
         html=re.sub('('+name+r'\.js\?v=)[^" ]+',lambda m:m[1]+digest,html)
-    (ROOT/'dist/index.html').write_text(html)
+    write_generated(ROOT / 'dist/index.html', html, check=check)
     print(f'{len(records)} verified SGA observations; {len(files)} lazy shards; index {len(script)} bytes; revision {index["revision"]}')
 
 
-if __name__=='__main__':build()
+if __name__ == '__main__':
+    build(check=build_parser().parse_args().check)

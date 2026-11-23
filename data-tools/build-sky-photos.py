@@ -11,6 +11,8 @@ import re
 import unicodedata
 from photo_target_roles import catalogue_aliases, primary_identifiers
 
+from generated_output import build_parser, write_generated
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'data-tools/sky-sources'
 NAME_RULES = dict(
@@ -122,7 +124,7 @@ def namespaces(photo, name):
     return result
 
 
-def build():
+def build(*, check=False):
     frozen = json.loads((SRC / 'media-astropix.json').read_text())
     webb = json.loads((SRC / 'media-webb.json').read_text())
     records = frozen['records'] + webb['records']
@@ -162,7 +164,7 @@ def build():
         payload = json.dumps(dict(version=1, photos=photos), ensure_ascii=False, separators=(',', ':')) + '\n'
         revision = hashlib.sha256(payload.encode()).hexdigest()[:12]
         filename = 'sky-photos-' + publisher + '.json'
-        (ROOT / 'dist' / filename).write_text(payload)
+        write_generated(ROOT / 'dist' / filename, payload, check=check)
         files[publisher] = dict(url=filename + '?v=' + revision, count=len(photos))
     index = dict(version=1, files=files, targets={k: sorted(v, key=lambda photo: (photo in surveys, photo not in primary_short[k], photo)) for k, v in sorted(targets.items())},
                  nameRules=NAME_RULES, surveys=sorted(surveys),
@@ -171,17 +173,18 @@ def build():
     payload = json.dumps(index, ensure_ascii=False, separators=(',', ':'))
     index['revision'] = hashlib.sha256(payload.encode()).hexdigest()[:12]
     script = '"use strict";\nconst SKY_PHOTO_INDEX=' + json.dumps(index, ensure_ascii=False, separators=(',', ':')) + ';\n'
-    (ROOT / 'dist/sky-photos-index.js').write_text(script)
+    write_generated(ROOT / 'dist/sky-photos-index.js', script, check=check)
     index_path = ROOT / 'dist/index.html'
     cache_key = hashlib.sha256(script.encode()).hexdigest()[:12]
-    index_path.write_text(re.sub(r'(sky-photos-index\.js\?v=)[^" ]+', lambda m: m[1]+cache_key, index_path.read_text()))
+    html = re.sub(r'(sky-photos-index\.js\?v=)[^" ]+', lambda m: m[1]+cache_key, index_path.read_text())
+    write_generated(index_path, html, check=check)
     audit = dict(version=1, catalogueRevision=catalogue_revision, imageRevision=index['revision'],
                  reviewed=len(reviews), restricted=sum(bool(r['otherIdentifiers']) for r in reviews),
                  unconfirmed=sum(not r['primaryIdentifiers'] for r in reviews), cases=reviews)
-    (SRC / 'photo-target-audit.json').write_text(json.dumps(audit, ensure_ascii=False, indent=2)+'\n')
+    write_generated(SRC / 'photo-target-audit.json', json.dumps(audit, ensure_ascii=False, indent=2)+'\n', check=check)
     print(f'{index["photoCount"]} observations; {len(targets)} classified identity keys; {len(files)} lazy metadata files')
     print(f'{audit["reviewed"]} multi-object records reviewed; {audit["restricted"]} restricted; {audit["unconfirmed"]} without confirmed primary targets')
 
 
 if __name__ == '__main__':
-    build()
+    build(check=build_parser().parse_args().check)

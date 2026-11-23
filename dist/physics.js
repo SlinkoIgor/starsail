@@ -698,6 +698,7 @@ Object.assign(OrbitalArrival,{
 });
 
 const FlightSetup={
+ mobile(){return typeof window!=='undefined'&&!!window.matchMedia?.('(max-width: 700px), (max-height: 500px) and (pointer: coarse)').matches;},
  normalize(c={}){return{...ShipPhysics.normalize(c),engine:!!c.engine,dump:!!c.dump,sail:!!c.sail,collector:!!c.collector,diffraction:c.diffraction!==false,burst:!!c.burst,burstSpectrum:['iip','ia','ibc'].includes(c.burstSpectrum)?c.burstSpectrum:'iip',brakeEngine:c.brakeEngine!==false,brakeSail:c.brakeSail!==false,collectGas:c.collectGas!==false,fill:c.arrivalFuelPercent!==null&&c.arrivalFuelPercent!==undefined?Number(c.arrivalFuelPercent)>0:!!c.fill,arrivalFuelPercent:c.arrivalFuelPercent!==null&&c.arrivalFuelPercent!==undefined&&Number.isFinite(+c.arrivalFuelPercent)?Math.max(0,Math.min(100,+c.arrivalFuelPercent)):null,reservePercent:Number.isFinite(+c.reservePercent)?Math.max(1,Math.min(99,+c.reservePercent)):99,densityCm3:Number.isFinite(+c.densityCm3)?Math.max(0,Math.min(1e6,+c.densityCm3)):1,capacityKg:Number.isFinite(+c.capacityKg)?Math.max(.01,Math.min(100,+c.capacityKg)):1,massSolar:c.massSolar!==null&&c.massSolar!==undefined&&Number.isFinite(+c.massSolar)&&+c.massSolar>=0?Math.min(1e6,+c.massSolar):null,luminositySolar:c.luminositySolar>0?Math.min(1e12,+c.luminositySolar):null};},
  defaults(s=state){return this.normalize({sail:true,collector:true,burst:false,engine:true,brakeEngine:true,brakeSail:true,collectGas:true,arrivalFuelPercent:50,capacityKg:s.tankCapacityKg||1});},
  legacy(s){const mode=s.flight?.departureMode||s.departureMode,p=s.flight?.mission,c=this.normalize(p?.setup||(!s.flight?s.flightSetup:null)||{engine:mode==='engine',sail:mode!=='engine',collector:mode!=='engine',burst:mode==='burst',brakeEngine:true,brakeSail:true,densityCm3:1,capacityKg:s.tankCapacityKg||1});if(p&&p.setup?.divergenceDeg===undefined)c.divergenceDeg=0;if(p&&c.collector&&c.sail)c.diffraction=!!p.acceleration?.diffraction&&p.acceleration.diffraction.enabled!==false;if(p&&(p.model||1)<4){c.collectorDiameterM=p.acceleration?.diffraction?.diameterM||1000;c.maxAccelerationG=100;c.maxBrakingG=p.brake?.plan?.maxG||100;}return c;},
@@ -720,12 +721,18 @@ const FlightSetup={
   if(!this.available(source,used))return{...c,engine:true,dump:false,sail:false,collector:false,burst:false};
   return{...c,collector:c.sail&&c.collector,burst:c.sail&&c.burst&&source.id!=='sol'};
  },
+ departure(input,source,used=new Set(state.destroyed)){
+  // Resolve the mobile preset at each departure, without rewriting preferences
+  // or the setup of an executing (possibly restored desktop) trajectory.
+  if(OrbitalArrival.enabled&&this.mobile())input={...input,engine:true,dump:false,sail:true,collector:true,burst:true,brakeEngine:true,brakeSail:true,collectGas:true};
+  return this.resolve(input,source,used);
+ },
  read(s=state){
   if(s.flight||!OrbitalArrival.enabled)return this.legacy(s);
   if ((s.tutorialStep === 'propulsion' || s.tutorialStep === 'launch') && s.selected === 'proxima') {
     return {...this.defaults(s), sail:false, collector:false};
   }
-  return this.resolve(this.preferred(s),s.planningSource||object(s.current),new Set(s.destroyed));
+  return this.departure(this.preferred(s),s.planningSource||object(s.current),new Set(s.destroyed));
  },
  sync(s=state){if(!s.flight&&OrbitalArrival.enabled){const c=this.read(s);s.departureMode=c.sail?(c.burst?'burst':'beam'):'engine';}},
  storeDraft(draft,preferred,source,changes=new Set()){
@@ -1134,7 +1141,7 @@ const MissionReach={
 // The same composable plan also feeds stopped routes and black-hole passages.
 Object.assign(MissionPlanner,{
  legSetup(c,source,used=new Set(state.destroyed)){
-  if(OrbitalArrival.enabled)return FlightSetup.resolve(c,source,used);
+  if(OrbitalArrival.enabled)return FlightSetup.departure(c,source,used);
   const available=source&&['star','home'].includes(source.kind)&&!used.has(source.id);
   return FlightSetup.normalize({...c,sail:c.sail&&available,burst:c.burst&&available&&source.id!=='sol'});
  },

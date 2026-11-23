@@ -54,7 +54,7 @@ console.log('PASS 12000 distinct verified observational JPEGs, exact identities,
 
 // Small independent examples exercise matching decisions rather than repeating
 // the import against its own output. A nearby galaxy cannot override a wrong ID.
-execFileSync('python3',['-c',`
+execFileSync('python3',['-B','-c',`
 import importlib.util
 spec=importlib.util.spec_from_file_location('sga','data-tools/fetch-sga-photos.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
@@ -74,8 +74,9 @@ assert m.ngc_key('NGC 0001A')=='NGC1A' and m.ngc_key('host NGC 1')==''
 assert 0<m.separation(359.999,20,.001,20)<10, 'RA wrap'
 `]);
 console.log('PASS import rejects wrong, ambiguous, inherited and discordant identities; duplicate physical galaxies are merged');
-execFileSync('python3',['-c',`
-import copy,importlib.util,json
+execFileSync('python3',['-B','-c',`
+import copy,importlib.util,json,sys
+sys.path.insert(0,'data-tools')
 spec=importlib.util.spec_from_file_location('imaging','data-tools/build-sky-imaging.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 frozen=json.load(open('data-tools/sky-sources/media-sga.json'))
@@ -115,7 +116,5 @@ context.PARUS_CATALOG_FILES[index.files[part].url.split('?')[0]]=JSON.stringify(
 await imaging.ensure(first);assert.ok(imaging.failed.has(part));assert.equal(imaging.cache.size,0);
 console.log('PASS lazy metadata, shared requests, bounded eight-part cache, failures/retry, standalone and rejection of model images');
 
-const files=['dist/sky-imaging-index.js',...Object.values(index.files).map(e=>'dist/'+e.url.split('?')[0])],before=files.map(p=>fs.readFileSync(p));
-execFileSync('python3',['data-tools/build-sky-imaging.py']);
-files.forEach((p,i)=>assert.ok(before[i].equals(fs.readFileSync(p)),p));
+execFileSync('python3', ['-B', 'data-tools/build-sky-imaging.py', '--check']);
 console.log('PASS deterministic offline rebuild of the entire imaging index and all metadata shards');

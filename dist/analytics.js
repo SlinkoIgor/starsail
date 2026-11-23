@@ -82,8 +82,8 @@ const GameAnalytics = (() => {
     const f = state.flight, e = meta.expedition, key = fingerprint(f);
     let record = flights.get(f);
     if (record) {
-      // Re-enabling collection reloads metadata from storage; keep the live
-      // record attached to it so its completion flag is persisted as well.
+      // Keep the live record attached to the current expedition so its
+      // completion flag is persisted as well.
       if (record.key !== key || e.activeFlight !== record) {
         record.key = key; e.activeFlight = record; save();
       }
@@ -171,17 +171,7 @@ const GameAnalytics = (() => {
     track('active_time', {seconds: Math.round(seconds)});
   }
   function start() {
-    if (ready || !configured()) return;
-    const setting = $('analyticsSetting'), toggle = $('analyticsToggle');
-    setting.hidden = false;
-    toggle.checked = !blocked() && read(OPT_OUT_KEY) !== '1' && !read('umami.disabled');
-    toggle.disabled = blocked();
-    toggle.onchange = safe(() => {
-      try { localStorage.setItem(OPT_OUT_KEY, toggle.checked ? '0' : '1'); } catch {}
-      if (toggle.checked) start();
-      else { ready = false; }
-    });
-    if (!toggle.checked) return;
+    if (ready || !configured() || blocked() || read(OPT_OUT_KEY) === '1' || read('umami.disabled')) return;
     let saved;
     try { saved = JSON.parse(read(STORE_KEY)); } catch {}
     const returning = isId(saved?.playerId);

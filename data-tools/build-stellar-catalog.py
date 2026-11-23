@@ -10,13 +10,17 @@ import math
 import os
 import pathlib
 import re
-import sys
 from urllib.parse import quote
 from stellar_base import validate as validate_base
+
+from generated_output import build_parser, write_generated
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / 'data-tools/stellar-sources'
 read = lambda name: json.loads((SRC / name).read_text())
+parser = build_parser()
+parser.add_argument('--validate-base', type=pathlib.Path)
+args = parser.parse_args()
 selection = read('catalog-selection.json')
 identities = read('simbad-identities.json')
 catalogs = read('orbit-catalogs.json')
@@ -24,6 +28,8 @@ sources = read('sources.json')
 
 
 def write(path, content):
+    if args.check:
+        return write_generated(path, content, check=True)
     if path.exists() and path.read_text() == content:
         return
     temp = path.with_name(path.name + '.' + str(os.getpid()) + '.tmp')
@@ -475,8 +481,8 @@ boot = json.loads(text.split('=', 1)[1].rstrip(';\n'))
 if boot['revision'] != data['baseCatalogRevision']:
     validation = dict(revision=boot['revision'], selectionSha256=hashlib.sha256((SRC / 'catalog-selection.json').read_bytes()).hexdigest(),
                       policy='Exact source identities and unchanged adopted astrometry of all modelled systems')
-    if len(sys.argv) == 3 and sys.argv[1] == '--validate-base':
-        candidate = json.loads(pathlib.Path(sys.argv[2]).read_text())
+    if args.validate_base:
+        candidate = json.loads(args.validate_base.read_text())
         assert candidate['revision'] == boot['revision']
         validate_base(selection, candidate['objects'])
     elif boot.get('stellarCatalog', {}).get('baseValidation') != validation:

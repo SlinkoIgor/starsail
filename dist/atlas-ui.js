@@ -311,10 +311,7 @@ function objectOrbitBox(o) {
   return box.every(Number.isFinite) && box[2] > box[0] && box[3] > box[1] ? box : null;
 }
 function fitMapBox(b, v = routeViewport()) {
-  const span = Math.max(.00006, (b[2]-b[0])*width/(v.right-v.left)*1.25,
-    (b[3]-b[1])*width/(v.bottom-v.top)*1.25);
-  goCamera((b[0]+b[2])/2-((v.left+v.right)/2-width*.43)*span/width,
-    (b[1]+b[3])/2-((v.top+v.bottom)/2-mapOriginY())*span/width, span);
+  fitCameraPoints([{x:b[0], y:b[1]}, {x:b[2], y:b[3]}], v, SOLAR_CAMERA_SPAN);
 }
 function focusObject(o) {
   if (!o) return;

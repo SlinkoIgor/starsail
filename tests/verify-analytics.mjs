@@ -44,8 +44,6 @@ assert.equal(named(g, 'theme_changed').length, 0, 'loading saved/default palette
 const player = named(g, 'game_opened')[0].id;
 const expedition = data(g, 'expedition_started').expedition_id;
 g.run(`
-assert.equal($('analyticsSetting').hidden,false);
-assert.equal($('analyticsToggle').checked,true);
 showObject('alpha');showObject('alpha');$('infoDialog').close();showObject('alpha');
 applyTheme('light');applyTheme('light');applyTheme('radar');
 state.journal.push({text:'SECRET'});
@@ -153,20 +151,19 @@ for (const options of [
   assert.equal(disabled.store.has('parus-analytics-v1'), false, 'no tracking ID while disabled');
 }
 const before = g.requests.length;
-g.run(`$('analyticsToggle').checked=false;$('analyticsToggle').onchange();applyTheme('amber');persist();`);
+g.store.set('parus-analytics-disabled', '1');
+g.run(`applyTheme('amber');persist();`);
 assert.equal(g.requests.length, before);
 assert.equal(g.store.get('parus-analytics-disabled'), '1');
 
 reload.run(`
 state.selected='alpha';launch(true);
-$('analyticsToggle').checked=false;$('analyticsToggle').onchange();
-$('analyticsToggle').checked=true;$('analyticsToggle').onchange();
 state.flight.covered=state.flight.distance;finishFlight(true);
 showObject('alpha');
 showDialog('<h2>Other dialog</h2>');showObject('alpha');
 `);
-const reenabled = JSON.parse(reload.store.get('parus-analytics-v1'));
-assert.equal(reenabled.expedition.activeFlight.finished, true, 're-enabled tracking persists the live completion flag');
+const completed = JSON.parse(reload.store.get('parus-analytics-v1'));
+assert.equal(completed.expedition.activeFlight.finished, true, 'tracking persists the live completion flag');
 assert.equal(named(reload, 'object_card_opened').length, 2, 'replacing another dialog with the same card is a new open');
 
 const noStorage = await game({brokenStorage:true});

@@ -69,12 +69,27 @@ for(const epoch of [0,14e9])for(const mode of ['full','radial']){
    assert.ok(Math.abs(fraction*d-q.comoving)<q.comoving*1e-12,'full 3D distance sets the crossing: '+id+' / '+mode);
   }
   assert.deepEqual(ReachDisplay.route(target,{comoving:d*2},null),[],'no crossing before a reachable target');
+  const section=ReachDisplay.section(q,target);
+  assert.equal(section.plane,mode==='full');
+  if(mode==='full')assert.ok(Math.hypot(...target.p3.slice(0,2))*Cosmology.scale()>section.radius,
+   'an unreachable target must be outside its own depth section: '+id);
  }
  assert.deepEqual(ReachDisplay.route(object('alpha'),q,q),[],'local targets need no cosmological mark');
 }
 state.cosmicTime=0;Cosmology.sync(state);MapSlice.mode='full';state.selected='hyperion';
 assert.ok(Math.hypot(...object('hyperion').p3.slice(0,2))<light.comoving);
 assert.equal(MissionPlanner.preview().unreachable,true,'the screenshot target really is beyond the photon horizon');
+const hyperionSection=ReachDisplay.section(light);
+assert.ok(hyperionSection.radius>1e10&&hyperionSection.radius<1.1e10,'the visible circle is about 10.9 billion XY light years, not the 16.7-billion silhouette');
+assert.equal(light.radius,Cosmology.horizon(0),'the physical horizon does not change with selection');
+assert.equal(ReachDisplay.section(light,object('mom-z14')).radius,0,'no circle when the entire target plane is outside the sphere');
+const bossSection=ReachDisplay.section(light,object('boss-wall'));
+assert.ok(bossSection.radius>Math.hypot(...object('boss-wall').p3.slice(0,2)),'a reachable target remains inside its depth section');
+const originalCircle=circle,circles=[];circle=(x,y,r)=>circles.push(r);
+const reachShip=ReachDisplay.ship;ReachDisplay.ship=()=>({...ship,setup:{arrivalFuelPercent:50}});
+MapLabels.begin();drawReachability();circle=originalCircle;ReachDisplay.ship=reachShip;
+assert.ok(circles.some(r=>Math.abs(r-hyperionSection.radius*width/cam.span)<1e-8),'the actual rendered circle uses the section radius');
+assert.ok(MapLabels.queue.some(q=>q.key==='light-reach'&&q.name.includes('НА ГЛУБИНЕ ЦЕЛИ')));
 MapLabels.begin();drawRouteReachability(ship,light);
 assert.equal(MapLabels.queue.filter(q=>q.key.startsWith('route-reach-')).length,1,'near-identical limits share one readable mark');
 assert.ok(MapLabels.queue.some(q=>q.name.includes('СВЕТА И ПОЛЁТА')));
@@ -96,5 +111,15 @@ for(const mode of ['full','radial']){
  assert.ok(mark&&p);assert.ok(Math.hypot(mark.x-p.a.x,mark.y-p.a.y)<1e-8,'active crossing shares the actual route in '+mode);
  assert.deepEqual(ReachDisplay.route(object('alpha'),q,null),[],'browsing never changes the active crossing');
 }
+MapSlice.mode='full';state.selected='mom-z14';
+const activeSection=ReachDisplay.section(light);
+assert.deepEqual(activeSection,ReachDisplay.section(light,target),'an executing leg keeps its own target depth while browsing');
+state.flight=null;state.current='boss-wall';state.ship=Space.point(from.p3);
+const remoteSection=ReachDisplay.section(light,target),dx=target.p3[0]-from.p3[0],dy=target.p3[1]-from.p3[1];
+assert.equal(Math.hypot(dx,dy)<=remoteSection.radius,Space.distance(from,target)<=light.comoving,
+ 'the section agrees with 3D reachability from a distant departure');
+assert.ok(Math.abs(Math.hypot(remoteSection.radius,target.p3[2]-from.p3[2])/light.comoving-1)<1e-12,
+ 'a distant departure uses relative depth, not depth from the Sun');
 console.log('PASS 3D horizon crossings precede distant targets in full/radial maps and later epochs; merged/separate marks, frozen expansion and active affine routes');
+console.log('PASS actual horizon circles use the selected target depth; hidden empty sections, reachable/unreachable targets, remote departures and unchanged physical range');
 }`);

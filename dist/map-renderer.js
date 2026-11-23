@@ -183,6 +183,23 @@ const ReachDisplay = {
     this.memo = { flight: f, mission: f.mission, at: now, value };
     return value;
   },
+  target() {
+    return state.flight ? object(state.flight.target)
+      : Route.endpoint(state.itinerary[0]) || object(state.selected);
+  },
+  section(q, target = this.target()) {
+    if (!q) return null;
+    const source = object(state.current) || state.ship,
+      plane = !MapRadial.active() && target?.navigable && target.p3 &&
+        (state.flight ? state.flight.cosmic : Cosmology.isCosmic(source, target));
+    if (!plane) return {radius:q.radius, plane:false};
+    // XY flattens Z. Intersect the reach sphere with the target's Z plane,
+    // rather than draw its outer silhouette around objects at every depth.
+    const depth = Math.abs((state.flight?.aim || target).p3[2] - state.ship.p3[2]),
+      radius = depth < q.comoving
+        ? Math.sqrt((q.comoving-depth)*(q.comoving+depth))*Cosmology.scale() : 0;
+    return {radius, plane:true};
+  },
   route(target, ship, light) {
     if (state.expansion === false || !target?.navigable || !target.p3) return [];
     const f = state.flight,
@@ -223,7 +240,7 @@ function renderReachability() {
   UIPatch.set(out, 'title', state.expansion !== false
       ? 'Текущие настройки и запас топлива на финише ' +
         Math.round(c.arrivalFuelPercent || 0) +
-        '%. Разгон и полная остановка у протяжённой цели; для орбиты расчёт индивидуален. Проекция трёхмерной сферы: положение цели внутри круга не гарантирует достижимость; учитывается и глубина.'
+        '%. Разгон и полная остановка у протяжённой цели; для орбиты расчёт индивидуален. На обычной карте круг учитывает глубину выбранной далёкой цели; на радиальной карте показана проекция пространственного предела.'
       : '');
 }
 
@@ -232,9 +249,7 @@ function circleLabel(key, name, detail, p, r, priority = 25) {
   if (r >= 5) MapLabels.add({ key, name, detail, priority, size: 9, candidates: [anchor] });
 }
 function drawRouteReachability(ship, light) {
-  const target = state.flight ? object(state.flight.target)
-    : Route.endpoint(state.itinerary[0]) || object(state.selected),
-    marks = ReachDisplay.route(target, ship, light);
+  const marks = ReachDisplay.route(ReachDisplay.target(), ship, light);
   if (marks.length === 2 && distanceText(marks[0].radius) === distanceText(marks[1].radius) &&
       Math.hypot(marks[0].x-marks[1].x, marks[0].y-marks[1].y) < 10) {
     marks[0].kind = 'both';
@@ -257,9 +272,10 @@ function drawReachability() {
   // on every braking frame while the player is looking at nearby stars.
   if (cam.span < 1e6) return;
   const light = lightReachability(),
+    lightSection = ReachDisplay.section(light),
     p = screen(state.ship);
   if (light && cam.span >= 1e9) {
-    const r = (light.radius * width) / cam.span;
+    const r = (lightSection.radius * width) / cam.span;
     if (r > 0 && r < 20000) {
       ctx.save();
       ctx.globalAlpha = 0.7;
@@ -267,7 +283,8 @@ function drawReachability() {
       ctx.restore();
       circleLabel(
         'light-reach',
-        'ПРЕДЕЛ СВЕТА · ' + distanceText(light.radius) + ' · ПРОЕКЦИЯ',
+        'ПРЕДЕЛ СВЕТА · ' + distanceText(light.radius) +
+          (lightSection.plane ? ' · НА ГЛУБИНЕ ЦЕЛИ' : ' · ПРОЕКЦИЯ'),
         'СВЕТ, ИСПУЩЕННЫЙ СЕЙЧАС · ПРОЕКЦИЯ СФЕРЫ В 3D',
         p,
         r,
@@ -275,16 +292,21 @@ function drawReachability() {
       );
     }
   }
-  const q = ReachDisplay.ship();
-  drawRouteReachability(q, light);
+  const q = ReachDisplay.ship(),
+    section = ReachDisplay.section(q);
+  // A section and a ray cross the sphere at different depths. Show one
+  // interpretation at a time; an empty section still gets the ray's limit.
+  if (!lightSection?.plane || !lightSection.radius && !section?.radius)
+    drawRouteReachability(q, light);
   if (!q || !(q.radius > 0)) return;
-  const r = (q.radius * width) / cam.span;
-  if (r > 20000) return;
+  const r = (section.radius * width) / cam.span;
+  if (!(r > 0) || r > 20000) return;
   ctx.save();
   ctx.globalAlpha = 0.85;
   circle(p.x, p.y, r, '#454545', 1.2, [10, 5, 2, 5]);
   ctx.restore();
-  const name = 'ПРЕДЕЛ ПОЛЁТА · ' + distanceText(q.radius) + ' · ПРОЕКЦИЯ',
+  const name = 'ПРЕДЕЛ ПОЛЁТА · ' + distanceText(q.radius) +
+      (section.plane ? ' · НА ГЛУБИНЕ ЦЕЛИ' : ' · ПРОЕКЦИЯ'),
     detail =
       'ТОПЛИВНЫЙ БАК НА ФИНИШЕ ≥ ' +
       Math.round(q.setup.arrivalFuelPercent || 0) +

@@ -1,6 +1,7 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const harness=fs.readFileSync('tests/verify-map.mjs','utf8').split('\nrun(`')[0]+'\nexport {context,run};';
 const {context,run}=await import('data:text/javascript,'+encodeURIComponent(harness)+'#continuity');
+run(fs.readFileSync('dist/universe-map.js','utf8'));
 context.radialManifest=JSON.parse(fs.readFileSync('dist/'+JSON.parse(fs.readFileSync('dist/map-radial/current.json')).dataRoot+'/manifest.json'));
 run(`{
  state=initial();paused=true;state.expansion=false;Cosmology.sync(state);MapSlice.setMode('full');MapLayers.active=false;width=1440;height=1000;cam={x:0,y:0,span:24};cameraGoal=null;
@@ -27,27 +28,27 @@ run(`{
  followShip=false;cam={x:100,y:200,span:24};focusShip();assert.equal(followShip,true);
  for(const deltaY of [-100,100,220,-220]){zoomAtPointer({preventDefault(){},deltaY,clientX:30,clientY:200});const p=screen(state.ship);assert.ok(Math.hypot(p.x-width/2,p.y-height/2)<1e-7);}
  const c=shipCamera(.01);goCamera(cam.x,cam.y,.01,true,true);assert.ok(Math.hypot(cam.x-c.x,cam.y-c.y)<1e-12);releaseShipCamera();
- // Wheel zoom can fit the whole atlas after expansion, including a frozen late
- // epoch. The preset rail stays fixed; the camera and ship focus may go beyond it.
+ // Every zoom path must end at the same overview, including in a frozen late epoch.
  const expedition=JSON.stringify(state),presets=JSON.stringify(zoomStops);
  for(const size of [[1440,1000],[390,844]])for(const epoch of [0,15e9,100e9,1e12])for(const expanding of [true,false]){
   [width,height]=size;state.cosmicTime=epoch;state.expansion=expanding;Cosmology.sync(state);
-  const physics=JSON.stringify(state),radius=46.5e9*Cosmology.scale();
-  cam={x:0,y:0,span:1.4e11};cameraGoal=null;
-  const pointer={preventDefault(){},deltaY:220,clientX:width*.43,clientY:height*(width<700?.39:.50)};
-  let steps=0;
-  do{zoomAtPointer(pointer);steps++;}while(radius*width/cam.span>Math.min(width*.4,height*.35)&&steps<100);
-  assert.ok(steps<100,'the expanded atlas fits without reaching the old zoom cap');
-  assert.ok(Number.isFinite(cam.span)&&cam.span>1.4e11,'wheel can continue beyond the fixed preset rail');
+  const physics=JSON.stringify(state),radius=UniverseMap.radius*Cosmology.scale(),overview=UniverseMap.overview();
+  cam={...overview,span:overview.span/2};cameraGoal=null;
+  const pointer={preventDefault(){},deltaY:220,clientX:width*.43,clientY:mapOriginY()};
+  zoomAtPointer(pointer);
+  assert.deepEqual(cam,overview,'wheel stops exactly at the current Universe overview');
+  zoomAtPointer({...pointer,clientX:width*.8});
+  assert.deepEqual(cam,overview,'extra wheel input at the limit leaves the view in place');
+  assert.equal(zoomInterpolate(6,'value','span'),overview.span,'slider ends at the same overview');
   const centre=screen(object('sol')),r=radius*width/cam.span;
   assert.ok(centre.x-r>=0&&centre.x+r<=width&&centre.y-r>=0&&centre.y+r<=height,'the whole atlas boundary fits');
   for(const o of OBJECTS.filter(o=>o.p3&&!o.atlasOnly)){
    const p=screen(o);assert.ok(p.x>=0&&p.x<=width&&p.y>=0&&p.y<=height,'catalogue position fits: '+o.id);
   }
   const span=cam.span;focusShip();assert.ok(cam.span<span,'centring restores the ship surroundings from the expanded overview');releaseShipCamera();
-  goCamera(cam.x,cam.y,span*2,true);assert.equal(cam.span,span*2,'camera navigation can retain wide views');
+  goCamera(cam.x,cam.y,span*2,true);assert.equal(cam.span,overview.span,'camera navigation obeys the same limit');
   assert.ok(Number.isFinite(gridMetrics().majorPixels));updateZoomControl();
-  assert.equal($('zoomSlider').value,'6.15','the slider rests at its upper endpoint');
+  assert.equal($('zoomSlider').value,'6','the slider rests on the Universe mark');
   // Return to the solar neighbourhood with the existing atlas navigation.
   ExtendedCatalog.focus(object('sol'));assert.equal(cameraGoal.span,24);assert.equal(cameraGoal.x,0);assert.equal(cameraGoal.y,0);
   assert.equal(JSON.stringify(state),physics,'camera actions never advance or edit the expedition');
@@ -55,8 +56,17 @@ run(`{
  state=JSON.parse(expedition);Cosmology.sync(state);width=1440;height=1000;cameraGoal=null;cam={x:0,y:0,span:24};
  const cursor={preventDefault(){},deltaY:220,clientX:width*.71,clientY:height*.32},anchor=world(cursor.clientX,cursor.clientY);
  for(let i=0;i<30;i++)zoomAtPointer(cursor);
- const at=screen(anchor);assert.ok(Math.hypot(at.x-cursor.clientX,at.y-cursor.clientY)<1e-7,'wheel keeps its cursor anchor beyond the old cap');
- for(let i=0;i<30;i++)zoomAtPointer({...cursor,deltaY:-220});assert.ok(Math.abs(cam.span/24-1)<1e-12);
+ const at=screen(anchor);assert.ok(Math.hypot(at.x-cursor.clientX,at.y-cursor.clientY)<1e-7,'wheel keeps its cursor anchor at the overview limit');
+ for(let i=0;i<40;i++)zoomAtPointer({...cursor,deltaY:-220});
+ assert.equal(cam.span,SOLAR_CAMERA_SPAN,'wheel stops at the Planets mark');
+ zoomAtPointer(cursor);assert.ok(cam.span>SOLAR_CAMERA_SPAN,'reverse direction works immediately at the limit');
+ const broad=UniverseMap.overview().span;
+ goCamera(0,0,broad,true);goCamera(0,0,broad*2);
+ canvas.getBoundingClientRect=()=>({width:390,height:844});resize();
+ assert.ok(UniverseMap.overview().span<broad);
+ assert.equal(cam.span,UniverseMap.overview().span,'resize bounds the current camera');
+ assert.equal(cameraGoal.span,cam.span,'resize bounds an in-flight animation too');
+ canvas.getBoundingClientRect=bounds;width=1440;height=1000;
  assert.equal(JSON.stringify(zoomStops),presets);
  cam={x:0,y:0,span:24};cameraGoal=null;
  // Every orbit in radial is exactly the ordinary XY ellipse plus one translation.
@@ -70,4 +80,4 @@ run(`{
  for(const mode of ['full','radial']){cam={...MapLayout.project(object('alpha')),span:.002};MapSlice.setMode(mode);let n=0;OrbitalMotion.traceCurve=(pointAt,{knots})=>{if(['alpha','hyg-71453'].some(id=>{const p=MapLayout.project(object(id));return knots.some(E=>{const q=pointAt(E);return Math.hypot(p.x-q.x,p.y-q.y)<1e-11;})}))n++;};OrbitalMotion.draw();assert.equal(n,2,'both A/B tracks immediately drawn in '+mode);}
  OrbitalMotion.traceCurve=trace;MapSlice.setMode('full');
 }`);
-console.log('PASS retained viewport detail, readiness during pan, smooth filament fade, expanded-universe wheel zoom and solar return, ship/cursor anchoring and XY ellipses with immediate AB tracks in all modes');
+console.log('PASS retained viewport detail, readiness during pan, smooth filament fade, bounded zoom from Planets to the expanded Universe and solar return, ship/cursor anchoring and XY ellipses with immediate AB tracks in all modes');

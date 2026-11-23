@@ -147,12 +147,9 @@ ExtendedCatalog.pinned.delete('procyon');state=initial();
 ExtendedCatalog.capture(state);assert.equal(OrbitalMotion.isOrbiting(object('sirius')),true,'fresh state keeps orbital animation');
 console.log('PASS sourced stellar identities, 99-target audit, 37 hierarchies, Gl 644 quintuple, honest missing elements, 31 relative orbits, '+cases+' projection/phase cases, barycentres, no association sticks, sky-photo fields and frozen old saves');
 `);
-const paths=['data-tools/stellar-catalog.json','dist/catalog-extended.js'];
-const before=paths.map(p=>fs.readFileSync(p));
-execFileSync('python3',['data-tools/build-stellar-catalog.py'],{stdio:'pipe'});
-for(let i=0;i<paths.length;i++)assert.ok(fs.readFileSync(paths[i]).equals(before[i]),'offline reproducible '+paths[i]);
+execFileSync('python3', ['-B', 'data-tools/build-stellar-catalog.py', '--check']);
 console.log('PASS offline stellar catalogue rebuild reproduces identical bytes');
-execFileSync('python3',['-c',`
+execFileSync('python3',['-B','-c',`
 import copy,json,sys
 sys.path.insert(0,'data-tools')
 from stellar_base import validate

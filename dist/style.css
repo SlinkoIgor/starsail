@@ -841,6 +841,7 @@ html[data-theme="dark"] .mission-builder{--muted:#b0b0b0}
 .menu-heading{padding:10px 12px 12px;margin-bottom:4px;border-bottom:1px solid var(--line);font:10px var(--mono);color:var(--muted)}
 .menu-setting{padding:12px;font:11px/1.5 var(--mono)}
 .menu-setting+.menu-setting{border-top:1px solid var(--line)}
+.game-version{display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:10px}
 .map-mode-switch{display:grid;margin:8px 0 0}
 .map-mode-option{display:flex;align-items:center;gap:12px;min-height:40px;cursor:pointer}
 .settings-toggle:hover,.settings-toggle:focus-within{background:var(--button-surface-hover)}
@@ -1179,13 +1180,56 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
  .object-card .fact-row .info-pop,.object-card .stellar-orbit-row .info-pop{left:0}
 }
 
-/* Edge-to-edge actions, flight cancellation and object detail sizing. */
+/* Phones keep the map, the top actions and a compact, edge-to-edge target. */
 @media(max-width:700px),(max-height:500px) and (pointer:coarse){
+ :root{--hud:0px}
+ .telemetry,#app .map-sidebar,.map-heading{display:none}
+ .map-panel{bottom:0}
  .map-actions{top:0;left:0;right:0;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);background:var(--paper);border-bottom:1px solid var(--line)}
  .map-actions .menu-button{width:100%;min-width:0;height:40px;padding:0;display:grid;place-items:center}
  .map-actions .menu-button svg,.map-actions .map-filter-button svg{width:19px;height:19px}
  .zen-mode .map-actions{background:transparent;border-color:transparent}
  .menu-popover,.theme-picker{top:calc(env(safe-area-inset-top) + 44px);right:max(8px,env(safe-area-inset-right))}
+ .catalog-drawer{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+ .flight-card,.flight-card.in-flight{left:0;right:0;bottom:0;width:100%;max-height:calc(100dvh - max(4px,env(safe-area-inset-top)) - 56px);display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:8px 12px;padding:10px max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-width:1px 0 0;z-index:7}
+ .flight-card{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+ .flight-card .card-scroll{display:contents}
+ .flight-card .card-overview,.flight-card.is-planning .card-overview{grid-column:1/-1;grid-row:1;padding:0;border:0}
+ .flight-card .card-topline,.flight-card .quick-flight,.flight-card .flight-details,.flight-card #configureFlight,.flight-card .quick-peak{display:none}
+ .flight-card .target-heading h2,.flight-card.in-flight .target-heading h2{font-size:18px;line-height:1.25;letter-spacing:-.25px;margin:0 0 4px;overflow-wrap:anywhere}
+ .flight-card .target-heading h2{display:flex;align-items:flex-start;gap:8px}
+ .flight-card #targetName{min-width:0;flex:1}
+ .flight-card .target-tools{display:flex;flex:none;gap:6px}
+ .flight-card .target-heading h2 button{margin-left:7px;top:0;width:24px;height:24px}
+ .flight-card .target-tools #objectInfo,.flight-card .target-tools #objectFocus{margin-left:0}
+ .flight-card .target-heading h2 button svg{width:20px;height:20px}
+ .flight-card .target-meta{display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:baseline;gap:12px}
+ .flight-card .target-type,.flight-card.is-planning .target-type{font:10px/1.5 var(--sans);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .flight-card .target-range{display:flex;gap:0}
+ .flight-card .distance-caption{display:none}
+ .flight-card .distance-row strong{max-width:none;font:11px/1.5 var(--mono);letter-spacing:0;text-align:left}
+ .flight-card .distance-row small{font-size:10px}
+ .flight-card .card-content{grid-column:1;grid-row:2;padding:0}
+ .flight-card.in-flight .card-content{grid-column:1/-1}
+ .flight-card .arrival-estimate,.flight-card.is-planning .arrival-estimate{display:flex;flex-wrap:wrap;gap:2px 16px;padding:5px 0 0;min-height:0}
+ .flight-card .arrival-estimate>.eyebrow{display:none}
+ .flight-card .arrival-estimate>div{display:flex;align-items:baseline;gap:5px;padding:0}
+ .flight-card .arrival-estimate>div>span{font:10px/1.5 var(--sans)}
+ .flight-card .arrival-estimate>div>b{max-width:none;font:11px/1.5 var(--mono);letter-spacing:0}
+ .flight-card .card-plan-controls,.flight-card.is-planning .card-plan-controls{grid-column:1/-1;grid-row:3;padding:0;border:0}
+ .flight-card .card-plan-controls:not(:has(#quickIssue:not([hidden]))){display:none}
+ .flight-card.is-planning .card-plan-footer{display:block;min-height:0}
+ .flight-card .quick-result{min-height:0}
+ .flight-card #quickResult:has(#quickIssue[hidden]){display:none}
+ .flight-card .quick-issue{font-size:10px;min-height:24px}
+ .flight-card .card-actions{display:contents}
+ .flight-card .launch-actions{grid-column:2;grid-row:2;display:flex;flex-direction:column;gap:6px;align-self:center}
+ .flight-card .launch-actions>.primary-action{flex:none;width:44px;height:44px;min-height:44px;padding:0;gap:0}
+ .flight-card .launch-actions>.primary-action svg{width:22px;height:22px}
+ .flight-card .launch-actions>.primary-action span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .flight-card .target-approach{grid-column:1/-1;grid-row:4;margin:0}
+ .flight-card .target-approach>.eyebrow{display:none}
+ .flight-card #flightControls{grid-column:1/-1;grid-row:auto}
  .flight-card .flight-progress>div:first-child{font-size:9px}
  .flight-card .progress-track{margin-top:3px}
  .flight-card .progress-remaining{font-size:9px;margin-top:4px}
@@ -1232,6 +1276,7 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 .tutorial-card {
   position: fixed;
   z-index: 8;
+  pointer-events: none;
   width: min(302px, calc(100vw - 20px));
   background: var(--paper);
   color: var(--ink);
@@ -1273,6 +1318,7 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 }
 .tutorial-actions:not(:has(button:not([hidden]))) { display: none; }
 .tutorial-actions button {
+  pointer-events: auto;
   min-height: 28px;
   padding: 4px;
   font: 11px/1.4 var(--mono);

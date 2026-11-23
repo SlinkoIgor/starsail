@@ -39,11 +39,11 @@ const FlightQueue = {
   },
   context(id=state.selected) {
     const f=state.flight,future=Route.future(),selectedIndex=future.findLastIndex(n=>n.id===id),nodes=selectedIndex<0?future:future.slice(0,selectedIndex);
-    const key=JSON.stringify([id,f?.target,f?.legIndex,nodes,this.setupFor(id),FlightSetup.preferred(),state.expansion,state.destroyed,ArrivalStars.revision]);
+    const key=JSON.stringify([id,f?.target,f?.legIndex,nodes,this.setupFor(id),FlightSetup.preferred(),FlightSetup.mobile(),state.expansion,state.destroyed,ArrivalStars.revision]);
     if(this.cache?.flight===f&&this.cache.key===key)return this.cache.value;
     let s={...state,flight:null,orbit:null,itinerary:[],nextTargets:[],selected:id,destroyed:[...state.destroyed],phase:'idle',beta:0};
     let issue='';
-    const baseKey=JSON.stringify([f?.target,f?.legIndex,FlightSetup.preferred(),state.expansion,state.destroyed,ArrivalStars.revision]);
+    const baseKey=JSON.stringify([f?.target,f?.legIndex,FlightSetup.preferred(),FlightSetup.mobile(),state.expansion,state.destroyed,ArrivalStars.revision]);
     if(this.arrivals?.flight!==f||this.arrivals?.mission!==f?.mission||this.arrivals?.key!==baseKey)this.arrivals={flight:f,mission:f?.mission,key:baseKey,stops:new Map()};
     const stops=f?.mission?this.arrivals.stops:null,copy=value=>({...value,destroyed:[...value.destroyed]});
     if(stops?.has(''))s=copy(stops.get(''));
@@ -82,7 +82,7 @@ const FlightQueue = {
       return this.plan(context,node,next);
     }
     return this.run(context,()=>context.beta>0
-      ?MissionPlanner.planPreferred(context.flightSetup,context.planningSource,object(context.selected),context.matter*1000,context.ship,context.cosmicTime,context.expansion!==false,context.beta,context.orbit)
+      ?MissionPlanner.planPreferred(FlightSetup.read(context),context.planningSource,object(context.selected),context.matter*1000,context.ship,context.cosmicTime,context.expansion!==false,context.beta,context.orbit)
       :MissionPlanner.preview());
   },
   dismiss() { if(this.browsing())select(state.flight.target); },

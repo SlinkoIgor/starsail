@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 const harness=fs.readFileSync('tests/verify-map.mjs','utf8').split('\nrun(`')[0]
+ .replace('addEventListener(){}getBoundingClientRect()', 'addEventListener(type,handler){(this.listeners??={})[type]=handler;}setPointerCapture(){}getBoundingClientRect()')
  .replace('devicePixelRatio:1,addEventListener(){}','devicePixelRatio:1,addEventListener(type,handler){(this.listeners??={})[type]=handler;}')+'\nexport {run};';
 const {run}=await import('data:text/javascript,'+encodeURIComponent(harness));
 run(`
@@ -44,6 +45,21 @@ state.selected='planet-МАРС';drawShip(0);assert.equal(turns.pop(),0,'a plane
 state.selected='proxima';drawShip(0);assert.notEqual(turns.pop(),0,'a flight target still turns the ship');
 state.selected='sol';delete ctx.rotate;
 assert.notDeepEqual(state.ship.p3,firstTutorial.ship.p3);
+// Advance one full Earth orbit with a card covering the expected label anchor.
+const tutorialCard=$('tutorialCard'), originalRect=tutorialCard.getBoundingClientRect;
+const expectedOffsets=[['ship',14,12],['planet-ЗЕМЛЯ',14,27]];
+for(let phase=0;phase<=64;phase++){
+ const p=screen(state.ship);
+ tutorialCard.getBoundingClientRect=()=>({left:p.x,top:p.y,width:300,height:120});
+ tutorialCard.hidden=phase%2===0;
+ MapLabels.begin();OrbitalMotion.draw();drawObjects();drawShip(0);MapLabels.draw();
+ for(const [key,dx,dy] of expectedOffsets){
+  const box=MapLabels.placed.find(q=>q.key===key);
+  assert.ok(box&&Math.abs(box.x-p.x-dx)<1e-8&&Math.abs(box.y-p.y-dy)<1e-8,key+' stays fixed to Earth');
+ }
+ if(phase<64)Simulation.tick(earthOrbit.period/64);
+}
+tutorialCard.getBoundingClientRect=originalRect;tutorialCard.hidden=false;
 state=restore(firstTutorial);assertOnEarth();
 assert.equal(speed,.1);assert.equal(paused,false);
 assert.equal($('timeSlider').value,'1');
@@ -72,13 +88,32 @@ const solarLimit=SolarView.limit(),solarFrame=()=>{
   assert.ok(p.x>0&&p.x<width&&p.y>0&&p.y<cameraViewportHeight(),q.name+' orbit fits in the widest tutorial view');
  }
 };
+function drag(dx,dy){
+ const e={button:0,pointerId:1,pointerType:'mouse',clientX:width/2,clientY:height/2};
+ canvas.listeners.pointerdown(e);
+ const end={...e,clientX:e.clientX+dx,clientY:e.clientY+dy};
+ canvas.listeners.pointermove(end);
+ canvas.listeners.pointerup(end);
+ assert.equal(pointer.down,false);
+}
+const solarCenter={...cam};
+drag(80,60);
+assert.ok(Math.abs(screen(object('sol')).x-width/2-80)<1e-6);
+assert.ok(Math.abs(screen(object('sol')).y-cameraViewportHeight()/2-60)<1e-6);
+drag(width*100,-height*100);
+assert.equal(cam.span,solarCenter.span);
+const slack=(solarLimit-cam.span)/2;
+assert.ok(Math.abs(cam.x-(solarCenter.x-slack))<1e-12);
+assert.ok(Math.abs(cam.y-(solarCenter.y+slack*cameraViewportHeight()/width))<1e-12);
+assert.equal(state.selected,'sol','dragging does not select an object');
+cam=solarCenter;
 assert.ok(solarLimit>SOLAR_CAMERA_SPAN&&solarLimit<zoomStops.at(-1).span);
 assert.equal(clampCameraSpan(1e9),solarLimit);
 zoomAtPointer({preventDefault(){},deltaY:220,clientX:40,clientY:60});
 assert.ok(cam.span>SOLAR_CAMERA_SPAN&&cam.span<solarLimit,'the first tutorial steps allow zooming out');
 {const sun=screen(object('sol'));assert.ok(sun.x>0&&sun.x<width&&sun.y>0&&sun.y<cameraViewportHeight());}
 for(let i=0;i<40;i++)zoomAtPointer({preventDefault(){},deltaY:220,clientX:40,clientY:60});
-assert.equal(cam.span,solarLimit);solarFrame();
+assert.equal(cam.span,solarLimit);drag(80,60);solarFrame();
 goCamera(cam.x+1,cam.y+1,1e6);assert.equal(cameraGoal.span,solarLimit);cam={...cameraGoal};cameraGoal=null;solarFrame();
 for(let i=0;i<60;i++)zoomAtPointer({preventDefault(){},deltaY:-220,clientX:width/2,clientY:cameraViewportHeight()/2});
 assert.equal(cam.span,minimumCameraSpan());
@@ -105,6 +140,8 @@ for(const step of ['zoom','mass','acceleration','velocity','dilation','destinati
 }
 ExpeditionTutorial.openSession(true);
 assert.equal(state.tutorialStep,'destination','refresh in the same session resumes the current step');
+renderUI();
+assert.ok($('tutorialText').innerHTML.endsWith('ближайшая к Солнцу звезда. Нажмите на неё.</p>'));
 assert.ok(cameraGoal && ExpeditionTutorial.target(object('proxima')));
 cam = {...cameraGoal};
 for (const id of ['sol','proxima']) {

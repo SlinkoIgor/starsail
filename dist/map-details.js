@@ -1234,35 +1234,18 @@ const MapLabels = {
     });
   },
   drawEarthDeparture(p) {
-    if (p.x < 0 || p.x > width || p.y < 0 || p.y > height) return;
     const labels = [
       {key:'ship', name:SHIP_NAME.toUpperCase(), color:'#171717'},
       {key:'planet-' + OrbitalMotion.earth.name, name:OrbitalMotion.earth.name, color:'#454545'},
     ];
     const w = 8 + Math.max(...labels.map(q => MapLabels.measure(q.name, '10px "Golos Text",Arial,sans-serif')));
     const row = 15, h = row * labels.length;
-    // Move both lines together. Prefer a clear spot beside the ship, even
-    // when the planetary orbit is smaller than a pixel on the stellar map.
-    const candidates = [[14,-h/2], [-14-w,-h/2], [-w/2,-h-14], [-w/2,14]];
-    const sun = screen(object('sol')), sunLabelWidth = this.measure('СОЛНЦЕ', '12px "Golos Text",Arial,sans-serif');
-    const obstacles = [...this.boxes, {x:sun.x-12,y:sun.y-36,w:sunLabelWidth+46,h:50}];
-    if (state.tutorialStep && !$('tutorialCard').hidden) {
-      const card = $('tutorialCard').getBoundingClientRect(), canvasBox = canvas.getBoundingClientRect();
-      obstacles.push({x:card.left-canvasBox.left,y:card.top-canvasBox.top,w:card.width,h:card.height});
-    }
-    let best, minOverlap = Infinity;
-    for (const [dx,dy] of candidates) {
-      const x = clamp(p.x + dx, 0, width-w), y = clamp(p.y + dy, 0, height-h);
-      let overlap = 0;
-      for (const b of obstacles)
-        overlap += Math.max(0, Math.min(x+w,b.x+b.w)-Math.max(x,b.x)) *
-          Math.max(0, Math.min(y+h,b.y+b.h)-Math.max(y,b.y));
-      if (overlap < minOverlap) { best = {x,y}; minOverlap = overlap; }
-      if (!overlap) break;
-    }
-    this.earthDepartureBox = {...best,w,h};
+    // Keep both rows attached to Earth as the orbit carries it across the map.
+    const label = {x:p.x + 14, y:p.y + 12, w, h};
+    if (!this.intersectsViewport(label)) return;
+    this.earthDepartureBox = label;
     for (const [i,q] of labels.entries()) {
-      const box = {x:best.x, y:best.y + i*row, w, h:row};
+      const box = {x:label.x, y:label.y + i*row, w, h:row};
       MapLabels.boxes.push(box);
       MapLabels.placed.push({key:q.key, ...box});
       text(q.name, box.x+4, box.y+11, 10, q.color, 'left', 'sans');
