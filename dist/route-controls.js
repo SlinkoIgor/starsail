@@ -64,7 +64,6 @@ Object.assign(Route, {
     const nodes=this.nodes(),draft=!f&&nodes.length>0;
     if(draft||browsing)this.renderDistance();
     if(draft){UIPatch.set($('distanceRow'), 'hidden', false);UIPatch.set($('objectCardBtn'), 'hidden', true);}
-    const p=(browsing?FlightQueue.forecast():f?.mission)||(!f&&target?.navigable?MissionPlanner.preview():null),star=p?.arrivalStar;
     UIPatch.set($('routeDraftIssue'), 'hidden', true);
     if(f?.routeIssue){
       const next=object(nodes[(f.legIndex||0)+1]?.id);
@@ -77,7 +76,6 @@ Object.assign(Route, {
         UIPatch.set($('routeDraftIssue'), 'hidden', false);UIContent.text($('routeDraftIssue'),'Для пролёта добавьте следующую точку маршрута.');
         if(browsing){UIPatch.set($('launchBtn'), 'disabled', !this.canSelectNext());UIContent.text($('launchBtn').querySelector('span'),'Добавить точку');}
       }
-      if(!f&&p?.requestedTargetId&&star){UIContent.text($('distanceCaption'),'ДО ЗВЕЗДЫ ТОРМОЖЕНИЯ');UIContent.html($('targetDistance'),compact(Cosmology.physicalDistance(state.ship,star))+' <small>св. лет</small>');}
       return;
     }
     const analysis=this.draftAnalysis(),pending=nodes.at(-1).mode==='flyby',

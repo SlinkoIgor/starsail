@@ -556,6 +556,148 @@
     "availability": {"checked": "2026-11-08", "status": 200, "contentType": "video/mp4", "posterStatus": 200}
   },
   {
+    "id": "eso-eso0846a-centre",
+    "objects": [
+      "sgr"
+    ],
+    "title": "Центр Млечного Пути в инфракрасном свете",
+    "instrument": "ESO · VLT / NACO",
+    "band": "Ближний инфракрасный диапазон · условные цвета",
+    "date": "10 декабря 2008",
+    "mediaType": "observation",
+    "url": "https://cdn.eso.org/images/screen/eso0846a.jpg",
+    "source": "https://www.eso.org/public/images/eso0846a/",
+    "credit": "ESO/S. Gillessen et al.",
+    "rights": "CC BY 4.0",
+    "archive": "https://www.eso.org/public/outreach/copyright/",
+    "archiveLabel": "ESO · условия использования",
+    "description": "Центральная область Галактики в ближнем инфракрасном диапазоне: снимок камеры NACO на телескопе VLT. Больше 16 лет астрономы следили за движением самых близких к центру звёзд и по нему определили массу сверхмассивной чёрной дыры.",
+    "identification": {
+      "method": "Official ESO observational page for the Galactic Centre; the caption ties the frame to the stellar orbits used to weigh the central black hole",
+      "objectNames": "Galactic Centre",
+      "pageSha256": "0b84bb76b85e3616a18023160634038ac3e27907ed47a6c21b77bbd9573df71b",
+      "quote": "The central parts of our Galaxy, the Milky Way, as observed in the near-infrared with the NACO instrument on ESO's Very Large Telescope. By following the motions of the most central stars over more than 16 years, astronomers were able to determine the mass of the supermassive black hole that lurks there."
+    },
+    "availability": {
+      "checked": "2026-11-25",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  },
+  {
+    "id": "eso-eso2119b-gravity",
+    "objects": [
+      "sgr"
+    ],
+    "title": "Звёзды рядом со Стрельцом A* — GRAVITY, март 2021",
+    "instrument": "ESO · VLTI / GRAVITY",
+    "band": "Инфракрасный диапазон · 2,2 мкм · условные цвета",
+    "date": "14 декабря 2021",
+    "mediaType": "observation",
+    "url": "https://cdn.eso.org/images/screen/eso2119b.jpg",
+    "source": "https://www.eso.org/public/images/eso2119b/",
+    "credit": "ESO/GRAVITY collaboration",
+    "rights": "CC BY 4.0",
+    "archive": "https://www.eso.org/public/outreach/copyright/",
+    "archiveLabel": "ESO · условия использования",
+    "description": "Звёзды, которые обращаются совсем близко к Стрельцу A*; он находится в центре кадра. Наблюдение выполнено в конце марта 2021 года прибором GRAVITY на интерферометре VLTI.",
+    "identification": {
+      "method": "Official ESO observational page explicitly identifies Sagittarius A* at the centre of the frame",
+      "objectNames": "Sagittarius A*",
+      "pageSha256": "68e5b2c0e7fb4d9735983b0190d6622f980e854089a8b924378153b341e50c13",
+      "quote": "This image show stars orbiting very close to Sgr A* (centre), the supermassive black hole at the heart of the Milky Way. They were obtained with the GRAVITY instrument on ESO’s Very Large Telescope Interferometer (VLTI) at the end of March 2021."
+    },
+    "availability": {
+      "checked": "2026-11-25",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  },
+  {
+    "id": "chandra-sgra-gas",
+    "objects": [
+      "sgr"
+    ],
+    "title": "Стрелец A* в рентгеновских и инфракрасных лучах",
+    "instrument": "NASA · Chandra / Hubble",
+    "band": "Рентген (синий) и инфракрасный диапазон (жёлтый, розовый) · условные цвета",
+    "date": "29 августа 2013",
+    "mediaType": "observation",
+    "url": "https://chandra.harvard.edu/photo/2013/sgra_gas/sgra_gas.jpg",
+    "source": "https://chandra.harvard.edu/photo/2013/sgra_gas/",
+    "credit": "X-ray: NASA/UMass/D.Wang et al., IR: NASA/STScI",
+    "description": "Окрестности Стрельца A* шириной около 7,5 светового года. Синим показан газ, нагретый до миллионов градусов: его рентгеновское излучение регистрирует обсерватория «Чандра». Жёлтые точки и розовые облака — инфракрасные наблюдения «Хаббла». На врезке — рентгеновский снимок области поперечником около половины светового года: горячий газ, захваченный чёрной дырой.",
+    "identification": {
+      "method": "Chandra official object page for Sagittarius A*; scale and colour coding taken from its fast facts and visual description",
+      "objectNames": "Sagittarius A*",
+      "pageSha256": "1af34dd892d49ac5ddda8a1e5a248d405ad084d77b6059d514aecf7ebe77093a",
+      "quote": "To the upper right is a pullout from the center showing an X-ray closeup covering a region half a light year wide. Diffuse blue X-ray emission is from hot gas captured by the black hole and being pulled inwards."
+    },
+    "availability": {
+      "checked": "2026-11-25",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  },
+  {
+    "id": "hubble-opo0928b-centre",
+    "objects": [
+      "sgr"
+    ],
+    "title": "Центр Галактики: «Хаббл», «Спитцер» и «Чандра»",
+    "instrument": "Hubble · Spitzer · Chandra",
+    "band": "Ближний ИК (жёлтый), ИК (красный), рентген (синий и фиолетовый)",
+    "date": "10 ноября 2009",
+    "mediaType": "observation",
+    "url": "https://cdn.esahubble.org/archives/images/screen/opo0928b.jpg",
+    "source": "https://esahubble.org/images/opo0928b/",
+    "credit": "NASA, ESA, SSC, CXC and STScI",
+    "rights": "CC BY 4.0",
+    "archive": "https://esahubble.org/copyright/",
+    "archiveLabel": "ESA/Hubble · условия использования",
+    "description": "Центральная область Млечного Пути по наблюдениям трёх космических обсерваторий. Ширина кадра — около половины градуса, как у полной Луны. Центр Галактики находится в яркой белой области правее и чуть ниже середины кадра. Жёлтым показаны наблюдения «Хаббла» в ближнем инфракрасном диапазоне, красным — инфракрасные наблюдения «Спитцера», синим и фиолетовым — рентгеновские наблюдения «Чандры».",
+    "identification": {
+      "method": "Official ESA/Hubble page for the Great Observatories composite of the Galactic centre region; the caption locates the centre of the Galaxy in the frame",
+      "objectNames": "Milky Way Galactic centre",
+      "pageSha256": "b74d7ef56346646e61865ab78ce595ad80fb8befee93e12655f9ef271310d231",
+      "quote": "Note that the centre of the galaxy is located within the bright white region to the right of and just below the middle of the image. The entire image width covers about one-half a degree, about the same angular width as the full moon."
+    },
+    "availability": {
+      "checked": "2026-11-25",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  },
+  {
+    "id": "eht-eso2406a-polarised",
+    "objects": [
+      "sgr"
+    ],
+    "title": "Стрелец A* в поляризованном свете — EHT",
+    "instrument": "Event Horizon Telescope",
+    "band": "Радионаблюдения · 1,3 мм · условные цвета",
+    "date": "27 марта 2024",
+    "mediaType": "observation",
+    "url": "https://cdn.eso.org/images/screen/eso2406a.jpg",
+    "source": "https://www.eso.org/public/images/eso2406a/",
+    "credit": "EHT Collaboration",
+    "rights": "CC BY 4.0",
+    "archive": "https://www.eso.org/public/outreach/copyright/",
+    "archiveLabel": "ESO · условия использования",
+    "description": "Стрелец A* в поляризованном свете по наблюдениям EHT. Линии показывают направление поляризации: оно связано с магнитным полем вокруг тени чёрной дыры. Так близко к краю Стрельца A* поляризацию измерили впервые.",
+    "identification": {
+      "method": "Official ESO observational page explicitly identifies Sagittarius A*",
+      "objectNames": "Sagittarius A*",
+      "pageSha256": "3be922f874f894dc60a84b8afe105dcf686eb6d8e0733a558b0149505d36a5bc",
+      "quote": "This image shows the polarised view of the Milky Way black hole. The lines overlaid on this image mark the orientation of polarisation, which is related to the magnetic field around the shadow of the black hole."
+    },
+    "availability": {
+      "checked": "2026-11-25",
+      "status": 200,
+      "contentType": "image/jpeg"
+    }
+  },
+  {
     "id": "hubble-potw1346a",
     "objects": [
       "3c273"

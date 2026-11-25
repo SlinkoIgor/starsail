@@ -286,8 +286,11 @@ function renderPanels() {
         ? 'Топливо расходуется · торможение автоматически.'
         : 'Запас рабочего вещества исчерпан.';
   }
-  UIPatch.set($('launchBtn'), 'hidden', active || (arrived && !questNext));
-  UIPatch.set($('objectCardBtn'), 'hidden', !arrived || !!questNext);
+  const cardOnly = ExpeditionTutorial.opensCard(target);
+  if (cardOnly && !('cardOnly' in $('flightCard').dataset)) $('flightCard').dataset.cardOnly = '';
+  else if (!cardOnly) delete $('flightCard').dataset.cardOnly;
+  UIPatch.set($('launchBtn'), 'hidden', active || cardOnly || (arrived && !questNext));
+  UIPatch.set($('objectCardBtn'), 'hidden', !cardOnly && (!arrived || !!questNext));
   UIPatch.set($('distanceRow'), 'hidden', arrived);
   UIContent.text($('launchBtn').querySelector('span'), action);
   UIPatch.set($('launchBtn'), 'disabled', !target.navigable || (!arrived && !boost && !Rocket.usableFuel(state.matter)));

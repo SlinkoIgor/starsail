@@ -51,7 +51,7 @@ const ExtendedCatalog = {
   },
   computeMatchesMap(o, categoryOnly) {
     // The guided star stays selectable even with a saved class filter.
-    if (o.id === 'proxima' && typeof ExpeditionTutorial !== 'undefined' && ExpeditionTutorial.target(o)) return true;
+    if (typeof ExpeditionTutorial !== 'undefined' && ExpeditionTutorial.target(o)) return true;
     const selected = typeof filter === 'string' ? filter : 'all';
     // Keep bulk survey envelopes out of the overview, including pinned/saved
     // targets. Atlas search and explicit class filters retain the full catalog.
@@ -1092,6 +1092,8 @@ const ExtendedCatalog = {
     }
   },
   arrivalStar(host, destroyed = state.destroyed) {
+    const guided = typeof ExpeditionTutorial !== 'undefined' && ExpeditionTutorial.arrivalStar(host, destroyed);
+    if (guided) return guided;
     if (globalThis.ArrivalStars?.eligible(host)) {
       const result = ArrivalStars.lookup(host, destroyed);
       if (result.star) return result.star;

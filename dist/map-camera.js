@@ -108,6 +108,32 @@ function routeViewport(avoidPanels = false) {
       : viewportHeight - pad;
   return { left: pad, top: mobile ? 64 : 112, right: Math.max(pad + 100, right), bottom: Math.max(180, bottom) };
 }
+function glideCamera(view, anchor, seconds) {
+  releaseShipCamera();
+  const at = (c) => ({
+    x: width * 0.43 + ((anchor.x - c.x) * width) / c.span,
+    y: mapOriginY() + ((anchor.y - c.y) * width) / c.span,
+  });
+  cameraGoal = { x: view.x, y: view.y, span: view.span, glide: { anchor, from: cam.span, start: at(cam), end: at(view), seconds, t: 0 } };
+  updateMapHeading();
+}
+function stepCameraGlide(dt) {
+  const g = cameraGoal.glide;
+  g.t = Math.min(1, g.t + dt / g.seconds);
+  if (g.t === 1) {
+    cam = { x: cameraGoal.x, y: cameraGoal.y, span: cameraGoal.span };
+    return;
+  }
+  const k = g.t * g.t * (3 - 2 * g.t),
+    span = Math.exp(Math.log(g.from) + (Math.log(cameraGoal.span) - Math.log(g.from)) * k),
+    x = g.start.x + (g.end.x - g.start.x) * k,
+    y = g.start.y + (g.end.y - g.start.y) * k;
+  cam = {
+    x: g.anchor.x - ((x - width * 0.43) * span) / width,
+    y: g.anchor.y - ((y - mapOriginY()) * span) / width,
+    span,
+  };
+}
 function centeredCamera(p, span) {
   return {
     x: p.x + ((width * 0.43 - width / 2) * span) / width,
@@ -425,7 +451,7 @@ function fitRoute(target, {wholeRoute = false} = {}) {
     return;
   fitCameraPoints(points, v, wholeRoute ? SOLAR_CAMERA_SPAN : current.span);
 }
-function fitCameraPoints(points, v, minimumSpan) {
+function pointsCamera(points, v, minimumSpan) {
   const minX = Math.min(...points.map(p => p.x)), maxX = Math.max(...points.map(p => p.x)),
     minY = Math.min(...points.map(p => p.y)), maxY = Math.max(...points.map(p => p.y));
   const span = clampCameraSpan(Math.max(
@@ -433,17 +459,22 @@ function fitCameraPoints(points, v, minimumSpan) {
     (((maxX - minX) * width) / (v.right - v.left)) * 1.25,
     (((maxY - minY) * width) / (v.bottom - v.top)) * 1.25,
   ));
-  goCamera(
-    (minX + maxX) / 2 - (((v.left + v.right) / 2 - width * 0.43) * span) / width,
-    (minY + maxY) / 2 -
+  return {
+    x: (minX + maxX) / 2 - (((v.left + v.right) / 2 - width * 0.43) * span) / width,
+    y: (minY + maxY) / 2 -
       (((v.top + v.bottom) / 2 - mapOriginY()) * span) / width,
     span,
-  );
+  };
+}
+function fitCameraPoints(points, v, minimumSpan) {
+  const view = pointsCamera(points, v, minimumSpan);
+  goCamera(view.x, view.y, view.span);
 }
 function select(id, fit = false, {deferPreview = false, routeAnchor = true} = {}) {
   const o = object(id);
   if (id !== null && !o) return;
   if (o) ExtendedCatalog.pin(o);
+  if (o) globalThis.SkyGuide?.preload(o);
   if (ExtendedCatalog.systemView) {
     if (ExtendedCatalog.systemView.members.has(id)) ExtendedCatalog.systemView.selected = id;
     else ExtendedCatalog.systemView = null;
@@ -451,13 +482,10 @@ function select(id, fit = false, {deferPreview = false, routeAnchor = true} = {}
   if(routeAnchor)Route.selection=o&&!Route.future().length?{id,state}:null;
   else if(!Route.future().length)Route.selection={id:state.selected,state};
   state.selected = id;
-  if (state.tutorialStep === 'destination' && id === 'proxima' && ExpeditionTutorial.canChoose()) {
-    ExpeditionTutorial.setStep('propulsion');
-    deferPreview = false;
-  }
+  if (ExpeditionTutorial.choose(o)) deferPreview = false;
   if(deferPreview)Route.deferFeedback({selectionOnly:true});
   else {Route.cancelFeedback();renderUI();}
-  if (state.tutorialStep === 'propulsion') ExpeditionTutorial.showMap();
+  if (state.tutorialStep === 'propulsion' || state.tutorialStep === 'supernova') ExpeditionTutorial.showMap();
   else if (fit) fitRoute(o);
   renderCatalog();
   if(!deferPreview)persist();

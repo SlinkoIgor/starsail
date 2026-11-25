@@ -194,9 +194,11 @@ for(const id of ['orion','whirlpool','opengc-ngc6611','opengc-ngc6720','opengc-n
  assert.ok(SkyPhotos.ids(o).some(p=>p.startsWith('esawebb-')),'direct ESA/Webb observations: '+id);
 }
 assert.ok(!SkyPhotos.ids(object('hyg-108526')).includes('esawebb-weic2421a'),'a coronagraph image of the exoplanet is not a photograph of the blocked star');
+assert.equal(SKY_GUIDE_DATA.leads.andromeda,'astropix-esahubble-heic0512d');
 for(const id of ['hyg-80519','hyg-101767','hyg-27253','hyg-10800','andromeda','orion','lmc','smc']){
  const slides=[...SkyGuide.gallery(object(id)).matchAll(/<figure[^>]+data-photo="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(slides.slice(0,2),['chart-wide','chart-close']);assert.ok(slides.some(s=>s.startsWith('astropix-')));
+ const lead=SKY_GUIDE_DATA.leads[id];assert.deepEqual(slides.slice(0,lead?3:2),[...(lead?[lead]:[]),'chart-wide','chart-close'],'a chosen photograph opens the carousel, the charts follow: '+id);
+ assert.equal(slides.filter(s=>s===lead).length,lead?1:0);assert.ok(slides.some(s=>s.startsWith('astropix-')));
  for(const p of SkyPhotos.media(object(id)))assert.ok(slides.includes(p.id),'distinct frames sharing a source page remain available');
  const kinds=SkyPhotos.media(object(id)).map(p=>p.mediaKind);
  assert.ok(kinds.lastIndexOf('observation')<0||kinds.indexOf('survey')<0||kinds.lastIndexOf('observation')<kinds.indexOf('survey'),'observatory photographs precede published DSS fields across all own aliases');

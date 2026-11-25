@@ -12,7 +12,7 @@ const plain=html=>html.replace(/<[^>]+>/g,' ');
 const details=html=>[...html.matchAll(/<section class="object-section">.*?<\\/section>/g)].map(m=>m[0]).join('');
 const count=(html,text)=>html.split(text).length-1;
 const sections=html=>[...html.matchAll(/<section class="object-section"[^>]*><h3[^>]*>([^<]+)<\\/h3>/g)].map(m=>m[1]);
-const order=['Система','Система и орбиты','Состав группы','Данные','Источники','Источники и примечания'];
+const order=['Состав системы','Состав системы и орбиты','Состав группы','Данные','Источники','Источники и примечания'];
 
 for(const o of OBJECTS){
  const keys=ObjectCard.keys(o);
@@ -164,7 +164,7 @@ for(const o of OBJECTS.filter(o=>o.region?.sizeUnknown)){const html=card(o.id);a
 for(const o of OBJECTS.filter(o=>MapGeometry.unlocated(o)&&o.p3)){const html=card(o.id);assert.ok(within(html,'Данные','Игровая точка XYZ')&&within(html,'Данные','Положение центра структуры не измерено')&&!html.includes('нет пространственной привязки'),'unlocated geometry: '+o.id);}
 const members=OBJECTS.filter(o=>ExtendedCatalog.systemByMember.has(o.id)),linked={named:0,titled:0,row:0,hinted:0};
 for(const o of members){
- const html=card(o.id),system=ExtendedCatalog.systemByMember.get(o.id),title=/<h3>(Система(?: и орбиты)?|Состав группы)<\\/h3>/.exec(html)?.[1];
+ const html=card(o.id),system=ExtendedCatalog.systemByMember.get(o.id),title=/<h3>(Состав системы(?: и орбиты)?|Состав группы)<\\/h3>/.exec(html)?.[1];
  assert.ok(title,'system section: '+o.id);
  const from=html.indexOf('<h3>'+title+'</h3>'),block=html.slice(from,html.indexOf('</section>',from)+10),note=/<div class="object-system-note">(.*?)<\\/div>(?:<dl|<div class="stellar|<\\/section>|$)/.exec(block)?.[1]||'';
  const named=plain(note.replace(/<details.*<\\/details>/,'')).includes(system.name),titled=o.name.split(' · ').includes(system.name);
@@ -174,8 +174,8 @@ for(const o of members){
  if(named&&note.includes('<details class="info-tip">'))linked.hinted++;
 }
 assert.ok(linked.named>50&&linked.titled>0&&linked.row>20&&linked.hinted>0,'all ways of naming a system are covered and its note keeps the hint: '+JSON.stringify(linked));
-assert.ok(within(card('sirius'),'Система и орбиты','class="object-system-note">Компонент A системы «Сириус».'),'the component note opens the system section');
-assert.ok(within(card('cygnus'),'Система','<dt>Состав<details')&&!within(card('cygnus'),'Данные','<dt>Система'),'the makeup of a system belongs to the system section');
+assert.ok(within(card('sirius'),'Состав системы и орбиты','class="object-system-note">Компонент A системы «Сириус».'),'the component note opens the system section');
+assert.ok(within(card('cygnus'),'Состав системы','<dt>Состав<details')&&!within(card('cygnus'),'Данные','<dt>Система'),'the makeup of a system belongs to the system section');
 for(const o of OBJECTS.filter(o=>o.cosmology).slice(0,3))assert.ok(within(card(o.id),'Данные','Красное смещение')&&tiles(card(o.id))['Расстояние'].value.includes('свет шёл'),'lookback note: '+o.id);
 assert.ok(!card('orion').includes('M☉ — масса Солнца'),'solar units are explained only where they are used');
 for(const o of OBJECTS.filter(o=>o.kind==='nebula'&&!o.region&&!o.facts?.radius).slice(0,5))assert.equal(tiles(card(o.id))['Размер'].value,'<span title="Индивидуальный размер в исходной выборке не приведён.">—</span>','a nebula without a size: '+o.id);
@@ -335,7 +335,7 @@ for(const id of checked){
  const at=label=>data.indexOf('<dt>'+label);
  for(const [first,second] of [['Возраст','Galactic XYZ'],['Красное смещение','Galactic XYZ'],['Орбита','Galactic XYZ'],['Galactic XYZ','Направление J2000'],['Направление J2000','Обозначения'],['Galactic XYZ','Обозначения'],['Игровая точка XYZ','Обозначения'],['Опорная галактика','Обозначения']])if(at(first)>=0&&at(second)>=0)assert.ok(at(first)<at(second),'data order: what the object is, then where it is, then how it is listed: '+id+' '+first+' / '+second);
 }
-for(const title of ['Данные','Источники','Источники и примечания','Система','Система и орбиты'])assert.ok(seenTitles.has(title),'the sample reaches the section '+title);
+for(const title of ['Данные','Источники','Источники и примечания','Состав системы','Состав системы и орбиты'])assert.ok(seenTitles.has(title),'the sample reaches the section '+title);
 assert.ok(tiles(card('andromeda'))['Размер'].tip.includes('Оптические оси, как они видны с Земли: '),'the second axis of a galaxy waits behind the size hint');
 assert.ok(tiles(card('horizon'))['Размер'].tip.includes('Размер области: ≈ 93 млрд св. лет'),'the diameter of the horizon waits behind its radius');
 for(const id of ['s1','s2']){const html=card(id);assert.ok(/<dt>Орбита<details class="info-tip">.*?Траектория рассчитана по опубликованным элементам\\..*?<\\/details><\\/dt>/.test(html)&&sections(html).includes('Источники'),'the remark about an orbit explains the orbit row: '+id);}

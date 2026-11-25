@@ -729,9 +729,8 @@ const FlightSetup={
  },
  read(s=state){
   if(s.flight||!OrbitalArrival.enabled)return this.legacy(s);
-  if ((s.tutorialStep === 'propulsion' || s.tutorialStep === 'launch') && s.selected === 'proxima') {
-    return {...this.defaults(s), sail:false, collector:false};
-  }
+  const guided = s.tutorialStep && typeof ExpeditionTutorial !== 'undefined' ? ExpeditionTutorial.setup(s) : null;
+  if (guided) return guided;
   return this.departure(this.preferred(s),s.planningSource||object(s.current),new Set(s.destroyed));
  },
  sync(s=state){if(!s.flight&&OrbitalArrival.enabled){const c=this.read(s);s.departureMode=c.sail?(c.burst?'burst':'beam'):'engine';}},

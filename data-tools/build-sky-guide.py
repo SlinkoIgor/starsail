@@ -100,6 +100,10 @@ for photo in media:
     if photo.get('format') == 'video':
         assert photo['url'].endswith('.mp4') and photo['poster'].startswith('https://')
         assert photo['mediaType'] in ('observation', 'reconstruction', 'diagram', 'composite')
+leads = {}
+for lead in read('gallery-leads.json'):
+    assert lead['object'] not in leads and lead['photo'] and lead['note']
+    leads[lead['object']] = lead['photo']
 visual_targets = read('visual-targets.json')
 observing_evidence = read('observing-evidence.json')['entries']
 for evidence in observing_evidence:
@@ -109,7 +113,7 @@ for evidence in observing_evidence:
 media = [{k: v for k, v in p.items() if k not in ['identification', 'sourceCaption', 'archiveTitle']} for p in media]
 data = dict(version=3, epoch='J2000', magnitudeLimit=6, stars=stars,
             declinationRangeSource='Roman 1987 VI/42 B1875 regions; IAU 1976 to J2000; degrees',
-            constellations=constellations, boundaries=boundaries, media=media,
+            constellations=constellations, boundaries=boundaries, media=media, leads=leads,
             visualTargets=[[identifier.strip(), p['caldwell']] for p in visual_targets['entries']
                            for identifier in p['identifier'].split(',')],
             observingEvidence=observing_evidence)

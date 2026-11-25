@@ -139,6 +139,14 @@ Regression: `node tests/verify-stellar-catalog.mjs`.
 сверка 935 созвездий с Astropy и описание горизонтальной галереи —
 [docs/sky-guide.md](../docs/sky-guide.md). Регрессия: `node tests/verify-sky-guide.mjs`.
 
+`sky-sources/gallery-leads.json` — редакционный выбор первого кадра карусели:
+записи `{object, photo, note}`. Запись только называет кадр, уже описанный
+каким-то источником; его авторство и условия остаются в исходном импорте.
+Сборщик проверяет формат и пишет `leads` в `sky-guide-data.js`, браузер
+проверяет, что кадр принадлежит объекту. После правки выполнить
+`build-sky-guide.py`, `build-map-filter-index.mjs` и
+`node tests/verify-sky-photos.mjs`.
+
 
 ## Предварительная подготовка DSS
 
@@ -375,11 +383,12 @@ python3 data-tools/build-star-ages.py
 node data-tools/export-wikipedia-candidates.mjs /tmp/parus-wikipedia-candidates.json
 python3 data-tools/fetch-wikipedia-media.py --cache /tmp/parus-wikipedia-cache --candidates /tmp/parus-wikipedia-candidates.json
 python3 data-tools/fetch-wikipedia-gallery.py --cache /tmp/parus-wikipedia-cache --candidates /tmp/parus-wikipedia-candidates.json
+python3 data-tools/find-wikipedia-duplicates.py --cache /tmp/parus-wikipedia-duplicates
 python3 data-tools/build-wikipedia-media.py
 node data-tools/build-map-filter-index.mjs
 ```
 
-Команды `fetch-wikipedia-*.py` получают внешние данные. Сетевой импорт читает астрономические
+Команды `fetch-wikipedia-*.py` и `find-wikipedia-duplicates.py` получают внешние данные. Сетевой импорт читает астрономические
 категории английской Википедии, точные названия, перенаправления и русские
 межъязыковые ссылки; отдельно добирает русские каталожные статьи, членов
 подгрупп Местной группы и объекты общей категории крупномасштабных структур. Сопоставление
@@ -406,6 +415,17 @@ node data-tools/build-map-filter-index.mjs
 и перечисляются в `wikipedia-audit.json`. После изменения обновить хеши
 подключённых модулей в `dist/index.html`. Научные тайлы, координаты и сохранения
 не меняются. Регрессия: `node tests/verify-wikipedia.mjs`.
+
+`find-wikipedia-duplicates.py` (нужны `curl` и `sips` из macOS) сравнивает по
+пикселям кадры Википедии с отобранными кадрами того же объекта из `media.json`,
+`media-hubble.json`, `media-cosmic.json` и `media-quests.json` и записывает
+совпавшие пары в `sky-sources/wikipedia-duplicates.json` вместе с обеими мерами
+и порогами. Сборка убирает копию Википедии у объекта из пары. Запускать после
+изменения отобранных кадров или импорта Википедии; без нового запуска сборка
+использует сохранённый список.
+
+Снимок от 25.11.2026: 30 пар у 30 объектов; после их исключения 8 598 объектов с
+изображениями и 6 689 файлов Commons.
 
 Снимок от 18.11.2026: 10 083 объекта со статьёй, 8 624 объекта с изображениями,
 6 713 различных файлов Commons. Пять карт из указанных пользователем галерей

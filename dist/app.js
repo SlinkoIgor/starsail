@@ -60,7 +60,8 @@ function frame(now) {
       // endpoint can never settle once the ship has moved during the zoom.
       if (followShip) Object.assign(cameraGoal, shipCamera(cameraGoal.span));
       const a = 1 - Math.exp(-Math.min(realDt, 0.1) * 8);
-      if (!cameraGoal.focus || !stepFocusedCamera(a)) {
+      if (cameraGoal.glide) stepCameraGlide(Math.min(realDt, 0.1));
+      else if (!cameraGoal.focus || !stepFocusedCamera(a)) {
         cam.x += (cameraGoal.x - cam.x) * a;
         cam.y += (cameraGoal.y - cam.y) * a;
         cam.span = Math.exp(
@@ -113,6 +114,7 @@ function frame(now) {
       Quests.draw();
       const tutorialTarget = ExpeditionTutorial.mapTargetPoint();
       if (tutorialTarget) circle(tutorialTarget.x, tutorialTarget.y, 10, 'tutorial', 1.5);
+      ExpeditionTutorial.follow();
     } catch (error) {
       // Discard any canvas save/clip left behind by the interrupted layer.
       canvas.width = canvas.width;
@@ -278,7 +280,7 @@ function pickMapTarget(e) {
     x = e.clientX - r.left,
     y = e.clientY - r.top;
   const tutorialTarget = ExpeditionTutorial.mapTargetPoint();
-  if (tutorialTarget && Math.hypot(x - tutorialTarget.x, y - tutorialTarget.y) <= 14) return {id:'proxima'};
+  if (tutorialTarget && Math.hypot(x - tutorialTarget.x, y - tutorialTarget.y) <= 14) return {id:ExpeditionTutorial.targetId()};
   const planet = !state.tutorialStep && !zenMode && globalThis.Exoplanets?.hit(x, y);
   if (planet) return {planet};
   const visits = MapVisits.hit(x, y);
@@ -464,6 +466,8 @@ $('startTutorial').onclick = () => {
   } else showExpeditionReset(true);
 };
 $('tutorialNext').onclick = () => ExpeditionTutorial.advance();
+$('tutorialLibrary').onclick = () => ExpeditionTutorial.openLibrary();
+$('tutorialAlt').onclick = () => ExpeditionTutorial.freeFlight();
 $('skipTutorial').onclick = () => ExpeditionTutorial.finish();
 $('menu').onkeydown = (event) => {
   if (event.key !== 'Escape') return;
@@ -519,6 +523,7 @@ function launchSelectedTarget(event) {
   } else launch();
 }
 $('launchBtn').onclick = event => {
+  if (state.tutorialStep === 'sail' || state.tutorialStep === 'supernova') return;
   const next = Quests.nextTarget();
   if (next) Quests.fly(next.step.id, next.quest.id);
   else launchSelectedTarget(event);
@@ -540,6 +545,7 @@ $('infoDialog').addEventListener('close', () => {
   const opener = document.activeElement;
   if (objectCardByPointer && objectCardOpeners.includes(opener?.id)) opener.blur();
   objectCardByPointer = false;
+  ExpeditionTutorial.dialogClosed();
 });
 $('infoDialog').addEventListener('click', (e) => {
   if (e.target === $('infoDialog')) {
@@ -675,6 +681,7 @@ resize();
 Route.recoverCompleted();
 renderUI();
 ExpeditionTutorial.showMap();
+globalThis.SkyGuide?.preload(object(state.selected));
 updateMapHeading();
 renderCatalog();
 MapLayers.start();

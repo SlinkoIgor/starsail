@@ -80,6 +80,15 @@ const MapAnnotations = {
     const boxAt = (offset) => ({ x: x - 4, y: y + offset - size - 4, w: w + 8, h: size + 10 });
     let offset = 0,
       box = boxAt(0);
+    if (q.guide) {
+      this.hits.push({ object: q.object, box });
+      MapLabels.boxes.push(box);
+      this.notableBoxes.push(box);
+      obstacles.push(box);
+      MapLabels.placed.push({ key: q.key, ...box });
+      text(q.name, x, y, size, 'tutorial', 'left', 'sans');
+      return;
+    }
     if (q.filtered) {
       const placements = [
         {x:p.x+15,y:p.y+23}, {x:p.x-w-15,y:p.y+23},
@@ -275,17 +284,15 @@ const MapAnnotations = {
           (a, b) =>
             Number(b.key === 'ship') - Number(a.key === 'ship') || a.key.localeCompare(b.key),
         );
+    const guide = ExpeditionTutorial.mapTarget();
+    if (guide) this.place({key:'object-' + guide.object.id, name:guide.name, object:guide.object, p:guide.p, alpha:1, guide:true}, obstacles);
     for (const q of [
       ...items,
       ...fixed.map((q) => ({ ...q, alpha: q.opacity ?? 1 })),
       ...localItems,
       ...moving.map((q) => ({ ...q, alpha: q.opacity ?? 1 })),
     ])
-      this.place(q, obstacles);
-    const p = ExpeditionTutorial.mapTargetPoint();
-    if (p && !this.hits.some(h => h.object.id === 'proxima')) {
-      this.place({key:'object-proxima', name:'Проксима Центавра', object:object('proxima'), p, alpha:1, filtered:true}, obstacles);
-    }
+      if (!guide || q.object?.id !== guide.object.id) this.place(q, obstacles);
   },
 };
 globalThis.MapAnnotations = MapAnnotations;

@@ -3,6 +3,30 @@
 const ExpeditionTutorial = {
   storageKey: 'parus-intro-tutorial',
   startRate: 0.1,
+  firstTarget: 'alpha',
+  farTarget: 'sgr',
+  centerRadius: 5,
+  centerRuler: 0.02,
+  approachSeconds: 6,
+  galaxyTarget: 'andromeda',
+  neighbourSpan: 1e7,
+  galaxyRadius: 3e5,
+  universeSecondsPerDecade: 2.5,
+  approach: null,
+  tracked: null,
+  leadPhotos: {alpha: 'hubble-alpha', sgr: 'eso-eso1825e-orbits'},
+  tour: {
+    search: 'catalogBtn', filters: 'mapFilterBtn', follow: 'shipBtn', theme: 'themeBtn', library: 'libraryBtn',
+    restart: 'resetBtn', settings: 'settingsBtn', zen: 'zenBtn', quests: 'questBtn',
+  },
+  heldButtons: ['catalogBtn', 'mapFilterBtn', 'shipBtn', 'resetBtn', 'zenBtn'],
+  at(step) {
+    return TUTORIAL_STEPS.indexOf(step);
+  },
+  between(first, last, step = state.tutorialStep) {
+    const index = this.at(step);
+    return index >= this.at(first) && index <= this.at(last);
+  },
   openSession(hasExpedition) {
     let firstVisit = !hasExpedition;
     try {
@@ -11,22 +35,52 @@ const ExpeditionTutorial = {
     } catch {}
     if (firstVisit) state.timeScale = this.startRate;
     // A guided flight and its arrival remain in the tutorial even if the tab was closed.
-    let step = state.tutorialStep === 'flight' ? 'flight' : firstVisit ? 'welcome' : null;
+    let step = this.at(state.tutorialStep) >= this.at('flight') ? state.tutorialStep : firstVisit ? 'welcome' : null;
     try {
       const active = JSON.parse(sessionStorage.getItem(this.storageKey));
       if (active?.expedition === state.expedition && TUTORIAL_STEPS.includes(active.step))
         step = active.step;
     } catch {}
     // Earlier versions ended training on takeoff. The departure snapshot identifies that flight.
-    if (!step && !state.tutorialStep && state.flight?.target === 'proxima' &&
+    if (!step && !state.tutorialStep && ['proxima', this.firstTarget].includes(state.flight?.target) &&
         state.flight.rollback?.tutorialStep === 'launch' && !state.flight.tutorialDismissed) step = 'flight';
-    if (['propulsion', 'launch'].includes(step) && (state.selected !== 'proxima' || !this.canChoose())) step = 'destination';
+    step = this.resume(step);
     if (step) this.prepareDeparture();
     this.setStep(step);
   },
+  resume(step) {
+    if (!TUTORIAL_STEPS.includes(step)) return null;
+    if (this.between('propulsion', 'launch', step))
+      return state.selected === this.firstTarget && this.canChoose() ? step : 'destination';
+    if (this.between('star', 'collector', step)) {
+      if (state.flight) return this.goal(state.flight) === this.farTarget ? 'voyage' : null;
+      if (state.current !== this.firstTarget) return null;
+      if (step === 'card') return 'star';
+      return this.between('sail', 'collector', step) && state.selected !== this.farTarget ? 'blackhole' : step;
+    }
+    if (step === 'voyage' && !state.flight)
+      return this.atCenter() ? 'braking' : state.current === this.firstTarget ? 'blackhole' : null;
+    if (this.between('braking', 'holecard', step)) return !this.atCenter() ? null : step === 'holecard' ? 'hole' : step;
+    if (this.between('neighbour', 'crossing', step)) {
+      if (state.flight) return this.goal(state.flight) === this.galaxyTarget ? 'crossing' : null;
+      if (step === 'crossing') return this.atGalaxy() ? 'arrival' : this.atCenter() ? 'neighbour' : null;
+      if (!this.atCenter()) return null;
+      return state.selected === this.galaxyTarget ? step : 'neighbour';
+    }
+    if (this.between('arrival', 'farewell', step)) return state.flight ? null : step;
+    return step;
+  },
+  parks(step = state.tutorialStep) {
+    return this.between('blackhole', 'voyage', step);
+  },
   setStep(step) {
     if (step && !state.tutorialStep) Quests.pauseForTutorial();
+    const parked = this.parks();
     state.tutorialStep = step;
+    if (parked !== this.parks() && typeof MissionPlanner !== 'undefined') {
+      const guided = '"' + this.farTarget + '"';
+      for (const key of [...MissionPlanner.cache.keys()]) if (key.includes(guided)) MissionPlanner.cache.delete(key);
+    }
     this.layout();
     if (!step && state.quests.starterPending) {
       delete state.quests.starterPending;
@@ -42,6 +96,8 @@ const ExpeditionTutorial = {
     if (app.dataset.tutorial === step) return;
     app.dataset.tutorial = step;
     app.dataset.tutorialParts = TUTORIAL_STEPS.slice(0, TUTORIAL_STEPS.indexOf(step) + 1).join(' ');
+    const held = this.between('search', 'farewell', step);
+    for (const id of this.heldButtons) $(id).inert = held;
     UIContent.text($('startTutorial'), step ? 'Отключить обучение' : 'Начать обучение');
     resize();
   },
@@ -59,49 +115,378 @@ const ExpeditionTutorial = {
     persist();
     renderUI();
   },
-  advance() {
-    const step = state.tutorialStep;
-    if (!step) return;
-    if (step === 'destination') {
-      if (this.canChoose()) this.showMap();
-      else this.finish();
-      return;
-    }
-    if (step === 'flight') {
-      if (!state.flight) this.finish();
-      return;
-    }
-    if (step === 'launch') {
-      if ($('launchBtn').disabled) this.finish();
-      return;
-    }
-    const next = TUTORIAL_STEPS[TUTORIAL_STEPS.indexOf(step) + 1];
+  go(next) {
     this.setStep(next);
     persist();
     renderUI();
-    if (next === 'destination' || next === 'launch') this.showMap();
+    if (next === 'center') this.showCenter(true);
+    else if (next === 'destination' || next === 'launch' || next === 'blackhole' || next === 'neighbour') this.showMap();
+    else if (next === 'hole') select(this.farTarget);
+    else if (next === 'universe') this.showUniverse(true);
+  },
+  advance() {
+    const step = state.tutorialStep;
+    if (!step || step === 'star' || step === 'card' || step === 'holecard' || (step === 'center' && this.approach) ||
+        (step === 'universe' && this.gliding())) return;
+    if (step === 'destination' || step === 'blackhole' || step === 'neighbour') {
+      if (this.targetId()) this.showMap();
+      else this.finish();
+      return;
+    }
+    if (step === 'flight' || step === 'voyage' || step === 'crossing') {
+      if (!state.flight) this.finish();
+      return;
+    }
+    if (step === 'launch' || step === 'collector' || step === 'burst') {
+      if (this.blocked(step)) this.finish();
+      return;
+    }
+    if (step === 'sail') {
+      this.connectSail();
+      return;
+    }
+    if (step === 'supernova') {
+      if (this.burstIssue()) this.finish();
+      else this.connectSail(true);
+      return;
+    }
+    if (step === 'hole') {
+      if (!this.cardReady()) showObject(this.farTarget);
+      return;
+    }
+    if (step === 'quests') {
+      Quests.open();
+      renderUI();
+      return;
+    }
+    if (step === 'farewell') {
+      this.finish();
+      return;
+    }
+    this.go(TUTORIAL_STEPS[this.at(step) + 1]);
+  },
+  blocked(step = state.tutorialStep) {
+    return $('launchBtn').disabled || (step !== 'launch' && !!QuickFlight.issueReason);
+  },
+  burstIssue() {
+    return FlightSetup.burstIssue(object(state.current));
+  },
+  connectSail(burst = false) {
+    state.flightSetup = FlightSetup.normalize({...FlightSetup.preferred(), sail: true, collector: true, burst});
+    FlightSetup.sync();
+    persist();
+    renderUI();
+  },
+  openLibrary() {
+    Library.open('flight', state.tutorialStep === 'burst' ? 'supernova' : null);
+  },
+  questChosen() {
+    if (state.tutorialStep !== 'quests') return;
+    delete state.quests.starterPending;
+    this.go('farewell');
+  },
+  freeFlight() {
+    if (state.tutorialStep !== 'quests') return;
+    Quests.close();
+    this.questChosen();
+  },
+  orbitsSpan(hole) {
+    const rows = typeof NuclearStars === 'undefined' ? [] : NuclearStars.rows.filter(q => q.e < 1),
+      v = routeViewport(), cx = width / 2, cy = cameraViewportHeight() / 2,
+      halfWidth = Math.min(cx - v.left, v.right - cx), halfHeight = Math.min(cy - v.top, v.bottom - cy);
+    let span = 0;
+    for (const q of rows) for (let n = 0; n < 90; n++) {
+      const p = NuclearStars.map(q, n / 90 * 2 * Math.PI);
+      span = Math.max(span, Math.abs(p.x - hole.x) * width / halfWidth, Math.abs(p.y - hole.y) * width / halfHeight);
+    }
+    return span * 1.1;
+  },
+  showCenter(slow = false) {
+    const hole = MapLayout.project(object(this.farTarget)), near = this.centerRuler * width / GRID_TARGET_PIXELS,
+      calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+      wide = slow && !calm ? this.orbitsSpan(hole) : 0, staged = wide > near * 2,
+      view = centeredCamera(hole, staged ? wide : near);
+    releaseShipCamera();
+    cameraGoal = {...view, focus: this.farTarget};
+    updateMapHeading();
+    this.approach = staged ? {goal: cameraGoal, hole, span: near} : null;
+  },
+  followApproach() {
+    const a = this.approach;
+    if (!a || cameraGoal === a.goal) return;
+    const arrived = !cameraGoal && cam.x === a.goal.x && cam.y === a.goal.y && cam.span === a.goal.span;
+    this.approach = null;
+    if (a.gliding || !arrived || state.tutorialStep !== 'center') return;
+    glideCamera(centeredCamera(a.hole, a.span), a.hole, this.approachSeconds);
+    this.approach = {goal: cameraGoal, gliding: true};
+  },
+  showGalaxy() {
+    fitCameraPoints([MapLayout.project(object(this.farTarget))], routeViewport(true), zoomStops[2].span);
+  },
+  showNeighbour() {
+    fitCameraPoints([FlightView.ship(), MapLayout.project(object(this.galaxyTarget))], routeViewport(true), this.neighbourSpan);
+  },
+  universeView() {
+    const view = UniverseMap.overview(), hud = document.querySelector('.telemetry')?.getBoundingClientRect();
+    if (!(hud?.height > 0)) return view;
+    const scale = width / view.span, r = this.universeRadius() * scale, cy = mapOriginY() - view.y * scale,
+      top = 16 + r, bottom = hud.top - canvas.getBoundingClientRect().top - 44 - r;
+    return {...view, y: (mapOriginY() - (top <= bottom ? clamp(cy, top, bottom) : (top + bottom) / 2)) / scale};
+  },
+  showUniverse(slow = false) {
+    if (!globalThis.UniverseMap) return;
+    const view = this.universeView();
+    if (!slow || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      goCamera(view.x, view.y, view.span);
+      return;
+    }
+    const seconds = Math.abs(Math.log10(view.span / cam.span)) * this.universeSecondsPerDecade;
+    glideCamera(view, FlightView.ship(), clamp(seconds, 6, 16));
+  },
+  gliding() {
+    return !!cameraGoal?.glide;
   },
   showMap() {
-    if (!state.tutorialStep) return;
-    if (state.tutorialStep === 'flight') {
-      if (state.flight) fitRoute(object(state.flight.target), {wholeRoute:true});
+    const step = state.tutorialStep;
+    if (!step) return;
+    if (this.allows('neighbour')) {
+      if (state.flight) {
+        if (step === 'crossing') fitRoute(object(state.flight.target), {wholeRoute:true});
+      } else if (this.between('neighbour', 'burst')) this.showNeighbour();
+      else if (this.between('universe', 'farewell')) this.showUniverse();
+      return;
+    }
+    if (this.allows('flight')) {
+      if (state.flight) {
+        if (step === 'flight' || step === 'voyage') fitRoute(object(state.flight.target), {wholeRoute:true});
+      } else if (this.between('blackhole', 'collector')) this.showGalaxy();
+      else if (this.between('center', 'holecard')) this.showCenter();
       return;
     }
     if (!this.allows('destination') || !this.canChoose()) {
       centerOnSun();
       return;
     }
-    const points = ['sol', 'proxima'].map(id => MapLayout.project(object(id)));
+    const points = ['sol', this.firstTarget].map(id => MapLayout.project(object(id)));
     fitCameraPoints(points, routeViewport(true), SOLAR_CAMERA_SPAN);
   },
   canChoose() {
-    return !state.flight && state.current !== 'proxima' && !state.itinerary.length;
+    return !state.flight && state.current !== this.firstTarget && !state.itinerary.length;
+  },
+  goal(f) {
+    return f.requestedTarget || f.target;
+  },
+  atCenter() {
+    return !state.flight && !!state.current && state.visited.includes(this.farTarget) &&
+      distance(state.ship, object(this.farTarget)) < this.centerRadius;
+  },
+  atGalaxy() {
+    return !state.flight && !!state.current && state.visited.includes(this.galaxyTarget) &&
+      distance(state.ship, object(this.galaxyTarget)) < this.galaxyRadius;
+  },
+  targetId() {
+    const step = state.tutorialStep;
+    if (step === 'destination') return this.canChoose() ? this.firstTarget : null;
+    if (step === 'blackhole')
+      return !state.flight && !state.itinerary.length && state.current === this.firstTarget ? this.farTarget : null;
+    if (step === 'neighbour') return !state.itinerary.length && this.atCenter() ? this.galaxyTarget : null;
+    return null;
   },
   target(o) {
-    return o?.id === 'proxima' && state.tutorialStep === 'destination' && this.canChoose();
+    return !!o && o.id === this.targetId();
+  },
+  mapTarget() {
+    const o = object(this.targetId());
+    return o ? {object: o, name: MapDetails.mapLabelName(o) || o.name, p: screen(o)} : null;
   },
   mapTargetPoint() {
-    if (state.tutorialStep === 'destination' && this.canChoose()) return screen(object('proxima'));
+    const id = this.targetId();
+    if (id) return screen(object(id));
+  },
+  choose(o) {
+    if (!this.target(o)) return false;
+    if (o.id !== this.firstTarget) {
+      const light = o.id === this.galaxyTarget;
+      state.flightSetup = FlightSetup.normalize({
+        ...FlightSetup.preferred(), engine: true, dump: false, sail: light, collector: light, burst: false,
+      });
+    }
+    this.setStep(o.id === this.firstTarget ? 'propulsion' : o.id === this.farTarget ? 'sail' : 'supernova');
+    return true;
+  },
+  setup(s = state) {
+    const step = s.tutorialStep;
+    if ((step === 'propulsion' || step === 'launch') && s.selected === this.firstTarget)
+      return {...FlightSetup.defaults(s), sail: false, collector: false};
+    const source = s.planningSource || object(s.current), used = new Set(s.destroyed);
+    if (this.between('neighbour', 'burst', step)) return FlightSetup.resolve(FlightSetup.preferred(s), source, used);
+    if (!this.between('star', 'collector', step)) return null;
+    return {...FlightSetup.resolve(FlightSetup.preferred(s), source, used), burst: false};
+  },
+  guided(f) {
+    const step = state.tutorialStep;
+    return (step === 'flight' && this.goal(f) === this.firstTarget) || (step === 'voyage' && this.goal(f) === this.farTarget) ||
+      (step === 'crossing' && this.goal(f) === this.galaxyTarget);
+  },
+  launched(f) {
+    const step = state.tutorialStep;
+    if (step === 'launch' && this.goal(f) === this.firstTarget) this.setStep('flight');
+    else if (step === 'collector' && this.goal(f) === this.farTarget) this.setStep('voyage');
+    else if (step === 'burst' && this.goal(f) === this.galaxyTarget) this.setStep('crossing');
+    else if (this.allows('star') && step) this.setStep(null);
+  },
+  cancelled() {
+    const step = state.tutorialStep;
+    if (step === 'flight')
+      this.setStep(state.selected === this.firstTarget && this.canChoose() ? 'launch' : 'destination');
+    else if (step === 'voyage')
+      this.setStep(state.current !== this.firstTarget ? null : state.selected === this.farTarget ? 'sail' : 'blackhole');
+    else if (step === 'crossing')
+      this.setStep(!this.atCenter() ? null : state.selected === this.galaxyTarget ? 'supernova' : 'neighbour');
+  },
+  sync() {
+    const step = state.tutorialStep;
+    let next = step;
+    if (step === 'flight' && !state.flight && state.current === this.firstTarget) next = 'star';
+    else if ((step === 'sail' || step === 'collector') && !state.flight && state.selected === this.farTarget) {
+      const setup = FlightSetup.read();
+      next = setup.sail && setup.collector ? 'collector' : 'sail';
+    } else if (step === 'voyage' && this.atCenter()) next = 'braking';
+    else if ((step === 'supernova' || step === 'burst') && !state.flight && state.selected === this.galaxyTarget)
+      next = FlightSetup.read().burst ? 'burst' : 'supernova';
+    else if (step === 'crossing' && this.atGalaxy()) next = 'arrival';
+    if (next === step) return;
+    this.setStep(next);
+    persist();
+  },
+  hostStar() {
+    return typeof NuclearStars === 'undefined' ? null : NuclearStars.rows.find(q => q.id === state.current) || null;
+  },
+  fastestStar() {
+    return typeof NuclearStars === 'undefined' ? null : NuclearStars.rows.filter(q => q.e < 1)
+      .reduce((a, q) => !a || NuclearStars.period(q) < NuclearStars.period(a) ? q : a, null);
+  },
+  arrivalStar(host, destroyed) {
+    if (host?.id !== this.farTarget || !this.parks()) return null;
+    const star = object(this.fastestStar()?.id);
+    return star && ![...destroyed].includes(star.id) ? star : null;
+  },
+  plural(n, one, few, many) {
+    const unit = n % 10, rest = n % 100;
+    return unit === 1 && rest !== 11 ? one : unit > 1 && unit < 5 && (rest < 10 || rest > 20) ? few : many;
+  },
+  yearsText(years) {
+    const n = Math.round(years);
+    return n + ' ' + this.plural(n, 'год', 'года', 'лет');
+  },
+  objectCount() {
+    const n = (typeof ExtendedCatalog === 'undefined' ? 0 : ExtendedCatalog.total) + (globalThis.Exoplanets?.newCount || 0);
+    return n > 0 ? n.toLocaleString('ru-RU') + ' ' + this.plural(n, 'объект', 'объекта', 'объектов') : '';
+  },
+  starName(id) {
+    const o = object(id);
+    return o ? MapDetails.mapLabelName(o) || o.name : '';
+  },
+  universeRadius() {
+    return UniverseMap.radius * Cosmology.scale();
+  },
+  flightLimit() {
+    const q = ReachDisplay.ship(), radius = q && ReachDisplay.section(q).radius;
+    return radius > 0 ? {radius, text: distanceText(q.radius)} : null;
+  },
+  circleSpot(step) {
+    const angle = -0.6, limit = step === 'reach' && this.flightLimit(),
+      center = limit ? state.ship : {x: 0, y: 0}, radius = limit ? limit.radius : this.universeRadius();
+    return {x: center.x + radius * Math.cos(angle), y: center.y + radius * Math.sin(angle)};
+  },
+  chosenQuest() {
+    return Quests.quest(Quests.store().active.at(-1))?.title || '';
+  },
+  galleryLead(o) {
+    const first = o.id === this.firstTarget && this.between('star', 'card'),
+      far = o.id === this.farTarget && this.between('hole', 'holecard');
+    return first || far ? this.leadPhotos[o.id] : null;
+  },
+  marksDistance() {
+    return ['propulsion', 'sail', 'supernova'].includes(state.tutorialStep);
+  },
+  opensCard(o) {
+    return this.between('hole', 'holecard') && !state.flight && o?.id === this.farTarget;
+  },
+  cardReady() {
+    return state.tutorialStep === 'hole' && this.opensCard(object(state.selected)) && !$('objectCardBtn').hidden;
+  },
+  cardOpened(o) {
+    const step = state.tutorialStep,
+      next = step === 'star' && o.id === this.firstTarget ? 'card' : step === 'hole' && o.id === this.farTarget ? 'holecard' : null;
+    if (!next) return;
+    this.setStep(next);
+    persist();
+    renderUI();
+  },
+  dialogClosed() {
+    if (state.tutorialStep === 'card') this.go('blackhole');
+    else if (state.tutorialStep === 'holecard') this.go('neighbour');
+  },
+  legend: [
+    ['Звёзды', 22, '<circle r="4" stroke-width=".8"/><circle class="solid" r="1.5"/><path stroke-width=".7" d="M-9 0H-6M6 0H9M0-9V-6M0 6V9"/>'],
+    ['Чёрные дыры', 22, '<circle r="8" stroke-width=".8"/><circle class="solid" r="4"/><ellipse rx="17" ry="4" stroke-width="1.25" transform="rotate(-17.2)"/>'],
+    ['Пульсары и квазары', 38, '<circle r="5"/><circle r="10" stroke-width=".5"/><path stroke-width=".8" d="M-5 18L5-18M-8 18H0M0-18H8"/>'],
+    ['Туманности', 22, '<path d="M-4.8 .6C-5.3-2-2.8-4 .2-3.2M2.7-2.7C5-1.9 5.3 .8 3.4 2.2M1.3 3.2C-1.4 4.4-4 2.9-3.5 1.5M-1.8 .5C-1.1-1.7 1.3-1.3 1.7 .5"/>'],
+    ['Звёздные скопления', 22, '<circle class="solid" r="1.6"/>'],
+    ['Галактики', 22, '<circle r="1.5" stroke-width=".9"/>'],
+    ['Скопления галактик', 22, '<circle r="9" stroke-width=".7" stroke-dasharray="7 3 1 3"/><circle r="1.2" stroke-width=".7"/>'],
+    ['Галактические нити', 22, '<path stroke-width=".7" d="M13.9 9L14.4 6.1L16 3L14.8 2.2L13.9 0L14.2-3.8L13.8-4.2L11.3-3.6L9.9-3.9L5-9L3.9-9L.2-6.5L-3.5-3.6L-7.6 .8L-16 2.1"/>'],
+  ],
+  galaxyMark() {
+    if (this.galaxyGlyph) return this.galaxyGlyph;
+    const o = object(this.galaxyTarget), model = o?.galaxy && typeof MapGeometry !== 'undefined' && MapGeometry.model(o);
+    if (!(model?.radius > 0)) return null;
+    const tolerance = model.radius / 80, outline = MapGeometry.projected(o, {tolerance, steps: 48}).paths,
+      arms = GalaxyStructure.projected(o, {tolerance}), points = outline.flatMap(path => path.points),
+      scale = 16 / Math.max(...points.map(q => Math.abs(q.x))),
+      size = 2 * Math.ceil(Math.max(...points.map(q => Math.abs(q.y))) * scale + 1.5),
+      at = v => String(Math.round(v * scale * 10) / 10),
+      d = paths => paths.map(path => 'M' + path.points.map(q => at(q.x) + ' ' + at(q.y)).join('L') + (path.closed ? 'Z' : '')).join('');
+    return this.galaxyGlyph = [size, '<path stroke-width=".9" stroke-dasharray="3 5" d="' + d(outline) + '"/><path stroke-width=".6" d="' + d(arms) + '"/>'];
+  },
+  legendFigure() {
+    return '<ul class="tutorial-legend" style="--rows:' + Math.ceil(this.legend.length / 2) + '">' + this.legend.map(([name, height, mark]) => {
+      const [size, glyph] = name === 'Галактики' && this.galaxyMark() || [height, mark];
+      return '<li><svg viewBox="-19 ' + -size / 2 + ' 38 ' + size + '" width="38" height="' + size + '" aria-hidden="true">' + glyph +
+        '</svg><span>' + name + '</span></li>';
+    }).join('') + '</ul>';
+  },
+  icons: {quests: ['quest-icon', 'кнопка «Квесты»'], library: ['library-icon', 'кнопка «Бортовая библиотека»']},
+  iconMark(name) {
+    const [icon, label] = this.icons[name];
+    return '<span class="tutorial-icon" role="img" aria-label="' + label + '"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#' + icon + '"/></svg></span>';
+  },
+  paragraph(line) {
+    return '<p>' + SkyGuide.escape(line).replace(/\{(\w+)\}/g, (token, name) => this.icons[name] ? this.iconMark(name) : token) + '</p>';
+  },
+  recommends(id) {
+    return state.tutorialStep === 'quests' && id === Quests.starterId;
+  },
+  brakingFigure() {
+    const gas = Array.from({length: 15}, (_, i) =>
+      '<rect x="65" y="' + ((i % 5) - 2) * 10 + '" width="1.6" height="1.6" style="animation-delay:-' +
+      (i / 15).toFixed(3) + 's"/>').join('');
+    return '<figure class="tutorial-figure" role="img" aria-label="Торможение: парус позади корабля ловит встречный газ, двигатель даёт обратную тягу">' +
+      '<svg viewBox="-62 -40 136 80" aria-hidden="true">' +
+      '<path class="tutorial-brake-field" d="M-22 34.9A28 35 0 1 1 -21.6 -34.9"/>' +
+      '<g class="tutorial-brake-gas">' + gas + '</g>' +
+      '<path class="tutorial-brake-tether" d="M-4 0L-30 -21M-4 0L-30 21M-4 0L-42 0"/>' +
+      '<path class="tutorial-brake-sail" d="M-30 -21Q-54 0 -30 21"/>' +
+      '<path class="tutorial-brake-hull" d="M11 0L-3 -4L0 0L-3 4Z"/>' +
+      '<path class="tutorial-brake-plume" d="M13 -2L23 0M13 2L23 0"/>' +
+      '</svg></figure>';
+  },
+  gasDensityText() {
+    const n = FlightSetup.preferred().densityCm3, whole = Number.isInteger(n),
+      one = whole && n % 10 === 1 && n % 100 !== 11;
+    return fmt(n, whole ? 0 : 2) + (one ? ' атом' : whole && (n % 10 === 0 || n % 10 > 4 || (n % 100 > 10 && n % 100 < 15)) ? ' атомов' : ' атома') +
+      ' на кубический сантиметр';
   },
   lessons: {
     welcome: {
@@ -140,35 +525,224 @@ const ExpeditionTutorial = {
     },
     destination: {
       title: 'Выберите цель',
-      text: 'Первая цель — Проксима Центавра, ближайшая к Солнцу звезда. Нажмите на неё.',
+      text: 'Первая цель — Альфа Центавра A, главная звезда ближайшей к Солнцу звёздной системы. Нажмите на неё.',
     },
     propulsion: {
       title: 'Расстояние и время в пути', anchor: 'arrivalEstimate',
       text: () => QuickFlight.issueReason ||
-        'До Проксимы ' + $('targetDistance').textContent + '. Световой год — путь, который свет проходит за год.\n' +
+        'До Альфы Центавра ' + $('targetDistance').textContent + '. Световой год — путь, который свет проходит за год.\n' +
         '«Ковчег» будет в пути ' + $('arrivalProper').textContent + ' по бортовым часам и ' +
         $('arrivalEarth').textContent + ' по часам на Земле: в полёте бортовые часы отстают.',
     },
     launch: {
-      title: 'Полёт к Проксиме', anchor: 'launchBtn',
-      text: () => {
-        const seconds = ExpeditionTutorial.flightSeconds();
-        return 'Нажмите «Лететь» в карточке звезды. Следите за картой и приборами: в полёте меняются скорость, масса и ход часов.' +
-          (seconds ? (speed === 1 ? ' При темпе 1× перелёт займёт ' : ' Выберите темп 1× — тогда перелёт займёт ') + seconds + '.' : '');
-      },
+      title: 'Полёт к Альфе Центавра', anchor: 'launchBtn',
+      text: () => 'Нажмите «Лететь» в карточке звезды. Следите за картой и приборами: в полёте меняются скорость, масса и ход часов.' +
+        ExpeditionTutorial.tempoText(),
     },
     flight: {
       title: 'Учебный перелёт завершён', anchor: 'arrivalEstimate',
-      text: () => state.current === 'proxima'
-        ? 'Вы у Проксимы Центавра. В карточке звезды — время в пути: на борту прошло меньше, чем на Земле.'
-        : 'Теперь можно завершить обучение и продолжить экспедицию.',
+      text: 'Теперь можно завершить обучение и продолжить экспедицию.',
+    },
+    star: {
+      title: 'Первый межзвёздный перелёт', anchor: 'objectCardBtn',
+      text: () => 'Первый межзвёздный перелёт завершён: «Ковчег» на орбите Альфы Центавра A.\n' +
+        'Под названием звезды стоит краткая справка: «' + $('targetType').textContent + '». Жёлтый карлик — звезда того же типа, что и Солнце. ' +
+        'Буква A обозначает главную из трёх звёзд системы: рядом с ней обращается Альфа Центавра B, намного дальше — Проксима.\n' +
+        'Кнопка «Карточка объекта» открывает полную карточку звезды. Нажмите её.',
+    },
+    blackhole: {
+      title: 'Выберите цель',
+      text: () => 'Следующая цель намного дальше — Стрелец A*, сверхмассивная чёрная дыра в центре Млечного Пути, нашей Галактики. Её масса — ' +
+        fmt(MapDetails.mass(object(ExpeditionTutorial.farTarget)) / 1e6, 1) + ' млн масс Солнца.\n' +
+        'Выберите её на карте.',
+    },
+    sail: {
+      title: 'Расстояние до цели', anchor: 'arrivalEstimate',
+      text: () => {
+        const setup = FlightSetup.read();
+        if (setup.sail && !setup.collector)
+          return 'Парус раскрыт, но рассеянного света звезды для разгона мало. Включите «Коллектор»: он соберёт свет в луч.';
+        return 'До Стрельца A* ' + $('targetDistance').textContent + '. Только на тяге двигателя перелёт займёт ' +
+          $('arrivalProper').textContent + ' по бортовым часам.\n' +
+          'С фотонным парусом «Ковчег» долетит намного быстрее: ' +
+          (FlightSetup.mobile() ? 'подключите парус и коллектор.' : 'включите «Парус» и «Коллектор» в карточке цели.');
+      },
+    },
+    collector: {
+      title: 'Парус и коллектор', anchor: 'launchBtn',
+      text: () => 'Коллектор — зеркало возле звезды. Оно собирает её свет в узкий луч и направляет на парус «Ковчега». ' +
+        'У фотонов нет массы, но есть импульс: отражаясь от паруса, они толкают корабль.\n' +
+        'С лучом «Ковчег» разгонится до ' + $('quickSpeed').textContent + ' и пройдёт путь почти наравне со светом — за ' +
+        $('arrivalEarth').textContent + ' по часам наблюдателя. На борту из-за замедления времени пройдёт всего ' +
+        $('arrivalProper').textContent + '.\n' +
+        'Устройство корабля описано в библиотеке — кнопка {library}. ' +
+        '«Подробный план» открывает точную настройку полёта.\n' +
+        'Нажмите «Лететь».' + ExpeditionTutorial.tempoText(),
+    },
+    voyage: {
+      title: 'Учебный перелёт завершён', anchor: 'arrivalEstimate',
+      text: 'Теперь можно завершить обучение и продолжить экспедицию.',
+    },
+    braking: {
+      title: 'Как тормозит «Ковчег»',
+      text: () => {
+        const host = ExpeditionTutorial.hostStar();
+        return '«Ковчег» в центре Млечного Пути' +
+          (host ? ': он остановился у ' + host.name + ', одной из звёзд возле Стрельца A*' : ', рядом со Стрельцом A*') +
+          '. Перед остановкой корабль выглядел на карте так:\n{figure}\n' +
+          'Во время торможения парус собирает встречный межзвёздный газ и пыль. Вещества очень мало — в игре принят ' +
+          ExpeditionTutorial.gasDensityText() + ', — но на околосветовой скорости даже оно заметно замедляет корабль.\n' +
+          'Собранное вещество попадает в бак. Остаток скорости гасит фотонный двигатель. Он работает так же, как при разгоне ' +
+          'на старте: целиком превращает вещество в свет по формуле E = mc². Только тяга теперь направлена против хода.';
+      },
+    },
+    center: {
+      title: 'Звёзды у чёрной дыры',
+      text: () => {
+        const rows = typeof NuclearStars === 'undefined' ? [] : NuclearStars.rows,
+          host = ExpeditionTutorial.hostStar(), fastest = ExpeditionTutorial.fastestStar();
+        return (rows.length ? 'Пунктирные линии — пути звёзд вокруг Стрельца A*. На карте ' + rows.length +
+            ' звёзд с измеренными траекториями. ' : '') +
+          (host?.e < 1 ? '«Ковчег» стоит у ' + host.name + ': она обходит чёрную дыру за ' +
+            ExpeditionTutorial.yearsText(NuclearStars.period(host)) + (host === fastest ? ' — быстрее остальных' : '') + '.' : '') + '\n' +
+          'Рядом с чёрной дырой время идёт медленнее из-за её гравитации. Когда звезда S2 проходит ближайшую к чёрной дыре точку орбиты, ' +
+          'её часы отстают примерно на минуту в сутки: сказываются гравитация чёрной дыры и скорость самой звезды. ' +
+          'Это измерили по покраснению света звезды.';
+      },
+    },
+    hole: {
+      title: 'Стрелец A*',
+      text: () => 'В центре всех орбит — Стрелец A*. Его массу, ' +
+        fmt(MapDetails.mass(object(ExpeditionTutorial.farTarget)) / 1e6, 1) +
+        ' млн масс Солнца, определили по движению этих звёзд: все они обращаются вокруг одной точки.' +
+        (ExpeditionTutorial.cardReady() ? '\nКнопка «Карточка объекта» открывает полную карточку чёрной дыры. Нажмите её.' : ''),
+    },
+    holecard: {title: 'Стрелец A*', text: ''},
+    neighbour: {
+      title: 'Выберите цель',
+      text: 'Дальше — другая галактика. Андромеда — ближайшая к Млечному Пути крупная галактика. Выберите её на карте.',
+    },
+    supernova: {
+      title: 'Расстояние до цели', anchor: 'arrivalEstimate',
+      text: () => {
+        const setup = FlightSetup.read(), light = setup.sail && setup.collector,
+          time = QuickFlight.issueReason ? '' : (light ? ' С парусом и коллектором перелёт займёт ' : ' Сейчас перелёт займёт ') +
+            $('arrivalProper').textContent + ' по бортовым часам.';
+        return 'До Андромеды ' + $('targetDistance').textContent + '.' + time + '\n' +
+          'Намного сильнее разгоняет вспышка сверхновой. ' +
+          (FlightSetup.mobile() ? 'Включите её.' : 'Включите «Сверхновая» в карточке цели.');
+      },
+    },
+    burst: {
+      title: 'Взрыв сверхновой', anchor: 'launchBtn',
+      text: () => {
+        const setup = FlightSetup.read(), suns = setup.burstLuminosityW / Astro.solarLuminosity,
+          star = ExpeditionTutorial.starName(state.current);
+        return 'Сверхновая — взрыв звезды, у которой стоит «Ковчег». Вспышка ' + fmt(setup.burstDays, 0) + ' суток светит как ' +
+          fmt(Math.round(suns / 1e8) * 100, 0) + ' млн Солнц. Коллектор направляет этот свет на парус: чем ярче свет, тем сильнее он толкает корабль.\n' +
+          'Со вспышкой «Ковчег» разгонится до ' + $('quickSpeed').textContent + '. Перелёт займёт ' + $('arrivalProper').textContent +
+          ' по бортовым часам и ' + $('arrivalEarth').textContent + ' по часам наблюдателя.' +
+          (star ? ' Звезда ' + star + ' будет уничтожена.' : '') + '\n' +
+          'Нажмите «Лететь».' + ExpeditionTutorial.tempoText();
+      },
+    },
+    crossing: {
+      title: 'Учебный перелёт завершён', anchor: 'arrivalEstimate',
+      text: 'Теперь можно завершить обучение и продолжить экспедицию.',
+    },
+    arrival: {
+      title: 'Перелёт к Андромеде', anchor: 'arrivalEstimate',
+      text: () => {
+        const trip = state.lastArrival;
+        return 'Перелёт завершён: «Ковчег» в Андромеде, на орбите одной из её звёзд.' +
+          (trip ? '\nВ пути прошло ' + durationText(trip.proper) + ' по бортовым часам и ' + durationText(trip.earth) +
+            ' по часам наблюдателя. Эти числа показаны в карточке, в строке «Время в пути».' : '');
+      },
+    },
+    universe: {
+      title: 'Вся Вселенная',
+      text: () => 'Карта показывает всю наблюдаемую Вселенную — шар радиусом ' + distanceText(ExpeditionTutorial.universeRadius()) +
+        '. Млечный Путь и Андромеда на этом масштабе сливаются в одну точку в центре.\n' +
+        'Вселенная расширяется, и далёкие галактики удаляются от нас. Поэтому долететь можно не до всего, что видно на карте.',
+    },
+    reach: {
+      title: 'Предел полёта',
+      text: () => {
+        const limit = ExpeditionTutorial.flightLimit();
+        return 'Чем дальше галактика, тем быстрее она удаляется. Самые далёкие «Ковчег» не догонит никогда, даже на скорости, близкой к световой.\n' +
+          (limit ? 'Граница достижимого отмечена на карте штрихпунктирной окружностью вокруг корабля с подписью «Предел полёта». Сейчас её радиус — ' + limit.text + '.'
+            : 'Расширение Вселенной сейчас выключено в настройках, поэтому границы достижимого на карте нет.');
+      },
+    },
+    objects: {
+      title: 'Объекты на карте',
+      text: () => {
+        const count = ExpeditionTutorial.objectCount();
+        return (count ? 'В базе «Ковчега» ' + count + '. ' : '') + 'На карте они обозначены так:\n{legend}';
+      },
+    },
+    search: {
+      title: 'Поиск',
+      text: 'Поиск находит объект по названию или обозначению в каталоге — например, «Сириус» или «M31».',
+    },
+    filters: {
+      title: 'Фильтры',
+      text: 'Фильтры определяют, что показано на карте: классы объектов, тематические подборки и отдельные каталоги.',
+    },
+    follow: {
+      title: 'Слежение за кораблём',
+      text: 'Эта кнопка возвращает карту к «Ковчегу» и включает слежение: карта движется вместе с кораблём.',
+    },
+    theme: {
+      title: 'Тема оформления',
+      text: 'Здесь выбирают цветовую схему карты и приборов.',
+    },
+    library: {
+      title: 'Бортовая библиотека',
+      text: 'В библиотеке описано, как летает «Ковчег», как устроена карта и откуда взяты данные. Здесь же — маршрут и журнал экспедиции.',
+    },
+    restart: {
+      title: 'Новая экспедиция',
+      text: 'Эта кнопка начинает экспедицию заново, от Солнца. Текущий прогресс при этом сбрасывается.',
+    },
+    settings: {
+      title: 'Настройки',
+      text: 'В настройках выбирают проекцию карты, включают мультиплеер и расширение Вселенной. Здесь же можно заново пройти обучение.',
+    },
+    zen: {
+      title: 'Режим дзен',
+      text: 'Режим дзен убирает с экрана приборы и панели: остаётся только карта. Выйти из него можно той же кнопкой.',
+    },
+    quests: {
+      title: () => Quests.isOpen ? 'Выберите квест' : 'Квесты',
+      text: () => {
+        if (!Quests.isOpen) return 'Вселенная огромна. Выбрать, куда лететь, помогут квесты: каждый квест — путешествие по интересным объектам с рассказом о них.';
+        const quest = Quests.quest(Quests.view);
+        return 'Рекомендуем начать с квеста «' + Quests.quest(Quests.starterId).title + '» и расширять знание о Вселенной постепенно.\n' +
+          (quest && !Quests.locked(quest) ? 'Чтобы выбрать этот квест, нажмите «Начать квест».' : 'Выберите квест в списке и нажмите «Начать квест».') +
+          ' Либо выберите свободный полёт.';
+      },
+    },
+    farewell: {
+      title: 'Экспедиция начинается',
+      text: () => {
+        const quest = ExpeditionTutorial.chosenQuest();
+        return (quest ? 'Квест «' + quest + '» начат. Его цели отмечены на карте флажками.'
+            : 'Вы выбрали свободный полёт. Квесты можно открыть в любой момент кнопкой {quests}.') + '\n' +
+          'Обучение пройдено, «Ковчег» в вашем распоряжении. Выбирайте цель на карте и нажимайте «Лететь».\n' +
+          'Счастливого пути!';
+      },
     },
   },
   flightSeconds() {
     const years = FlightEstimate.get()?.proper;
-    if (!(years > 0)) return '';
+    if (!(years > 0) || !Number.isFinite(years)) return '';
     const n = Math.max(1, Math.round(years));
     return 'около ' + n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'секунды' : 'секунд');
+  },
+  tempoText() {
+    const seconds = this.flightSeconds();
+    return seconds ? (speed === 1 ? ' При темпе 1× перелёт займёт ' : ' Выберите темп 1× — тогда перелёт займёт ') + seconds + '.' : '';
   },
   union(...rects) {
     return {
@@ -176,55 +750,132 @@ const ExpeditionTutorial = {
       top: Math.min(...rects.map(r => r.top)), bottom: Math.max(...rects.map(r => r.bottom)),
     };
   },
+  mapAnchor(p) {
+    const origin = canvas.getBoundingClientRect(), limit = cameraViewportHeight();
+    const x = origin.left + clamp(p.x, 0, width), y = origin.top + clamp(p.y, 0, limit);
+    return {
+      offscreen: p.x < 0 || p.x > width || p.y < 0 || p.y > limit,
+      anchor: {left:x - 9, right:x + 9, top:y - 9, bottom:y + 9},
+    };
+  },
   render() {
+    this.tracked = null;
+    this.sync();
+    this.followApproach();
     this.layout();
     const step = state.tutorialStep, card = $('tutorialCard');
-    const hideCard = !step || (step === 'flight' && !!state.flight);
+    const hideCard = !step || step === 'card' || step === 'holecard' ||
+      ((step === 'flight' || step === 'voyage' || step === 'crossing') && !!state.flight);
     UIPatch.set(card, 'hidden', hideCard);
     if (hideCard) return;
     const lesson = this.lessons[step];
     let body = typeof lesson.text === 'function' ? lesson.text() : lesson.text;
-    let action = 'Далее', waiting = false;
+    let action = 'Далее', alt = '', waiting = false, library = '', spotOn = null;
     let anchor = lesson.anchor && $(lesson.anchor).getBoundingClientRect();
     let sides = ['above', 'below', 'right', 'left'], frame;
+    const ready = step === 'hole' && this.cardReady();
     if (step === 'welcome') {
       action = 'Начать обучение';
       UIPatch.style(card, 'left', '');
       UIPatch.style(card, 'top', '');
     } else if (step === 'time' || step === 'zoom') {
       sides = ['right', 'below', 'above', 'left'];
-    } else if (step === 'destination') {
-      const p = screen(object('proxima')), origin = canvas.getBoundingClientRect();
-      const offscreen = p.x < 0 || p.x > width || p.y < 0 || p.y > cameraViewportHeight();
-      const x = origin.left + clamp(p.x, 0, width), y = origin.top + clamp(p.y, 0, cameraViewportHeight());
-      anchor = {left:x - 9, right:x + 9, top:y - 9, bottom:y + 9};
-      if (this.canChoose()) {
-        waiting = offscreen && !!cameraGoal;
-        action = offscreen ? 'Показать на карте' : '';
+    } else if (step === 'destination' || step === 'blackhole' || step === 'neighbour') {
+      spotOn = object(step === 'destination' ? this.firstTarget : step === 'blackhole' ? this.farTarget : this.galaxyTarget);
+      const spot = this.mapAnchor(screen(spotOn));
+      anchor = spot.anchor;
+      waiting = spot.offscreen && !!cameraGoal;
+      if (step !== 'destination') sides = ['above', 'left', 'below', 'right'];
+      if (this.targetId()) {
+        action = spot.offscreen ? 'Показать на карте' : '';
       } else {
+        waiting = false;
         body = 'Чтобы отправиться к звезде, выберите её на карте и нажмите «Лететь» в карточке. Теперь можно продолжить экспедицию.';
         action = 'Готово';
+        spotOn = null;
         anchor = {left:width / 2, right:width / 2, top:height / 2, bottom:height / 2};
       }
-    } else if (step === 'propulsion' || step === 'launch' || step === 'flight') {
-      if (step === 'flight') action = 'Завершить обучение';
+    } else if (this.between('braking', 'hole') && !ready) {
+      spotOn = step === 'braking' ? state.ship : object(this.farTarget);
+      anchor = this.mapAnchor(screen(spotOn)).anchor;
+      sides = ['left', 'right', 'above', 'below'];
+      if (step === 'braking') action = 'Перейти к изучению чёрной дыры';
+      if (step === 'hole') action = 'Открыть карточку чёрной дыры';
+      waiting = step === 'center' && !!this.approach;
+    } else if (step === 'universe' || step === 'reach') {
+      spotOn = this.circleSpot(step);
+      anchor = this.mapAnchor(screen(spotOn)).anchor;
+      sides = ['right', 'left', 'above', 'below'];
+      waiting = step === 'universe' && this.gliding();
+    } else if (step === 'objects' || step === 'farewell') {
+      const origin = canvas.getBoundingClientRect(), hud = document.querySelector('.telemetry')?.getBoundingClientRect(),
+        x = origin.left + width / 2, y = hud?.height > 0 ? hud.top : origin.top + cameraViewportHeight();
+      anchor = {left: x, right: x, top: y, bottom: y};
+      sides = ['above'];
+      if (step === 'farewell') action = 'Начать экспедицию';
+    } else if (this.tour[step]) {
+      anchor = $(this.tour[step]).getBoundingClientRect();
+      sides = ['below', 'left', 'right', 'above'];
+      if (step === 'quests') action = 'Открыть квесты';
+      if (step === 'quests' && Quests.isOpen) {
+        const quest = Quests.quest(Quests.view),
+          mark = $('questsBody').querySelector(quest && !Quests.locked(quest) ? '[data-quest-start]' : '[data-quest-open="' + Quests.starterId + '"]')?.getBoundingClientRect();
+        frame = $('quests').getBoundingClientRect();
+        anchor = mark?.height > 0 ? mark : frame;
+        sides = ['right', 'below', 'above', 'left'];
+        action = '';
+        alt = 'Свободный полёт';
+      }
+    } else if (this.allows('propulsion')) {
       sides = ['left', 'above', 'below', 'right'];
       frame = $('flightCard').getBoundingClientRect();
-      if (step === 'propulsion') anchor = this.union($('distanceRow').getBoundingClientRect(), anchor);
-      if (step === 'launch') {
-        action = $('launchBtn').disabled ? 'Готово' : '';
-        if (action) body = QuickFlight.issueReason || 'Для этого перелёта сейчас не хватает топлива. Завершите обучение, чтобы вернуться к планированию.';
+      if (step === 'flight' || step === 'voyage' || step === 'crossing') action = 'Завершить обучение';
+      if (step === 'star' || ready) action = '';
+      if (ready) anchor = $('objectCardBtn').getBoundingClientRect();
+      if (step === 'propulsion' || step === 'sail' || step === 'supernova')
+        anchor = this.union($('distanceRow').getBoundingClientRect(), anchor);
+      if (step === 'sail') {
+        action = FlightSetup.mobile() ? 'Подключить парус и коллектор' : '';
+        UIPatch.set($('launchBtn'), 'disabled', true);
+      }
+      if (step === 'supernova') {
+        const issue = this.burstIssue();
+        action = issue ? 'Завершить обучение' : FlightSetup.mobile() ? 'Включить сверхновую' : '';
+        if (issue) body = issue + ' Завершите обучение, чтобы вернуться к планированию.';
+        UIPatch.set($('launchBtn'), 'disabled', true);
+      }
+      if (step === 'launch' || step === 'collector' || step === 'burst') {
+        const blocked = this.blocked(step);
+        action = !blocked ? '' : step === 'launch' ? 'Готово' : 'Завершить обучение';
+        if (blocked) body = QuickFlight.issueReason || 'Для этого перелёта сейчас не хватает топлива. Завершите обучение, чтобы вернуться к планированию.';
+        if (!blocked && step !== 'launch') library = step === 'burst' ? 'Сверхновая в библиотеке' : 'Как летает «' + SHIP_NAME + '»';
       }
     }
-    UIContent.text($('tutorialTitle'), lesson.title);
-    UIContent.html($('tutorialText'), body.split('\n').map(line => '<p>' + SkyGuide.escape(line) + '</p>').join(''));
-    const next = $('tutorialNext'), shortcut = step === 'welcome' || action === 'Далее';
-    UIContent.text(next, shortcut ? action + ' (Пробел)' : action);
+    UIContent.text($('tutorialTitle'), typeof lesson.title === 'function' ? lesson.title() : lesson.title);
+    UIContent.html($('tutorialText'), body.split('\n').map(line =>
+      line === '{figure}' ? this.brakingFigure() : line === '{legend}' ? this.legendFigure() : this.paragraph(line)).join(''));
+    const next = $('tutorialNext'), shortcut = !!action;
+    UIContent.text(next, shortcut ? action + ' [Пробел]' : action);
     UIPatch.set(next, 'ariaKeyShortcuts', shortcut ? 'Space' : null);
     UIPatch.set(next, 'hidden', !action);
+    UIContent.text($('tutorialAlt'), alt);
+    UIPatch.set($('tutorialAlt'), 'hidden', !alt);
     UIPatch.set($('skipTutorial'), 'hidden', step !== 'welcome');
+    UIContent.text($('tutorialLibraryLabel'), library);
+    UIPatch.set($('tutorialLibrary'), 'hidden', !library);
     UIPatch.style(card, 'visibility', waiting ? 'hidden' : '');
-    if (anchor && !waiting) this.place(card, anchor, sides, frame);
+    this.tracked = spotOn && !waiting ? {spot: spotOn, sides, x: NaN, y: NaN} : null;
+    if (this.tracked) this.follow();
+    else if (anchor && !waiting) this.place(card, anchor, sides, frame);
+  },
+  follow() {
+    const t = this.tracked;
+    if (!t || !state.tutorialStep) return;
+    const p = screen(t.spot);
+    if (Math.abs(p.x - t.x) < .25 && Math.abs(p.y - t.y) < .25) return;
+    t.x = p.x;
+    t.y = p.y;
+    this.place($('tutorialCard'), this.mapAnchor(p).anchor, t.sides);
   },
   place(card, anchor, sides, frame = anchor) {
     const box = card.getBoundingClientRect(), gap = 26, pad = width < 700 ? 10 : 24;
@@ -257,7 +908,8 @@ const ExpeditionTutorial = {
     const arrow = $('tutorialPointer');
     UIPatch.style(arrow, 'left', vertical ? clamp(cx - left, 12, box.width - 12) + 'px' : '');
     UIPatch.style(arrow, 'top', vertical ? '' : clamp(cy - top, 12, box.height - 12) + 'px');
-    UIPatch.style(arrow, 'width', side === 'left' ? Math.max(1, anchor.left - left - box.width - 8) + 'px' : '');
+    UIPatch.style(arrow, 'width', side === 'left' ? Math.max(1, anchor.left - left - box.width - 8) + 'px'
+      : side === 'right' && frame !== anchor ? Math.max(1, left - anchor.right - 8) + 'px' : '');
   },
 };
 
@@ -380,8 +1032,7 @@ const FlightTips = {
     if(persistNow)persist();
   },
   noteLaunch(continuingRoute = false) {
-    if (state.tutorialStep === 'launch' && !continuingRoute && state.flight.target === 'proxima')
-      ExpeditionTutorial.setStep('flight');
+    if (!continuingRoute) ExpeditionTutorial.launched(state.flight);
     state.flight.noticeElapsed = 0;
     this.observe(state);
   },

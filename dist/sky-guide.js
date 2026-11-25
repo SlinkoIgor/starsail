@@ -264,6 +264,35 @@ const SkyGuide = {
     const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-label="'+esc(title)+'" style="font-family:Arial,sans-serif"><rect width="800" height="520" fill="#15202b"/><text x="40" y="52" fill="white" font-size="27">'+esc(title)+'</text><text x="40" y="88" fill="#c2d4df" font-size="17">'+esc(subtitle)+'</text>'+drawing+'<text x="40" y="480" fill="#c2d4df" font-size="15">Схема'+(age?' · '+esc(age):'')+' · размеры и расстояния условны</text></svg>';
     return '<figure class="stellar-photo stellar-epoch-diagram" data-photo="epoch-scheme"><div class="stellar-photo-field">'+svg+'</div><figcaption><strong>'+esc(title)+'</strong><span>Поясняющая схема'+(age?' · '+esc(age):'')+'</span><p>'+esc(o.note)+' Условные символы показывают физический смысл, а не наблюдённое расположение частиц или объектов.</p><a class="stellar-photo-source" href="https://lambda.gsfc.nasa.gov/education/graphic_history/univ_evol.html" target="_blank" rel="noopener">NASA · история Вселенной ↗</a></figcaption></figure>';
   },
+  lead(o,photos) {
+    const id=(typeof ExpeditionTutorial==='undefined'?null:ExpeditionTutorial.galleryLead(o))||SKY_GUIDE_DATA.leads?.[o.id];
+    return id?photos.find(p=>p.id===id)||null:null;
+  },
+  preloadFrames:3,warmFrames:new Map(),warmVideo:null,
+  preload(o) {
+    if(typeof Image==='undefined'||typeof fetch!=='function'||!o||o.synthetic||globalThis.navigator?.connection?.saveData)return;
+    this.preloadTarget=o.id;
+    clearTimeout(this.preloadTimer);
+    this.preloadTimer=setTimeout(async()=>{
+      await Promise.all([SkyPhotos.ensure(o),typeof SkyImaging==='undefined'?false:SkyImaging.ensure(o),typeof Wikipedia==='undefined'?false:Wikipedia.ensure(o)]);
+      if(this.preloadTarget!==o.id)return;
+      const photos=this.media(o),lead=this.lead(o,photos),frames=[...(lead?[lead]:[]),...photos.filter(p=>p!==lead)].slice(0,this.preloadFrames),
+        clip=frames.find(p=>p.format==='video');
+      for(const p of frames){
+        const url=p.format==='video'?p.poster:p.url;
+        if(this.warmFrames.has(url))continue;
+        const img=new Image();img.referrerPolicy='no-referrer';img.decoding='async';img.src=url;
+        this.warmFrames.set(url,img);
+        if(this.warmFrames.size>12)this.warmFrames.delete(this.warmFrames.keys().next().value);
+      }
+      if(this.warmVideo&&this.warmVideo.dataset.url!==clip?.url){this.warmVideo.removeAttribute('src');this.warmVideo.load();this.warmVideo=null;}
+      if(clip&&!this.warmVideo){
+        const video=document.createElement('video');
+        video.dataset.url=clip.url;video.muted=true;video.preload='auto';video.src=clip.url;
+        this.warmVideo=video;
+      }
+    },250);
+  },
   gallery(o) {
     const photos=this.photos(o), chartable=this.canChart(o), diagram=this.epochDiagram(o),missing=SkyPhotos.missing(o),imagingMissing=typeof SkyImaging==='undefined'?[]:SkyImaging.missing(o),wikiMissing=typeof Wikipedia==='undefined'?[]:Wikipedia.missing(o),
       heading=o.cosmicEpoch||['structure','wall','void','ring','arc'].includes(o.kind)?'Снимки и визуализации':'Небо и снимки',
@@ -287,7 +316,8 @@ const SkyGuide = {
       failed=missing.some(p=>SkyPhotos.failed.has(p))||imagingMissing.some(p=>SkyImaging.failed.has(p))||wikiMissing.some(p=>Wikipedia.failed.has(p)),
       pending=missing.length||imagingMissing.length||wikiMissing.length?'<figure class="stellar-photo" data-photo="archive-pending"><div class="stellar-photo-field"><p class="'+(failed?'stellar-photo-error':'stellar-photo-loading')+'" role="status">'+(failed?'Архив сейчас недоступен. <button data-photo-retry>Повторить загрузку</button>':'Загрузка изображений…')+'</p></div><figcaption><strong>Изображения объекта</strong><span>Обсерватории и Wikimedia Commons</span><p>Снимки, карты и иллюстрации с подписями и источниками.</p></figcaption></figure>':'',
       // Keep both available finding charts together before any photographs.
-      slides=[...(chartable?[chart(false),chart(true)]:[]),...(diagram?[diagram]:[]),...photos.filter(p=>!['dss','survey'].includes(p.id)).map(photo),...(pending?[pending]:[]),...photos.filter(p=>['dss','survey'].includes(p.id)).map(photo)];
+      lead=this.lead(o,photos),rest=photos.filter(p=>p!==lead),
+      slides=[...(lead?[photo(lead)]:[]),...(chartable?[chart(false),chart(true)]:[]),...(diagram?[diagram]:[]),...rest.filter(p=>!['dss','survey'].includes(p.id)).map(photo),...(pending?[pending]:[]),...rest.filter(p=>['dss','survey'].includes(p.id)).map(photo)];
     return '<section class="stellar-gallery" id="stellarMedia" aria-label="'+heading+'" aria-roledescription="карусель">'+
       '<div class="stellar-gallery-viewport"><div class="stellar-gallery-track" id="stellarGallery" tabindex="0" role="region" aria-label="Карты неба и фотографии. Листайте горизонтально">'+slides.join('')+'</div>'+
       '<div class="stellar-gallery-nav"><button id="stellarGalleryPrev" aria-label="Предыдущий кадр" aria-controls="stellarGallery" disabled>←</button><button id="stellarGalleryNext" aria-label="Следующий кадр" aria-controls="stellarGallery">→</button></div></div><div class="stellar-gallery-heading"><h3 id="stellarGalleryTitle">'+heading+'</h3><span id="stellarGalleryPosition" aria-live="polite" aria-atomic="true">1 / '+slides.length+'</span></div></section>';
@@ -343,10 +373,10 @@ const SkyGuide = {
       const changed=(await Promise.all([SkyPhotos.ensure(o),typeof SkyImaging==='undefined'?false:SkyImaging.ensure(o),typeof Wikipedia==='undefined'?false:Wikipedia.ensure(o)])).some(Boolean);
       // Closing/switching cards during a request must not reopen an old card.
       if(!changed||document.getElementById('stellarGallery')!==track||!track.isConnected)return;
-      const selected=cards[current()]?.dataset.photo;
+      const at=current(),selected=cards[at]?.dataset.photo;
       document.getElementById('stellarMedia').outerHTML=this.gallery(o);
       const replacement=document.getElementById('stellarGallery'),figures=[...replacement.querySelectorAll('figure')],
-        target=figures.find(c=>c.dataset.photo===selected)||
+        target=(at>0&&figures.find(c=>c.dataset.photo===selected))||
           (selected==='archive-pending'&&figures.find(c=>/^(?:astropix-|sga-grz-|wiki-)/.test(c.dataset.photo)))||figures[0];
       replacement.scrollLeft=target.offsetLeft;
       this.mount(o);

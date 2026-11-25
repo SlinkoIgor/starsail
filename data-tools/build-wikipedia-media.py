@@ -43,6 +43,11 @@ def build(*, check=False):
             media[p['id']] = {k: v for k, v in p.items() if k not in ('objects', 'identification')}
             for oid in p['objects']:
                 media_targets[oid].add(p['id'])
+    duplicates = SRC / 'wikipedia-duplicates.json'
+    repeated = json.loads(duplicates.read_text())['records'] if duplicates.exists() else []
+    for pair in repeated:
+        media_targets[pair['object']].discard(pair['wikipedia'])
+    media_targets = defaultdict(set, {oid: ids for oid, ids in media_targets.items() if ids})
     used = {id for ids in media_targets.values() for id in ids}
     observations = {id for id in used if media[id]['mediaType'] == 'observation' and media[id].get('mediaKind') != 'survey'}
     depicted = defaultdict(list)

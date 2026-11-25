@@ -458,7 +458,10 @@ assert.equal(Quests.isOpen,false);assert.equal($('toast').hidden,true);
 assert.deepEqual(Quests.activeIds,[]);assert.equal(Quests.isActive(quest),false);
 assert.equal($('questBtn').hidden,true);assert.equal($('questCount').hidden,true);
 assert.equal(Quests.nextTarget(),null);assert.equal(Quests.flightStory({target:'proxima'}),null);
-assert.equal(Quests.storyHTML(object('proxima')),'');Quests.mountStory(object('proxima'));
+{const lore=Quests.storyHTML(object('proxima'));
+ assert.ok(lore.startsWith('<section class="quest-story"><h3>Ближайшая звезда</h3>'),'the tutorial keeps the object story');
+ assert.ok(!lore.includes('quest-membership')&&!lore.includes('КВЕСТ ·')&&!lore.includes('data-quest-'),'quest membership and actions stay hidden');}
+Quests.mountStory(object('proxima'));assert.equal(Quests.story,null);
 Quests.open();assert.equal(Quests.isOpen,false);assert.equal(Quests.fly('proxima','neighbours'),false);
 assert.equal(Quests.start('records'),false);
 assert.equal(countLocalFlags(),0);
@@ -475,7 +478,7 @@ assert.equal(JSON.stringify(state.quests),beforeTutorial,'arrival during the tut
 $('skipTutorial').onclick();assert.equal(Quests.pending,'proxima');assert.equal(state.quests.credited['neighbours/proxima'],true);
 assert.equal(Quests.present(),true);assert.equal($('infoDialog').dataset.objectId,'proxima');
 assert.ok(countLocalFlags()>0);
-console.log('PASS tutorial pauses all quest UI, actions, stories and credits; subscriptions, prior progress and deferred arrivals survive reload and resume');
+console.log('PASS tutorial pauses all quest UI, actions, story pop-ups and credits while object cards keep their stories; subscriptions, prior progress and deferred arrivals survive reload and resume');
 
 reset();state.selected='procyon';launch();renderUI();
 assert.equal($('toast').hidden,false);assert.equal($('toast').dataset.kind,'quest','a quest star is announced even without a subscription');

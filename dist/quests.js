@@ -5,7 +5,7 @@ const Quests = {
   opened: false,
   isOpen: false,
   get suspended() {
-    return !!state.tutorialStep;
+    return !ExpeditionTutorial.allows('quests');
   },
   get activeIds() {
     return this.suspended ? [] : this.store().active;
@@ -150,8 +150,8 @@ const Quests = {
   routeIds() {
     return Route.future().map(n => n.id);
   },
-  entries(id) {
-    if (this.suspended) return [];
+  entries(id, paused = false) {
+    if (this.suspended && !paused) return [];
     const visited = this.visitedSet(), found = [];
     for (const quest of QUESTS) {
       if (this.locked(quest, visited)) continue;
@@ -195,6 +195,7 @@ const Quests = {
     GameAnalytics.track('quest_started', {quest_id: id, steps_total: quest.steps.length});
     GameAnalytics.questProgress(quest, this.progress(quest));
     log('Квест начат: ' + quest.title + '.');
+    ExpeditionTutorial.questChosen();
     persist();
     return true;
   },
@@ -322,6 +323,7 @@ const Quests = {
     // A flight to a galaxy or a nebula can park at a different, nearby star.
     const id = [flight.requestedTarget, flight.target, stopId].find(candidate => this.isQuestObject(candidate));
     if (!id || ($('infoDialog').open && $('infoDialog').dataset.objectId === id)) return;
+    if (ExpeditionTutorial.guided(flight)) return;
     (state.pendingQuestArrivals ??= []).push(id);
   },
   present() {
@@ -365,9 +367,10 @@ const Quests = {
     return html + '<button class="text-action" data-quest-panel="' + quest.id + '">Все объекты квеста · ' + p.done + ' из ' + p.total + '</button>';
   },
   storyHTML(o) {
-    const entries = this.entries(o.id);
+    const paused = this.suspended, entries = this.entries(o.id, paused);
     if (!entries.length) return '';
     const esc = this.esc, visited = this.visitedSet(), step = entries.find(({step}) => this.told(step))?.step;
+    if (paused && !step) return '';
     let story = '';
     if (step) {
       const refs = step.refs?.length
@@ -381,7 +384,7 @@ const Quests = {
             step.more.map(text => '<p class="quest-lead">' + esc(text) + '</p>').join('') + refs + '</details>'
           : refs);
     }
-    return '<section class="quest-story">' + story + entries.map(entry => {
+    return '<section class="quest-story">' + story + (paused ? [] : entries).map(entry => {
       const {quest, index} = entry, p = this.progress(quest, visited);
       return '<div class="quest-membership"><div class="modal-eyebrow">КВЕСТ · ' + esc(quest.title.toUpperCase()) + ' · ' +
         (index + 1) + ' / ' + p.total + '</div>' +
@@ -508,7 +511,8 @@ const Quests = {
     return '<p class="quest-text">Путешествия по Вселенной. Начните квест — его объекты засчитываются при прибытии, каким бы путём вы до них ни добрались. Можно вести несколько квестов одновременно.</p>' +
       QUESTS.map(quest => {
         const p = this.progress(quest, visited), active = this.isActive(quest), locked = this.locked(quest, visited);
-        return '<button class="quest-card' + (active ? ' is-active' : '') + (locked ? ' is-locked' : '') + '" data-quest-open="' + quest.id + '">' +
+        return '<button class="quest-card' + (active ? ' is-active' : '') + (locked ? ' is-locked' : '') +
+          (ExpeditionTutorial.recommends(quest.id) ? ' is-recommended' : '') + '" data-quest-open="' + quest.id + '">' +
           '<span class="quest-status">' + this.statusText(quest, p, visited) + '</span>' +
           '<strong>' + esc(quest.title) + '</strong><span class="quest-card-summary">' + esc(quest.summary) + '</span>' +
           (locked ? '<span class="quest-card-lock">' + esc(this.lockText(quest)) + '</span>' : this.progressHTML(p)) + '</button>';

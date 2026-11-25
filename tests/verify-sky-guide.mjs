@@ -156,6 +156,18 @@ const orbitGallery=SkyGuide.gallery(object('sgr')),orbitSlide=orbitGallery.split
 assert.ok(orbitSlide.includes('<video controls playsinline loop preload="none" data-video-src="'+orbits.url+'"'));
 assert.ok(!orbitSlide.includes('<img')&&!orbitSlide.includes('autoplay'),'video is user initiated and never treated as a still image');
 assert.ok(orbitSlide.includes('почти двадцать лет')&&orbitSlide.includes('Сама чёрная дыра в этих кадрах не видна'));
+{const frames=SkyGuide.media(object('sgr')).map(p=>p.id);
+ assert.deepEqual(frames,['eht-eso2208-eht-mwa','eso-eso1825e-orbits','eso-eso0846a-centre','eso-eso2119b-gravity','chandra-sgra-gas','hubble-opo0928b-centre','eht-eso2406a-polarised']);
+ for(const id of frames.slice(2)){
+  const p=SKY_GUIDE_DATA.media.find(p=>p.id===id);assert.deepEqual(p.objects,['sgr'],'own frame of the Galactic Centre: '+id);
+  assert.ok(p.url.startsWith('https://')&&p.source.startsWith('https://')&&p.credit&&p.description&&p.mediaType==='observation','source, credit and kind: '+id);
+ }
+ assert.deepEqual(SKY_GUIDE_DATA.leads,{andromeda:'astropix-esahubble-heic0512d'});
+ for(const id of Object.keys(SKY_GUIDE_DATA.leads))assert.ok(object(id),'an opening frame is chosen for a catalogue object: '+id);
+ const chosen={id:SKY_GUIDE_DATA.leads.andromeda},other={id:'other'};
+ assert.equal(SkyGuide.lead(object('andromeda'),[other,chosen]),chosen);
+ assert.equal(SkyGuide.lead(object('andromeda'),[other]),null,'a chosen frame that the object does not have is ignored');
+ assert.equal(SkyGuide.lead(object('orion'),[other,chosen]),null,'other objects keep their order');}
 assert.ok(orbitGallery.indexOf('data-photo="eht-eso2208-eht-mwa"')<orbitGallery.indexOf('data-photo="eso-eso1825e-orbits"'),'orbit movie follows Sgr A EHT portrait');
 for(const id of ['bh-m87','m87','milkyway','s2']){assert.ok(object(id));assert.ok(!SkyGuide.media(object(id)).includes(orbits),'central-star sequence is not inherited by other identities: '+id);}
 assert.equal(object('bh-m87').kind,'blackhole');assert.ok(object('bh-m87').massSolar>1e9);

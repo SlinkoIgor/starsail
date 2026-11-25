@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "method": "1280 px frames; 9x8 greyscale difference hash within 12 of 64 bits and mean 16x16 RGB difference within 10 of 255",
+  "objects": 100,
+  "compared": 119,
+  "unavailable": [
+    "https://ar5iv.labs.arxiv.org/html/1602.08498/assets/bgw.svg",
+    "https://arxiv.org/html/2501.19236v1/wedge_SS2_new.svg"
+  ],
+  "records": [
+    {
+      "object": "3c273",
+      "wikipedia": "wiki-b9c93e4c468cabe4",
+      "curated": "hubble-potw1346a",
+      "hashDistance": 0,
+      "colourDifference": 0.0,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Best_image_of_bright_quasar_3C_273_(10953173335).jpg",
+      "curatedSource": "https://esahubble.org/images/potw1346a/"
+    },
+    {
+      "object": "bode",
+      "wikipedia": "wiki-57e417abe4028efe",
+      "curated": "nasa-messier-81",
+      "hashDistance": 1,
+      "colourDifference": 1.8,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Messier_81_HST.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-81/"
+    },
+    {
+      "object": "bootes",
+      "wikipedia": "wiki-21055c8fd398ecc4",
+      "curated": "cosmic-bootes",
+      "hashDistance": 0,
+      "colourDifference": 0.0,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Boovoid.png",
+      "curatedSource": "https://commons.wikimedia.org/wiki/File:Boovoid.png"
+    },
+    {
+      "object": "hyg-118441",
+      "wikipedia": "wiki-ba701e8a34a86655",
+      "curated": "hubble-sirius",
+      "hashDistance": 0,
+      "colourDifference": 6.1,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Sirius_A_and_B_Hubble_photo.editted.PNG",
+      "curatedSource": "https://esahubble.org/images/heic0516a/"
+    },
+    {
+      "object": "hyperion",
+      "wikipedia": "wiki-fff42c83e987dd7d",
+      "curated": "cosmic-hyperion",
+      "hashDistance": 1,
+      "colourDifference": 0.2,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:The_Hyperion_Proto-Supercluster.jpg",
+      "curatedSource": "https://www.eso.org/public/images/eso1833a/"
+    },
+    {
+      "object": "opengc-ic2574",
+      "wikipedia": "wiki-abbf3f4f36b057ca",
+      "curated": "hubble-potw1152a",
+      "hashDistance": 0,
+      "colourDifference": 0.0,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:IC_2574_HST.jpg",
+      "curatedSource": "https://esahubble.org/images/potw1152a/"
+    },
+    {
+      "object": "opengc-ngc1275",
+      "wikipedia": "wiki-2179065380e73afa",
+      "curated": "nasa-caldwell-24",
+      "hashDistance": 3,
+      "colourDifference": 4.6,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:NGC_1275_Hubble.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/caldwell-24/"
+    },
+    {
+      "object": "opengc-ngc1316",
+      "wikipedia": "wiki-cbcd3495204d1fef",
+      "curated": "hubble-opo0511a",
+      "hashDistance": 0,
+      "colourDifference": 0.3,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Ngc1316_hst.jpg",
+      "curatedSource": "https://esahubble.org/images/opo0511a/"
+    },
+    {
+      "object": "opengc-ngc1952",
+      "wikipedia": "wiki-98156fed4220dc07",
+      "curated": "nasa-messier-1",
+      "hashDistance": 3,
+      "colourDifference": 2.2,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Crab_Nebula.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-1/"
+    },
+    {
+      "object": "opengc-ngc2070",
+      "wikipedia": "wiki-31388af67785f72e",
+      "curated": "webb-weic2212a",
+      "hashDistance": 0,
+      "colourDifference": 0.3,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Tarantula_Nebula_by_JWST.jpg",
+      "curatedSource": "https://esawebb.org/images/weic2212a/"
+    },
+    {
+      "object": "opengc-ngc3034",
+      "wikipedia": "wiki-3a73a8f8e1eac3c7",
+      "curated": "nasa-messier-82",
+      "hashDistance": 2,
+      "colourDifference": 5.2,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:M82_HST_ACS_2006-14-a-large_web.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-82/"
+    },
+    {
+      "object": "opengc-ngc3132",
+      "wikipedia": "wiki-dfb60c833d092f54",
+      "curated": "webb-weic2207b",
+      "hashDistance": 3,
+      "colourDifference": 1.1,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Southern_Ring_Nebula_(NIRCam_Image).png",
+      "curatedSource": "https://esawebb.org/images/weic2207b/"
+    },
+    {
+      "object": "opengc-ngc4038",
+      "wikipedia": "wiki-0968e29e785b8d18",
+      "curated": "hubble-heic0615a",
+      "hashDistance": 4,
+      "colourDifference": 7.3,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Antennae_galaxies_xl.jpg",
+      "curatedSource": "https://esahubble.org/images/heic0615a/"
+    },
+    {
+      "object": "opengc-ngc4039",
+      "wikipedia": "wiki-0968e29e785b8d18",
+      "curated": "hubble-heic0615a",
+      "hashDistance": 4,
+      "colourDifference": 7.3,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Antennae_galaxies_xl.jpg",
+      "curatedSource": "https://esahubble.org/images/heic0615a/"
+    },
+    {
+      "object": "opengc-ngc5457",
+      "wikipedia": "wiki-d84dbaaec9e6e68b",
+      "curated": "nasa-messier-101",
+      "hashDistance": 1,
+      "colourDifference": 2.9,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:M101_hires_STScI-PRC2006-10a.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-101/"
+    },
+    {
+      "object": "opengc-ngc6302",
+      "wikipedia": "wiki-737c82d0cf1afdc6",
+      "curated": "nasa-caldwell-69",
+      "hashDistance": 2,
+      "colourDifference": 2.8,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:NGC_6302_Hubble_2009.full.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/caldwell-69/"
+    },
+    {
+      "object": "opengc-ngc6720",
+      "wikipedia": "wiki-005e0b7f5268fc67",
+      "curated": "webb-weic2320b",
+      "hashDistance": 0,
+      "colourDifference": 0.3,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Webb_captures_detailed_beauty_of_Ring_Nebula_(NIRCam_image)_(weic2320b).jpg",
+      "curatedSource": "https://esawebb.org/images/weic2320b/"
+    },
+    {
+      "object": "opengc-ngc6826",
+      "wikipedia": "wiki-0b83e8c0aaae7171",
+      "curated": "nasa-caldwell-15",
+      "hashDistance": 5,
+      "colourDifference": 7.7,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:NGC_6826HSTFull.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/caldwell-15/"
+    },
+    {
+      "object": "opengc-ngc7635",
+      "wikipedia": "wiki-3cef8b74a365540b",
+      "curated": "nasa-caldwell-11",
+      "hashDistance": 0,
+      "colourDifference": 1.6,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:The_Bubble_Nebula_-_NGC_7635_-_Heic1608a.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/caldwell-11/"
+    },
+    {
+      "object": "orion",
+      "wikipedia": "wiki-663416408e5e5938",
+      "curated": "nasa-messier-42",
+      "hashDistance": 3,
+      "colourDifference": 1.0,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-42/"
+    },
+    {
+      "object": "proxima",
+      "wikipedia": "wiki-66099f9fb8a9919e",
+      "curated": "hubble-proxima",
+      "hashDistance": 2,
+      "colourDifference": 0.8,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:New_shot_of_Proxima_Centauri,_our_nearest_neighbour.jpg",
+      "curatedSource": "https://esahubble.org/images/potw1343a/"
+    },
+    {
+      "object": "qso-he0435",
+      "wikipedia": "wiki-c3b2b7d9b4328727",
+      "curated": "cosmic-astropix-esahubble-heic1702a",
+      "hashDistance": 8,
+      "colourDifference": 0.8,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Lensed_quasar_and_its_surroundings_(32549923855).jpg",
+      "curatedSource": "https://www.spacetelescope.org/images/heic1702a/"
+    },
+    {
+      "object": "qso-he0450",
+      "wikipedia": "wiki-d6dd8cce51ecef9b",
+      "curated": "cosmic-astropix-esahubble-heic0511b",
+      "hashDistance": 10,
+      "colourDifference": 0.7,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Quasar_HE0450-2958.jpg",
+      "curatedSource": "https://www.spacetelescope.org/images/heic0511b/"
+    },
+    {
+      "object": "qso-he1104",
+      "wikipedia": "wiki-5dd4cfb250f3cb1b",
+      "curated": "cosmic-astropix-esahubble-heic1116a",
+      "hashDistance": 11,
+      "colourDifference": 0.9,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Quasar_HE_1104-1805.jpg",
+      "curatedSource": "https://www.spacetelescope.org/images/heic1116a/"
+    },
+    {
+      "object": "qso-pg0052",
+      "wikipedia": "wiki-f3c651940c017cc2",
+      "curated": "cosmic-astropix-esahubble-opo9635a1",
+      "hashDistance": 4,
+      "colourDifference": 2.1,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:PG_0052%2B251HUBBLE.jpg",
+      "curatedSource": "https://www.spacetelescope.org/images/opo9635a1/"
+    },
+    {
+      "object": "qso-pg1012",
+      "wikipedia": "wiki-81030697cf5346bf",
+      "curated": "cosmic-astropix-esahubble-opo9635a5",
+      "hashDistance": 5,
+      "colourDifference": 1.2,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Quasar_PG_1012%2B008_(opo9635a5).jpg",
+      "curatedSource": "https://www.spacetelescope.org/images/opo9635a5/"
+    },
+    {
+      "object": "qso-phl909",
+      "wikipedia": "wiki-a9072a96f5d1905e",
+      "curated": "cosmic-astropix-esahubble-opo9635a4",
+      "hashDistance": 5,
+      "colourDifference": 2.4,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Quasar_PHL_909_(opo9635a4).jpg",
+      "curatedSource": "https://www.spacetelescope.org/images/opo9635a4/"
+    },
+    {
+      "object": "qso-pks0637",
+      "wikipedia": "wiki-f5b31f8e59d42a96",
+      "curated": "cosmic-astropix-chandra-289",
+      "hashDistance": 0,
+      "colourDifference": 0.1,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:PKS_0637-752-_NASA_Unveils_First_Images_From_Chandra_X-Ray_Observatory_(1999-0064_-_0064_xray).tiff",
+      "curatedSource": "https://chandra.harvard.edu/photo/1999/0064/"
+    },
+    {
+      "object": "sgr",
+      "wikipedia": "wiki-abb35c32d73a88c5",
+      "curated": "eht-eso2208-eht-mwa",
+      "hashDistance": 0,
+      "colourDifference": 0.1,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:EHT_Sagittarius_A_black_hole.tif",
+      "curatedSource": "https://www.eso.org/public/images/eso2208-eht-mwa/"
+    },
+    {
+      "object": "whirlpool",
+      "wikipedia": "wiki-f3aacbab10428f4d",
+      "curated": "nasa-messier-51",
+      "hashDistance": 2,
+      "colourDifference": 4.9,
+      "wikipediaSource": "https://commons.wikimedia.org/wiki/File:Messier51_sRGB.jpg",
+      "curatedSource": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-51/"
+    }
+  ]
+}

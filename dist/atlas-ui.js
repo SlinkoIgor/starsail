@@ -1006,6 +1006,7 @@ function showObject(id = state.selected) {
     age = ObjectCard.age(o),
     lead = MapDetails.lead(o),
     story = Quests.storyHTML(o),
+    media = stellarSkyPhoto(o),
     explainer = MapDetails.explainer(o);
   sentences(lead);
   const componentNote = fresh(MapDetails.componentNote(o)),
@@ -1067,7 +1068,7 @@ function showObject(id = state.selected) {
     (designations ? '<p class="object-designation">' + designations + '</p>' : '') +
     (lead && !story.includes('quest-lead') ? '<p class="object-lead">' + lead + '</p>' : '') +
     story +
-    stellarSkyPhoto(o) +
+    media +
     ObjectCard.keysHTML(keys) +
     (explainer
       ? '<section class="object-explainer"><h3>' +
@@ -1081,7 +1082,7 @@ function showObject(id = state.selected) {
   const orbits = stellarOrbitFacts(system),
     named = !!system && !!componentNote && componentNote.includes(system.name);
   html += section(
-    orbits ? 'Система и орбиты' : system || componentNote ? 'Система' : 'Состав группы',
+    orbits ? 'Состав системы и орбиты' : system || componentNote ? 'Состав системы' : 'Состав группы',
     (componentNote
       ? '<div class="object-system-note">' +
         componentNote +
@@ -1259,6 +1260,7 @@ function showObject(id = state.selected) {
   $('infoDialog').dataset.objectId = o.id;
   SkyGuide.mount(o);
   Quests.mountStory(o);
+  ExpeditionTutorial.cardOpened(o);
   if (o.id === 'sgr' || o.nuclearStar)
     $('viewNuclearCluster').onclick = () => {
       $('infoDialog').close();

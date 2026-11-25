@@ -10,7 +10,12 @@ let state,
   hitObjects = [],
   lastUI = 0,
   saveTick = 0;
-const TUTORIAL_STEPS = ['welcome', 'time', 'clocks', 'zoom', 'mass', 'acceleration', 'velocity', 'dilation', 'destination', 'propulsion', 'launch', 'flight'];
+const TUTORIAL_STEPS = [
+  'welcome', 'time', 'clocks', 'zoom', 'mass', 'acceleration', 'velocity', 'dilation', 'destination', 'propulsion', 'launch', 'flight',
+  'star', 'card', 'blackhole', 'sail', 'collector', 'voyage', 'braking', 'center', 'hole', 'holecard',
+  'neighbour', 'supernova', 'burst', 'crossing', 'arrival', 'universe', 'reach', 'objects',
+  'search', 'filters', 'follow', 'theme', 'library', 'restart', 'settings', 'zen', 'quests', 'farewell',
+];
 const initial = ({deferStarterQuest = false} = {}) => ({
   version: 13,
   flightDefaultsVersion: 2,
@@ -388,8 +393,7 @@ const FlightHistory = {
     if (f.legIndex) this.finish({legIndex: f.legIndex});
     state.flightTips = FlightTips.mergeProgress(state.flightTips, tipProgress);
     state.quests = Quests.normalize(questProgress);
-    if (state.tutorialStep === 'flight')
-      ExpeditionTutorial.setStep(state.selected === 'proxima' && ExpeditionTutorial.canChoose() ? 'launch' : 'destination');
+    ExpeditionTutorial.cancelled();
     FlightQueue.reset();
     paused = !!saved.paused;
     speed = state.timeScale || 1;

@@ -50,6 +50,7 @@ const detailedChecks = [
   'tests/verify-composed.mjs',
   'tests/verify-planner.mjs',
   'tests/verify-time-controls.mjs',
+  'tests/verify-tutorial-universe.mjs',
   'tests/verify-flight-tips.mjs',
   'tests/verify-engine-start.mjs',
   'tests/verify-flight-tip-links.mjs',

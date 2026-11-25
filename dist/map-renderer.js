@@ -746,7 +746,7 @@ function drawSegmentDistance(from, target, d) {
     descent = bounds.actualBoundingBoxDescent ?? 0;
   ctx.fillStyle = paint('#f8f8f8');
   ctx.fillRect(-left - 1, -6 - ascent - 1, left + right + 2, ascent + descent + 2);
-  text(caption, 0, -6, 11, '#555555', 'center', 'sans');
+  text(caption, 0, -6, 11, ExpeditionTutorial.marksDistance() ? 'tutorial' : '#555555', 'center', 'sans');
   ctx.restore();
 }
 function drawRouteDistance() {

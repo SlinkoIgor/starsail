@@ -18,6 +18,16 @@ for(const [shard,entry] of Object.entries(index.files)){
   assert.ok(p.credit&&p.rights&&p.description);all[id]=p;
  }
 }
+{const repeated=JSON.parse(fs.readFileSync('data-tools/sky-sources/wikipedia-duplicates.json')),curated=run('SKY_GUIDE_DATA.media');
+ assert.equal(repeated.records.length,30);assert.equal(new Set(repeated.records.map(r=>r.object)).size,30,'a measured rule for the whole class of illustrated objects, not an exception for one card');
+ for(const r of repeated.records){
+  assert.ok(r.hashDistance<=12&&r.colourDifference<=10,'both measures are inside the published thresholds: '+r.object);
+  assert.ok(r.wikipediaSource.startsWith('https://commons.wikimedia.org/wiki/File:')&&r.curatedSource.startsWith('https://'));
+  assert.ok(curated.some(p=>p.id===r.curated&&p.objects.includes(r.object)),'the curated frame stays in the gallery: '+r.object);
+  assert.ok(!(index.mediaTargets[r.object]||[]).includes(r.wikipedia),'the Wikipedia copy of a curated frame is not shown twice: '+r.object);
+ }
+ for(const id of ['sgr','orion','proxima','whirlpool','3c273'])assert.ok(repeated.records.some(r=>r.object===id),id);
+}
 const source=JSON.parse(fs.readFileSync('data-tools/sky-sources/wikipedia.json'));
 assert.ok(source.articleCount>5000);
 for(const r of source.records){

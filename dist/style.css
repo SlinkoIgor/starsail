@@ -1064,8 +1064,8 @@ dialog .quest-outro{margin:10px 0 0;color:var(--ink)}
 .menu-subheading{margin-top:6px;border-top:1px solid var(--line)}
 .menu-chapters button{justify-content:flex-start;gap:12px;min-height:38px;padding:9px 12px}
 .menu-chapters button span{flex:none;width:16px;font:9px var(--mono);color:var(--muted)}
-dialog.library-dialog{--lib-pad-top:52px;--lib-pad-side:56px;width:min(800px,94vw);padding:var(--lib-pad-top) var(--lib-pad-side) 44px;max-height:90dvh}
-dialog.library-dialog>.modal-close{position:sticky;top:calc(13px - var(--lib-pad-top));right:auto;float:right;margin:calc(13px - var(--lib-pad-top)) calc(13px - var(--lib-pad-side)) 0 0}
+dialog.library-dialog{--lib-pad-top:52px;--lib-pad-side:56px;width:min(940px,94vw);padding:var(--lib-pad-top) var(--lib-pad-side) 44px;max-height:90dvh}
+dialog.library-dialog>.modal-close{position:sticky;top:calc(12px - var(--lib-pad-top));right:auto;float:right;width:44px;height:44px;margin:calc(12px - var(--lib-pad-top)) calc(12px - var(--lib-pad-side)) 0 0;z-index:8;background:var(--paper)}
 .lib{--lib-text:color-mix(in srgb,var(--ink) 84%,var(--paper));--lib-soft:color-mix(in srgb,var(--ink) 7%,var(--paper))}
 .lib>h2{font-size:38px;line-height:1.08;margin:18px 0 22px}
 .lib>h3{font-size:19px;letter-spacing:-.3px;margin:38px 0 10px}
@@ -1259,20 +1259,44 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 #app[data-tutorial="acceleration"] .acceleration-cell,
 #app[data-tutorial="velocity"] .velocity-cell,
 #app[data-tutorial="dilation"] .dilation-cell,
-#app[data-tutorial="propulsion"] :is(#distanceRow, #arrivalEstimate) {
+#app:is([data-tutorial="propulsion"], [data-tutorial="sail"], [data-tutorial="supernova"]) :is(#distanceRow, #arrivalEstimate),
+#app:is([data-tutorial="collector"], [data-tutorial="burst"], [data-tutorial="arrival"]) #arrivalEstimate,
+#app[data-tutorial="star"] #targetType {
   --muted: var(--tutorial-ink);
   --ink: var(--tutorial-ink);
   --line: var(--tutorial-ink);
   color: var(--tutorial-ink);
 }
-#app[data-tutorial="destination"] .catalog-item[data-object-id="proxima"] strong {
+#app[data-tutorial="destination"] .catalog-item[data-object-id="alpha"] strong {
   color: var(--tutorial-ink);
 }
-#app[data-tutorial="launch"] #launchBtn {
+#app[data-tutorial="sail"] :is([data-flight-option="sail"], [data-flight-option="collector"]):not([aria-pressed="true"]),
+#app[data-tutorial="supernova"] [data-flight-option="burst"]:not([aria-pressed="true"]) {
+  border-color: var(--tutorial-ink);
+  color: var(--tutorial-ink);
+}
+#app:is([data-tutorial="launch"], [data-tutorial="collector"], [data-tutorial="burst"]) #launchBtn,
+#app:is([data-tutorial="star"], [data-tutorial="hole"]) #objectCardBtn,
+#tutorialNext {
   background: var(--tutorial-ink);
   border-color: var(--tutorial-ink);
   color: var(--paper);
 }
+#app:is([data-tutorial="collector"], [data-tutorial="library"]) #libraryBtn,
+#app[data-tutorial="search"] #catalogBtn,
+#app[data-tutorial="filters"] #mapFilterBtn,
+#app[data-tutorial="follow"] #shipBtn,
+#app[data-tutorial="theme"] #themeBtn,
+#app[data-tutorial="restart"] #resetBtn,
+#app[data-tutorial="settings"] #settingsBtn,
+#app[data-tutorial="zen"] #zenBtn,
+#app[data-tutorial="quests"] #questBtn,
+body:has(#app:is([data-tutorial="card"], [data-tutorial="holecard"])) #infoDialog > .modal-close {
+  border: 1px solid var(--tutorial-ink);
+  color: var(--tutorial-ink);
+}
+#app:is([data-tutorial="sail"], [data-tutorial="supernova"]) #launchBtn { pointer-events: none; }
+.flight-card[data-card-only] :is(#quickFlight, #arrivalEstimate, .card-plan-controls) { display: none; }
 .tutorial-card {
   position: fixed;
   z-index: 8;
@@ -1290,6 +1314,11 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
   width: min(380px, calc(100vw - 20px));
 }
 #app[data-tutorial="clocks"] .tutorial-card { width: min(530px, calc(100vw - 20px)); }
+#app:is([data-tutorial="star"], [data-tutorial="blackhole"], [data-tutorial="collector"], [data-tutorial="braking"], [data-tutorial="center"], [data-tutorial="hole"], [data-tutorial="burst"], [data-tutorial="universe"], [data-tutorial="reach"], [data-tutorial="quests"]) .tutorial-card {
+  width: min(350px, calc(100vw - 20px));
+}
+#app[data-tutorial="objects"] .tutorial-card { width: min(400px, calc(100vw - 20px)); }
+#app[data-tutorial="farewell"] .tutorial-card { width: min(380px, calc(100vw - 20px)); }
 .tutorial-copy { padding: 14px 16px; }
 .tutorial-heading {
   display: flex;
@@ -1323,8 +1352,55 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
   padding: 4px;
   font: 11px/1.4 var(--mono);
 }
-#tutorialNext { margin-left: auto; padding-inline: 12px; border: 1px solid var(--line); }
-#tutorialNext:hover { border-color: var(--ink); }
+#tutorialNext { margin-left: auto; padding-inline: 12px; border: 1px solid var(--tutorial-ink); }
+#tutorialAlt { padding-inline: 12px; border: 1px solid var(--line); }
+#tutorialAlt:hover { border-color: var(--ink); }
+#tutorialLibrary { display: flex; align-items: center; gap: 6px; color: var(--tutorial-ink); }
+#tutorialLibrary svg { width: 15px; height: 15px; stroke-width: 1.5; }
+#tutorialLibrary:hover span { text-decoration: underline; }
+.tutorial-figure { margin: 8px 0; border: 1px solid var(--line); }
+.tutorial-figure svg { display: block; width: 100%; height: 92px; }
+.tutorial-copy .tutorial-figure + p { margin-top: 7px; }
+.tutorial-brake-field { stroke: var(--muted); stroke-width: .7; stroke-dasharray: 3 5; }
+.tutorial-brake-tether { stroke: var(--muted); stroke-width: .6; }
+.tutorial-brake-sail { stroke-width: .9; }
+.tutorial-brake-hull { fill: currentColor; stroke: none; }
+.tutorial-brake-plume { stroke-width: .8; transform-origin: 13px 0; animation: tutorial-brake-plume .25s ease-in-out infinite alternate; }
+.tutorial-brake-gas rect { fill: var(--muted); stroke: none; animation: tutorial-brake-gas 1s linear infinite; }
+@keyframes tutorial-brake-gas { to { transform: translateX(-105px); } }
+@keyframes tutorial-brake-plume { from { transform: scaleX(.8); } to { transform: scaleX(1.3); } }
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-brake-plume, .tutorial-brake-gas rect { animation-play-state: paused; }
+}
+#tutorialNext:hover { background: var(--ink); border-color: var(--ink); }
+.tutorial-legend {
+  display: grid;
+  grid-template-rows: repeat(var(--rows), minmax(26px, auto));
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 0 20px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+.tutorial-legend li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tutorial-legend svg { flex: none; stroke-width: 1; }
+.tutorial-legend .solid { fill: currentColor; stroke: none; }
+.tutorial-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -4px 1px;
+  border: 1px solid var(--line);
+  vertical-align: middle;
+}
+.tutorial-icon svg { width: 14px; height: 14px; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#app[data-tutorial="quests"] .tutorial-card { z-index: 12; }
+.quest-card.is-recommended,
+body:has(#app[data-tutorial="quests"]) #questsBody [data-quest-start] { border: 1px solid var(--tutorial-ink); }
+body:has(#app[data-tutorial="quests"]) #questsBody [data-quest-start] { background: var(--tutorial-ink); color: var(--paper); }
 #skipTutorial { color: var(--card-muted, var(--muted)); }
 #skipTutorial:hover { color: var(--ink); }
 .tutorial-pointer, .tutorial-pointer::after { position: absolute; pointer-events: none; }
@@ -1350,8 +1426,19 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 
 /* The map stays full height while each real instrument is introduced. */
 #app[data-tutorial-parts~="welcome"] .map-panel { bottom: 0; }
-#app[data-tutorial-parts~="welcome"] :is(.map-actions > :not(#settingsBtn), #toast, #reachReadout),
-#app[data-tutorial="welcome"] .tutorial-pointer,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="collector"]) #libraryBtn,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="search"]) #catalogBtn,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="filters"]) #mapFilterBtn,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="follow"]) #shipBtn,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="restart"]) #resetBtn,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="zen"]) #zenBtn,
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="quests"]) #questBtn {
+  visibility: hidden;
+}
+#app[data-tutorial-parts~="welcome"] #questBtn[hidden] { display: grid !important; }
+#app[data-tutorial-parts~="welcome"] :is(#toast, #reachReadout),
+#app:is([data-tutorial="welcome"], [data-tutorial="objects"], [data-tutorial="farewell"]) .tutorial-pointer,
+#app:is([data-tutorial="neighbour"], [data-tutorial="universe"], [data-tutorial="reach"], [data-tutorial="objects"], [data-tutorial="search"], [data-tutorial="filters"], [data-tutorial="follow"], [data-tutorial="theme"], [data-tutorial="library"], [data-tutorial="restart"], [data-tutorial="settings"], [data-tutorial="zen"]) .flight-card,
 #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="time"]) #timeControls,
 #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="zoom"]) :is(#zoomControls, .map-scale),
 #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="clocks"]) .telemetry,
@@ -1374,22 +1461,34 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
 #app[data-tutorial-parts~="clocks"]:not([data-tutorial-parts~="dilation"]) .dilation-cell {
   visibility: hidden;
 }
-#app[data-tutorial-parts~="propulsion"] :is(#quickFlight, .target-tools, .card-plan-controls, #flightDetails, #objectCardBtn),
+#app[data-tutorial-parts~="propulsion"] :is(#flightDetails, #blackHoleArrival),
+#app[data-tutorial-parts~="propulsion"]:not([data-tutorial-parts~="supernova"]) [data-flight-option="burst"],
+#app[data-tutorial-parts~="propulsion"]:not([data-tutorial-parts~="star"]) :is(.target-tools, #objectCardBtn),
+#app[data-tutorial-parts~="propulsion"]:not([data-tutorial-parts~="sail"]) #quickFlight,
+#app[data-tutorial-parts~="propulsion"]:not([data-tutorial-parts~="sail"]) .card-plan-controls,
 #app[data-tutorial="propulsion"] .card-actions { display: none; }
 
 
 @media(max-width:700px),(max-height:500px) and (pointer:coarse) {
-  #app[data-tutorial-parts~="welcome"] .map-heading {
-    display: block; top: max(8px, env(safe-area-inset-top)); left: 8px; max-width: calc(100% - 66px);
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) .map-heading {
+    display: block; top: max(8px, env(safe-area-inset-top)); left: 8px; max-width: calc(100% - 96px);
   }
-  #app[data-tutorial-parts~="welcome"] .map-heading .eyebrow { width: auto; }
-  #app[data-tutorial-parts~="welcome"] .map-heading h1 { display: block; margin: 4px 0 0; max-width: none; }
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"])[data-tutorial-parts~="collector"] .map-heading { max-width: calc(100% - 132px); }
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) .map-heading .eyebrow { width: auto; }
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) .map-heading h1 { display: block; margin: 4px 0 0; max-width: none; }
   #app[data-tutorial-parts~="welcome"] .ship-location { display: none; }
-  #app[data-tutorial-parts~="welcome"] .map-actions {
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) .map-actions {
     display: flex; inset: max(6px, env(safe-area-inset-top)) 8px auto auto;
     padding: 0; border: 0; background: transparent;
   }
-  #app[data-tutorial-parts~="welcome"] #settingsBtn { width: 40px; }
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) .map-actions .menu-button { width: 36px; }
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]):not([data-tutorial-parts~="collector"]) #libraryBtn,
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) :is(#catalogBtn, #mapFilterBtn, #shipBtn, #resetBtn, #zenBtn) {
+    display: none;
+  }
+  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) #questBtn[hidden] { display: none !important; }
+  #app[data-tutorial="objects"] .tutorial-legend { grid-template-rows: none; grid-auto-flow: row; grid-auto-rows: minmax(26px, auto); }
+  #app[data-tutorial="quests"]:has(#quests:not([hidden])) .tutorial-pointer { display: none; }
   #app[data-tutorial-parts~="time"] .map-sidebar {
     display: flex; inset: calc(max(8px, env(safe-area-inset-top)) + 62px) 8px auto 8px;
   }
