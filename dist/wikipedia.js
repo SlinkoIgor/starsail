@@ -33,7 +33,8 @@ const Wikipedia = {
       const url=new URL(p.url),source=new URL(p.source);
       return url.protocol==='https:'&&['upload.wikimedia.org','thumb.wikimedia.org'].includes(url.hostname)&&
         source.origin==='https://commons.wikimedia.org'&&source.pathname.startsWith('/wiki/File:')&&
-        ['observation','map','diagram','illustration','reconstruction','composite'].includes(p.mediaType);
+        ['observation','map','diagram','illustration','reconstruction','composite'].includes(p.mediaType)&&
+        (p.labelled===undefined||typeof SkyPhotos!=='undefined'&&SkyPhotos.validLabelled(p.labelled));
     } catch {return false;}
   },
   async ensure(o) {

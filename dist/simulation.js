@@ -28,6 +28,11 @@ const Simulation={
   this.wallDebt=this.wallQueue.reduce((sum,q)=>sum+q.seconds,0);
  },
  idle(years){
+  if(typeof ExpeditionTutorial!=='undefined'&&ExpeditionTutorial.holdsClocks()){
+   state.prelude=(state.prelude||0)+years;
+   if(OrbitalMotion.onEarth(state))OrbitalMotion.parkOnEarth();
+   return;
+  }
   if(OrbitalArrival.idle(years))return;
   state.proper+=years;state.earth+=years;Cosmology.elapse(state,years);
   if(OrbitalMotion.onEarth(state))OrbitalMotion.parkOnEarth();

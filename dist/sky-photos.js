@@ -65,9 +65,18 @@ const SkyPhotos = {
   },
   ids(o) { return [...new Set(this.keys(o).flatMap(k=>SKY_PHOTO_INDEX.targets[k]||[]))].sort((a,b)=>Number(this.surveys.has(a))-Number(this.surveys.has(b))); },
   publisher(id) { return id.startsWith('esawebb-')?'esawebb':id.match(/^astropix-([a-z0-9_]+)-/)?.[1]; },
+  labelHosts:['www.astropix.org','cdn.eso.org','cdn.esahubble.org','cdn.esawebb.org','storage.noirlab.edu'],
+  validLabelled(l) {
+    if(l===undefined)return true;
+    try {
+      const url=new URL(l.url),source=new URL(l.source);
+      return url.protocol==='https:'&&this.labelHosts.includes(url.hostname)&&/\.(?:jpe?g|png)$/i.test(url.pathname)&&
+        source.protocol==='https:'&&new URL(l.archive).protocol==='https:'&&!!(l.title&&l.credit&&l.rights&&l.archiveLabel);
+    } catch { return false; }
+  },
   validPhoto(id,p,q) {
     const url=new URL(q.url),source=new URL(q.source);
-    return q.id===id&&this.publisher(id)===p&&source.protocol==='https:'&&q.credit&&q.rights&&
+    return q.id===id&&this.publisher(id)===p&&source.protocol==='https:'&&q.credit&&q.rights&&this.validLabelled(q.labelled)&&
       (p==='esawebb'?url.origin==='https://cdn.esawebb.org'&&/^\/archives\/images\/screen\/[A-Za-z0-9_.-]+\.jpg$/.test(url.pathname)&&source.origin==='https://esawebb.org':
         url.origin==='https://www.astropix.org'&&url.pathname.startsWith('/archive/'));
   },

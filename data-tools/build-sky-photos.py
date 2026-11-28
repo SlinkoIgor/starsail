@@ -131,6 +131,8 @@ def build(*, check=False):
     assert len({p['id'] for p in records}) == len(records)
     aliases, catalogue_revision = catalogue_aliases(ROOT, key, records)
     targets, publishers, primary_short = defaultdict(set), defaultdict(dict), defaultdict(set)
+    labelled = {r['photo']: r['labelled'] for r in json.loads((SRC / 'labelled-variants.json').read_text())['records']
+                if r['collection'] in ('astropix', 'webb')}
     surveys, reviews = set(), []
     for p in records:
         primary, evidence = primary_identifiers(p, aliases, key)
@@ -157,6 +159,10 @@ def build(*, check=False):
         publishers[p['publisher']][p['id']]['title'] = p['archiveTitle']
         if evidence:
             publishers[p['publisher']][p['id']]['targetEvidence'] = evidence
+        if p['id'] in labelled:
+            variant = {k: labelled[p['id']][k] for k in ['title', 'url', 'source', 'credit', 'rights', 'archive', 'archiveLabel']}
+            assert all(variant.values()) and all(variant[k].startswith('https://') for k in ['url', 'source', 'archive'])
+            publishers[p['publisher']][p['id']]['labelled'] = variant
         if p.get('mediaKind') == 'survey':
             surveys.add(p['id'])
     files = {}

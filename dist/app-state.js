@@ -103,6 +103,8 @@ function restore(saved) {
   };
   upgraded.startYear = Number.isSafeInteger(saved.startYear) && saved.startYear > 0 ? saved.startYear : new Date().getFullYear();
   upgraded.tutorialStep = TUTORIAL_STEPS.includes(saved.tutorialStep) ? saved.tutorialStep : null;
+  if (Number.isFinite(saved.prelude) && saved.prelude > 0) upgraded.prelude = saved.prelude;
+  else delete upgraded.prelude;
   if (saved.timeScale === 0.5) upgraded.timeScale = 0.1;
   // Missing/null setups used the optical defaults before engine-only starts.
   // Keep that fallback for existing expeditions, including active/queued plans.

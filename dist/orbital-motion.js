@@ -29,7 +29,7 @@ const OrbitalMotion={
   ['УРАН',19.18916464,.04725744,.77263783,313.23810451,170.95427630,74.01692503],
   ['НЕПТУН',30.06992276,.00859048,1.77004347,-55.12002969,44.96476227,131.78422574]
  ].map(([name,a,e,i,L,peri,node])=>({name,a,e,i,node,omega:peri-node,period:Math.sqrt(a**3),peri:2000-(L-peri)/360*Math.sqrt(a**3),solar:true})),
- elapsed(){try{return state?.universeElapsed??state?.earth??0;}catch{return 0;}},
+ elapsed(){try{return (state?.universeElapsed??state?.earth??0)+(state?.prelude||0);}catch{return 0;}},
  phase(q,year=this.epoch+this.elapsed()){
   const M=(((year-q.peri)%q.period)/q.period*2*Math.PI+2*Math.PI)%(2*Math.PI);
   let lo=0,hi=2*Math.PI,E=M;for(let n=0;n<60;n++){const f=E-q.e*Math.sin(E)-M;if(Math.abs(f)<2e-14)break;if(f>0)hi=E;else lo=E;const next=E-f/(1-q.e*Math.cos(E));E=next>lo&&next<hi?next:(lo+hi)/2;}return E;

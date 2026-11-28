@@ -49,6 +49,12 @@ def build(*, check=False):
         media_targets[pair['object']].discard(pair['wikipedia'])
     media_targets = defaultdict(set, {oid: ids for oid, ids in media_targets.items() if ids})
     used = {id for ids in media_targets.values() for id in ids}
+    for r in json.loads((SRC / 'labelled-variants.json').read_text())['records']:
+        if r['collection'] == 'wikipedia' and r['photo'] in used:
+            variant = {k: r['labelled'][k] for k in ['title', 'url', 'source', 'credit', 'rights', 'archive', 'archiveLabel']}
+            variant.update(instrument=r['labelled']['publisherName'], band='иллюстрация статьи Википедии')
+            assert all(variant.values()) and all(variant[k].startswith('https://') for k in ['url', 'source', 'archive'])
+            media[r['photo']] = dict(media[r['photo']], labelled=variant)
     observations = {id for id in used if media[id]['mediaType'] == 'observation' and media[id].get('mediaKind') != 'survey'}
     depicted = defaultdict(list)
     for oid, ids in sorted(media_targets.items()):

@@ -29,7 +29,9 @@ function assertOnEarth(){
  assert.deepEqual(FlightView.ship(),OrbitalMotion.planetPoint(earthOrbit,OrbitalMotion.phase(earthOrbit)));
 }
 assert.equal(object('planet-ЗЕМЛЯ')?.navigable,undefined);
-assert.ok($('tutorialText').innerHTML.includes('</p><p>Экспедиция стартует с Земли. '));
+const flat=s=>String(s).split(String.fromCharCode(160)).join(' ').replace(/<span class="tutorial-nowrap">([^<]*)<[/]span>/g,'$1');
+const lesson=()=>flat($('tutorialText').innerHTML);
+assert.ok(lesson().includes('</p><p>Экспедиция стартует с Земли. '));
 assert.equal($('shipLocationFrom').textContent,'Стоянка · Земля');
 const turns=[];ctx.rotate=angle=>turns.push(angle);
 for(const years of [0,.25,.5]){
@@ -125,9 +127,27 @@ assert.equal(space({repeat:true}),true);assert.equal(space({shiftKey:true}),fals
 assert.equal(state.tutorialStep,'time');assert.equal($('skipTutorial').hidden,true);
 setTimeRate(10);ExpeditionTutorial.openSession(true);
 assert.equal(state.timeScale,10,'resuming the first step keeps the selected rate');
+const preludeStart=state.prelude||0;
+{const earth=OrbitalMotion.planetPosition(OrbitalMotion.earth,OrbitalMotion.phase(OrbitalMotion.earth)).join();
+ assert.equal(paused,false);assert.equal(speed,10);Simulation.advance(.25);
+ assert.ok(Math.abs(state.prelude-preludeStart-2.5)<1e-9,'time before the clocks appear moves the planets only: '+state.prelude+' after '+preludeStart);
+ assert.equal(state.proper,0);assert.equal(state.earth,0);assert.equal(state.universeElapsed,0);assert.equal(state.cosmicTime,0);
+ assert.equal(OrbitalMotion.elapsed(),state.prelude);assert.notEqual(OrbitalMotion.planetPosition(OrbitalMotion.earth,OrbitalMotion.phase(OrbitalMotion.earth)).join(),earth);
+ assert.ok(OrbitalMotion.onEarth(state));}
 assert.equal(space(),true);
 assert.equal(state.tutorialStep,'clocks');assert.equal($('app').dataset.tutorial,'clocks');
-assert.match($('tutorialText').innerHTML,/13,8 млрд лет/);assert.equal($('tutorialText').innerHTML.split('<p>').length,4);
+{const earth=OrbitalMotion.planetPosition(OrbitalMotion.earth,OrbitalMotion.phase(OrbitalMotion.earth)).join();
+ renderUI();assert.equal($('shipClock').textContent,String(state.startYear),'the clocks appear showing the starting year');
+ assert.equal($('earthClock').textContent,String(state.startYear));assert.equal($('universeClock').textContent,fmt(INITIAL_UNIVERSE_AGE,0));
+ assert.equal(OrbitalMotion.planetPosition(OrbitalMotion.earth,OrbitalMotion.phase(OrbitalMotion.earth)).join(),earth,'the planets do not jump when the clocks start');
+ Simulation.advance(.3);
+ assert.ok(Math.abs(state.proper-3)<1e-9&&Math.abs(state.earth-3)<1e-9&&Math.abs(state.universeElapsed-3)<1e-9);
+ assert.ok(Math.abs(state.prelude-preludeStart-2.5)<1e-9);assert.ok(Math.abs(OrbitalMotion.elapsed()-preludeStart-5.5)<1e-9);
+ renderUI();assert.equal($('shipClock').textContent,String(state.startYear+3));
+ assert.equal(restore(FlightHistory.snapshot()).prelude,state.prelude,'the save keeps the orbital lead');
+ assert.equal(Object.hasOwn(restore({...FlightHistory.snapshot(),prelude:-1}),'prelude'),false);
+ assert.equal(Object.hasOwn(initial(),'prelude'),false);}
+assert.match(lesson(),/13,8 млрд лет/);assert.equal(lesson().split('<p>').length,4);
 assert.equal(SolarView.limit(),solarLimit,'the limit holds until the scale step');
 state=restore(FlightHistory.snapshot());ExpeditionTutorial.openSession(true);
 assert.equal(state.tutorialStep,'clocks');assert.equal(state.timeScale,10);assert.deepEqual(state.quests.active,[]);
@@ -141,7 +161,7 @@ for(const step of ['zoom','mass','acceleration','velocity','dilation','destinati
 ExpeditionTutorial.openSession(true);
 assert.equal(state.tutorialStep,'destination','refresh in the same session resumes the current step');
 renderUI();
-assert.ok($('tutorialText').innerHTML.endsWith('ближайшей к Солнцу звёздной системы. Нажмите на неё.</p>'));
+assert.ok(lesson().endsWith('ближайшей к Солнцу звёздной системы. Нажмите на неё.</p>'));
 assert.ok(cameraGoal && ExpeditionTutorial.target(object('alpha')));
 assert.equal(ExpeditionTutorial.target(object('proxima')),false);assert.equal(ExpeditionTutorial.mapTarget().name,'Альфа Центавра A');
 cam = {...cameraGoal};
@@ -158,16 +178,18 @@ assert.equal(ExpeditionTutorial.choose(object('proxima')),false,'only the guided
 select('alpha');assert.equal($('app').dataset.tutorial,'propulsion');assert.equal(ExpeditionTutorial.marksDistance(),true);
 assert.equal(ExpeditionTutorial.target(object('alpha')),false);assert.equal(ExpeditionTutorial.mapTarget(),null);
 for(const id of ['arrivalProper','arrivalEarth']){
- const duration=$(id).textContent;assert.ok(duration && duration!=='—');assert.ok($('tutorialText').innerHTML.includes(duration));
+ const duration=$(id).textContent;assert.ok(duration && duration!=='—');assert.ok(lesson().includes(duration));
 }
+assert.ok($('quickSpeed').textContent.endsWith('% c'));
+assert.ok(lesson().endsWith(flat(' по часам на Земле. Бортовые часы отстают из-за высокой скорости: «Ковчег» разгонится до '+$('quickSpeed').textContent+'.</p>')),'the lesson names the speed that slows the ship clock');
 assert.equal($('tutorialTitle').textContent,'Расстояние и время в пути');
-assert.ok($('tutorialText').innerHTML.includes('До Альфы Центавра '+$('targetDistance').textContent+'.'));
+assert.ok(lesson().includes(flat('До Альфы Центавра '+$('targetDistance').textContent+'.')));
 assert.deepEqual(state.quests.active,[],'selecting the star is still part of the tutorial');
 const guided=FlightSetup.read();
 assert.ok(guided.engine && !guided.sail && !guided.collector && !guided.burst && guided.brakeEngine && guided.brakeSail);
 assert.equal(space(),true);assert.equal(state.tutorialStep,'launch');assert.equal(space(),false);
-assert.match($('tutorialText').innerHTML,/Выберите темп 1× — тогда перелёт займёт около [0-9]+ секунд/);
-assert.equal($('tutorialText').innerHTML.split('<p>').length,2,'the launch hint is one paragraph');assert.equal(state.flight,null);
+assert.match(lesson(),/Выберите темп 1× — тогда перелёт займёт около [0-9]+ секунд/);
+assert.equal(lesson().split('<p>').length,2,'the launch hint is one paragraph');assert.equal(state.flight,null);
 assertOnEarth();
 $('launchBtn').onclick();assert.equal($('tutorialCard').hidden,true);
 const departure=physicalEarth(),departureOnMap=OrbitalMotion.planetPoint(earthOrbit,OrbitalMotion.phase(earthOrbit));
@@ -186,13 +208,12 @@ Simulation.tick(.2);assert.notDeepEqual(physicalEarth(),departure);
 assert.deepEqual(FlightView.at(state.flight,0),departureOnMap,'the departure point stays fixed');
 FlightHistory.cancel();assertOnEarth();assert.equal(state.tutorialStep,'launch');assert.equal(Quests.suspended,true);
 const arriveGuided=()=>{Simulation.tick(state.flight.mission.proper*1.00001);renderUI();};
-const lesson=()=>$('tutorialText').innerHTML;
 $('launchBtn').onclick();arriveGuided();
 assert.equal(state.current,'alpha');assert.equal(state.tutorialStep,'star','arrival continues the tutorial at the star card');
 assert.equal(Quests.pending,null);assert.equal(state.pendingQuestArrivals,undefined,'a guided arrival queues no quest story');
 assert.deepEqual(state.quests.active,[]);assert.equal($('tutorialNext').hidden,true);assert.equal(space(),false);
 assert.ok(lesson().startsWith('<p>Первый межзвёздный перелёт завершён: «Ковчег» на орбите Альфы Центавра A.</p>'));assert.ok(state.orbit,'the lesson names a real orbit');
-assert.ok(lesson().includes('«Звезда · жёлтый карлик · компонент A»')&&lesson().includes('главную из трёх звёзд системы'));
+assert.ok(lesson().includes('«Звезда · жёлтый карлик · в тройной системе»')&&lesson().includes('В системе три звезды: Альфа Центавра A — главная'));
 assert.ok(lesson().endsWith('<p>Кнопка «Карточка объекта» открывает полную карточку звезды. Нажмите её.</p>'));assert.equal($('objectCardBtn').hidden,false);
 assert.ok($('app').dataset.tutorialParts.split(' ').includes('star'));
 globalThis.sessionStorage=storage();state=restore(FlightHistory.snapshot());ExpeditionTutorial.openSession(true);renderUI();
@@ -214,7 +235,7 @@ $('infoDialog').close();ExpeditionTutorial.dialogClosed();
 assert.equal(state.tutorialStep,'blackhole');assert.equal($('tutorialCard').hidden,false);
 assert.equal(cameraGoal.span,zoomStops[2].span,'the next flight is introduced at the Galaxy scale');
 assert.equal($('tutorialTitle').textContent,'Выберите цель');
-assert.equal(lesson(),'<p>Следующая цель намного дальше — Стрелец A*, сверхмассивная чёрная дыра в центре Млечного Пути, нашей Галактики. Её масса — 4,3 млн масс Солнца.</p><p>Выберите её на карте.</p>');
+assert.equal(lesson(),'<p>Следующая цель намного дальше — Стрелец A*, сверхмассивная чёрная дыра в центре Млечного Пути, нашей Галактики.</p><p>Выберите её на карте.</p>');
 assert.ok(!TUTORIAL_STEPS.includes('galaxy'));
 showObject('alpha');assert.equal(state.tutorialStep,'blackhole');
 $('infoDialog').close();ExpeditionTutorial.dialogClosed();assert.equal(state.tutorialStep,'blackhole');
@@ -234,7 +255,11 @@ select('sgr');assert.equal(state.tutorialStep,'sail');assert.equal(ExpeditionTut
 assert.ok(!state.flightSetup.sail&&!state.flightSetup.collector&&!state.flightSetup.burst&&state.flightSetup.engine,'the far flight starts from the engine-only plan');
 assert.equal($('distanceCaption').textContent,'РАССТОЯНИЕ ДО ЦЕЛИ');
 assert.equal($('tutorialTitle').textContent,'Расстояние до цели');
-assert.ok(lesson().includes('До Стрельца A* '+$('targetDistance').textContent+'. Только на тяге двигателя перелёт займёт '+$('arrivalProper').textContent+' по бортовым часам'));
+assert.ok(lesson().includes(flat('До Стрельца A* '+ExpeditionTutorial.shown('targetDistance')+'. Только на тяге двигателя перелёт займёт '+ExpeditionTutorial.shown('arrivalProper')+' по бортовым часам')));
+assert.ok($('targetDistance').innerHTML.includes(' тыс. ')&&$('arrivalProper').textContent.includes(' тыс. ')&&!lesson().includes('тыс.'),'the card spells thousands out');
+assert.deepEqual(['64,8 тыс. лет','7 тыс. лет','26,7 тыс. св. лет','2,54 млн лет','5,93 года'].map(q=>ExpeditionTutorial.plain(q)),[fmt(64800,0)+' лет',fmt(7000,0)+' лет',fmt(26700,0)+' св. лет','2,54 млн лет','5,93 года']);
+assert.match(ExpeditionTutorial.plain('64,8 тыс. лет'),/^64\\s800 лет$/);
+assert.deepEqual(['33,04 года','20,5 года','1,2 года','33 года','101 год','64,8 тыс. лет'].map(q=>ExpeditionTutorial.about(q)),['≈ 33 года','≈ 21 год','≈ 1 год','33 года','101 год',fmt(64800,0)+' лет']);
 assert.ok(lesson().endsWith('<p>С фотонным парусом «Ковчег» долетит намного быстрее: включите «Парус» и «Коллектор» в карточке цели.</p>'));
 assert.equal(ExpeditionTutorial.marksDistance(),true,'the distance on the map shares the accent of the distance row');assert.equal($('tutorialNext').hidden,true);
 assert.equal($('launchBtn').disabled,true,'the launch button waits for the sail and the collector');
@@ -251,9 +276,9 @@ QuickFlight.toggle('sail');assert.equal(state.tutorialStep,'sail');assert.ok(!Fl
 QuickFlight.toggle('sail');assert.equal(state.tutorialStep,'sail');
 assert.equal(lesson(),'<p>Парус раскрыт, но рассеянного света звезды для разгона мало. Включите «Коллектор»: он соберёт свет в луч.</p>');
 QuickFlight.toggle('collector');assert.equal(state.tutorialStep,'collector');assert.equal($('launchBtn').disabled,false);assert.equal(ExpeditionTutorial.marksDistance(),false);
-assert.ok(lesson().includes('пройдёт всего '+$('arrivalProper').textContent));
+assert.ok(lesson().includes(flat('пройдёт всего '+ExpeditionTutorial.about($('arrivalProper').textContent)+'.')));assert.match(lesson(),/пройдёт всего ≈ \\d+ (?:год|года|лет)\\./);assert.ok(lesson().includes(flat(' — за '+ExpeditionTutorial.shown('arrivalEarth')+' по часам наблюдателя'))&&!lesson().includes('тыс.'));
 assert.equal($('tutorialLibrary').hidden,false);assert.equal($('tutorialNext').hidden,true);assert.equal(space(),false);
-for(const id of ['quickSpeed','arrivalEarth','arrivalProper'])assert.ok($(id).textContent&&lesson().includes($(id).textContent),id+' is quoted in the collector lesson');
+for(const id of ['quickSpeed','arrivalEarth','arrivalProper'])assert.ok($(id).textContent&&lesson().includes(flat(id==='quickSpeed'?$(id).textContent:id==='arrivalProper'?ExpeditionTutorial.about($(id).textContent):ExpeditionTutorial.shown(id))),id+' is quoted in the collector lesson');
 assert.ok(lesson().includes('в библиотеке — кнопка <span class="tutorial-icon" role="img" aria-label="кнопка «Бортовая библиотека»"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#library-icon"/></svg></span>.'),'the collector lesson draws the library button instead of describing its place');
 assert.ok(lesson().includes('У фотонов нет массы, но есть импульс')&&lesson().includes('«Подробный план»'));
 assert.ok(FlightEstimate.get().proper<100&&FlightEstimate.get().proper<slowTrip/1000);
@@ -280,6 +305,7 @@ assert.equal(state.tutorialStep,'braking');assert.equal(JSON.stringify(cameraGoa
 assert.equal($('tutorialNext').textContent,'Перейти к изучению чёрной дыры [Пробел]');
 assert.equal(space(),true,'Space presses every lesson button');
 assert.equal(state.tutorialStep,'center');
+assert.equal($('tutorialCard').style.visibility,'hidden','the next lesson is hidden in the same frame the camera starts to move');
 const centred=()=>{const hole=screen(object('sgr'));return Math.abs(hole.x-width/2)<1e-6&&Math.abs(hole.y-cameraViewportHeight()/2)<1e-6;};
 {const wide=cameraGoal,near=.02*width/GRID_TARGET_PIXELS;
  assert.ok(wide.span>near*2&&!wide.glide&&wide.focus==='sgr','the first stage is the usual fast zoom to all orbits');
@@ -303,12 +329,12 @@ const centred=()=>{const hole=screen(object('sgr'));return Math.abs(hole.x-width
  assert.equal(cameraGoal.span,near);assert.equal(ExpeditionTutorial.approach,null);cam={...cameraGoal};cameraGoal=null;renderUI();}
 assert.equal(MapDetails.mapLabelName(object('s111')),'S111');assert.equal(MapDetails.mapLabelName(object('s2')),'S2');
 assert.equal($('tutorialTitle').textContent,'Звёзды у чёрной дыры');
-assert.ok(lesson().startsWith('<p>Пунктирные линии — пути звёзд вокруг Стрельца A*. На карте '+NuclearStars.rows.length+' звёзд с измеренными траекториями. «Ковчег» стоит у S55: она обходит чёрную дыру за 12 лет — быстрее остальных.</p>'));
+assert.ok(lesson().startsWith(flat('<p>Пунктирные линии — пути звёзд вокруг Стрельца A*. На карте '+NuclearStars.rows.length+' звёзд с измеренными траекториями. «Ковчег» стоит у S55: она обходит чёрную дыру за 12 лет — быстрее остальных.</p>')));
 assert.equal(ExpeditionTutorial.fastestStar().id,'s55');assert.ok(NuclearStars.rows.filter(q=>q.e<1).every(q=>NuclearStars.period(q)>=NuclearStars.period(ExpeditionTutorial.fastestStar())));
 assert.equal(NuclearStars.rows.length,40);assert.deepEqual(NuclearStars.rows.map(q=>q.id),NUCLEAR_ORBIT_DATA.rows.map(q=>q.id),'every catalogued trajectory is on the map');
 for(const q of NuclearStars.rows)assert.ok(object(q.id)?.orbit===q&&object(q.id).navigable,q.name+' is a map object with its trajectory');
 assert.ok(!lesson().includes('S111')&&!lesson().includes('вместе с часами')&&lesson().split('<p>').length===3,'the lesson names one star and stays short');
-assert.ok(lesson().endsWith('<p>Рядом с чёрной дырой время идёт медленнее из-за её гравитации. Когда звезда S2 проходит ближайшую к чёрной дыре точку орбиты, её часы отстают примерно на минуту в сутки: сказываются гравитация чёрной дыры и скорость самой звезды. Это измерили по покраснению света звезды.</p>'));
+assert.ok(lesson().endsWith('<p>Рядом с чёрной дырой время идёт чуть медленнее из-за её гравитации. Когда звезда S2 проходит ближайшую к чёрной дыре точку орбиты, её часы отстают примерно на минуту в сутки: сказываются гравитация чёрной дыры и скорость самой звезды. Это измерили по покраснению света звезды.</p>'));
 {const p=screen(object('sgr')),held=ExpeditionTutorial.tracked;assert.equal(held.spot,object('sgr'),'the lesson is tied to the black hole, not to a moving star');assert.ok(Math.abs(held.x-p.x)<1e-9);}
 assert.deepEqual([1,2,5,12,21,22,37,111].map(n=>ExpeditionTutorial.yearsText(n)),['1 год','2 года','5 лет','12 лет','21 год','22 года','37 лет','111 лет']);
 globalThis.sessionStorage=storage();state=restore(FlightHistory.snapshot());cam={x:0,y:0,span:50};cameraGoal=null;ExpeditionTutorial.openSession(true);ExpeditionTutorial.showMap();renderUI();

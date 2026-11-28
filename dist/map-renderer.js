@@ -399,7 +399,21 @@ function drawSymbol(o, p, selected = false) {
     } else {
       circle(0, 0, Math.max(globalThis.MapFilters?.promotes(o) ? 3.5 : 0.8, r), ink, 0.9);
     }
-  } else if (o.kind === 'pulsar' || o.kind === 'quasar') {
+  } else if (o.kind === 'quasar') {
+    ctx.fillStyle = paint(ink);
+    ctx.beginPath();
+    ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 11, 3.6, -0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    for (const side of [1, -1]) {
+      line(side * 1.5, side * 4.8, side * 8.7, side * 16.2, ink, 0.8);
+      line(side * 1.5, side * 4.8, side * 2, side * 18.2, ink, 0.8);
+    }
+  } else if (o.kind === 'pulsar') {
     circle(0, 0, 5, ink);
     circle(0, 0, 10, ink, 0.5);
     line(-5, 18, 5, -18, ink, 0.9);

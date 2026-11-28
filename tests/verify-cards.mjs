@@ -11,7 +11,7 @@ for(const id of ['alpha','hyg-71453','proxima','bootes','sgr','orion']){showObje
 assert.equal(MapDetails.component(object('alpha')),'A');assert.equal(MapDetails.component(object('hyg-71453')),'B');assert.equal(MapDetails.component(object('proxima')),'C');
 assert.ok(MapDetails.componentNote(object('proxima')).includes('Бета Центавра — другая'));
 assert.ok(!object('alpha').facts.mass.includes('+'));assert.equal(MapDetails.mass(object('alpha')),1.08);assert.ok(!object('alpha').type.includes('ДВОЙНАЯ'));
-state=initial();state.selected='alpha';launch(true);renderUI();assert.ok($('targetType').textContent.includes('Звезда'));assert.ok($('targetType').textContent.includes('компонент A'));
+state=initial();state.selected='alpha';launch(true);renderUI();assert.ok($('targetType').textContent.includes('Звезда'));assert.ok($('targetType').textContent.endsWith(' · в тройной системе'));
 const record=ExtendedCatalog.decode(['test','Test','nebula',100,10,20,'catalog','Дальность измерена.',[],null,'OpenNGC',{catalogType:'PN'},0,0]);
 assert.ok(!/Реальн/.test(record.desc));assert.ok(record.facts.refs.some(r=>r[1]==='OpenNGC'));
 for(const o of OBJECTS)assert.ok(!/^Реальный объект:|^Реальная каталожная запись/.test(MapDetails.description(o)));

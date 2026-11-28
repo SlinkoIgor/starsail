@@ -184,7 +184,7 @@ function objectTypeText(o) {
     : (state.destroyed.includes(o.id) && o.kind === 'star'
         ? 'ОСТАТОК ЗВЕЗДЫ'
         : MapDetails.typeLabel(o)) +
-        (MapDetails.component(o) ? ' · компонент ' + MapDetails.component(o) : '');
+        (MapDetails.multiplicity(o) ? ' · ' + MapDetails.multiplicity(o) : '');
 }
 const distance = (a, b) => Space.distance(a, b);
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));

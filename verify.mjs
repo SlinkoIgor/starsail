@@ -91,6 +91,7 @@ const detailedChecks = [
   'tests/verify-cosmic-media.mjs',
   'tests/verify-sky-dss.mjs',
   'tests/verify-sky-photos.mjs',
+  'tests/verify-labelled-photos.mjs',
   'tests/verify-sky-imaging.mjs',
   'tests/verify-orbit-paths.mjs',
   'tests/verify-extended-geometry.mjs',

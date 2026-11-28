@@ -1267,7 +1267,8 @@ dialog .object-system-note{position:relative;margin:10px 0 0;font-size:12px;line
   --line: var(--tutorial-ink);
   color: var(--tutorial-ink);
 }
-#app[data-tutorial="destination"] .catalog-item[data-object-id="alpha"] strong {
+#app[data-tutorial="destination"] .catalog-item[data-object-id="alpha"] strong,
+#app[data-tutorial="collector"] #configureFlightLabel {
   color: var(--tutorial-ink);
 }
 #app[data-tutorial="sail"] :is([data-flight-option="sail"], [data-flight-option="collector"]):not([aria-pressed="true"]),
@@ -1301,7 +1302,7 @@ body:has(#app:is([data-tutorial="card"], [data-tutorial="holecard"])) #infoDialo
   position: fixed;
   z-index: 8;
   pointer-events: none;
-  width: min(302px, calc(100vw - 20px));
+  width: min(330px, calc(100vw - 20px));
   background: var(--paper);
   color: var(--ink);
   border: 1px solid var(--tone-a7a7a7);
@@ -1314,7 +1315,7 @@ body:has(#app:is([data-tutorial="card"], [data-tutorial="holecard"])) #infoDialo
   width: min(380px, calc(100vw - 20px));
 }
 #app[data-tutorial="clocks"] .tutorial-card { width: min(530px, calc(100vw - 20px)); }
-#app:is([data-tutorial="star"], [data-tutorial="blackhole"], [data-tutorial="collector"], [data-tutorial="braking"], [data-tutorial="center"], [data-tutorial="hole"], [data-tutorial="burst"], [data-tutorial="universe"], [data-tutorial="reach"], [data-tutorial="quests"]) .tutorial-card {
+#app:is([data-tutorial="star"], [data-tutorial="blackhole"], [data-tutorial="collector"], [data-tutorial="braking"], [data-tutorial="center"], [data-tutorial="hole"], [data-tutorial="neighbour"], [data-tutorial="burst"], [data-tutorial="universe"], [data-tutorial="reach"], [data-tutorial="quests"]) .tutorial-card {
   width: min(350px, calc(100vw - 20px));
 }
 #app[data-tutorial="objects"] .tutorial-card { width: min(400px, calc(100vw - 20px)); }
@@ -1334,7 +1335,8 @@ body:has(#app:is([data-tutorial="card"], [data-tutorial="holecard"])) #infoDialo
   letter-spacing: .065em;
   text-transform: uppercase;
 }
-.tutorial-copy p { margin: 0; }
+.tutorial-copy p { margin: 0; text-wrap: pretty; }
+.tutorial-nowrap { white-space: nowrap; }
 .tutorial-copy p + p { margin-top: 7px; }
 .tutorial-actions {
   display: flex;
@@ -1427,15 +1429,17 @@ body:has(#app[data-tutorial="quests"]) #questsBody [data-quest-start] { backgrou
 /* The map stays full height while each real instrument is introduced. */
 #app[data-tutorial-parts~="welcome"] .map-panel { bottom: 0; }
 #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="collector"]) #libraryBtn,
-#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="search"]) #catalogBtn,
-#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="filters"]) #mapFilterBtn,
-#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="follow"]) #shipBtn,
-#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="restart"]) #resetBtn,
-#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="zen"]) #zenBtn,
-#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="quests"]) #questBtn {
+#app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="search"]) :is(#catalogBtn, #mapFilterBtn, #shipBtn, #resetBtn, #zenBtn) {
+  display: none;
+}
+#app[data-tutorial-parts~="search"]:not([data-tutorial-parts~="filters"]) #mapFilterBtn,
+#app[data-tutorial-parts~="search"]:not([data-tutorial-parts~="follow"]) #shipBtn,
+#app[data-tutorial-parts~="search"]:not([data-tutorial-parts~="restart"]) #resetBtn,
+#app[data-tutorial-parts~="search"]:not([data-tutorial-parts~="zen"]) #zenBtn,
+#app[data-tutorial-parts~="search"]:not([data-tutorial-parts~="quests"]) #questBtn {
   visibility: hidden;
 }
-#app[data-tutorial-parts~="welcome"] #questBtn[hidden] { display: grid !important; }
+#app[data-tutorial-parts~="search"] #questBtn[hidden] { display: grid !important; }
 #app[data-tutorial-parts~="welcome"] :is(#toast, #reachReadout),
 #app:is([data-tutorial="welcome"], [data-tutorial="objects"], [data-tutorial="farewell"]) .tutorial-pointer,
 #app:is([data-tutorial="neighbour"], [data-tutorial="universe"], [data-tutorial="reach"], [data-tutorial="objects"], [data-tutorial="search"], [data-tutorial="filters"], [data-tutorial="follow"], [data-tutorial="theme"], [data-tutorial="library"], [data-tutorial="restart"], [data-tutorial="settings"], [data-tutorial="zen"]) .flight-card,
@@ -1482,11 +1486,10 @@ body:has(#app[data-tutorial="quests"]) #questsBody [data-quest-start] { backgrou
     padding: 0; border: 0; background: transparent;
   }
   #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) .map-actions .menu-button { width: 36px; }
-  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]):not([data-tutorial-parts~="collector"]) #libraryBtn,
-  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) :is(#catalogBtn, #mapFilterBtn, #shipBtn, #resetBtn, #zenBtn) {
-    display: none;
+  #app[data-tutorial-parts~="universe"]:not([data-tutorial-parts~="search"]) :is(#catalogBtn, #mapFilterBtn, #shipBtn, #resetBtn, #zenBtn) {
+    display: grid; visibility: hidden;
   }
-  #app[data-tutorial-parts~="welcome"]:not([data-tutorial-parts~="universe"]) #questBtn[hidden] { display: none !important; }
+  #app[data-tutorial-parts~="universe"] #questBtn[hidden] { display: grid !important; visibility: hidden; }
   #app[data-tutorial="objects"] .tutorial-legend { grid-template-rows: none; grid-auto-flow: row; grid-auto-rows: minmax(26px, auto); }
   #app[data-tutorial="quests"]:has(#quests:not([hidden])) .tutorial-pointer { display: none; }
   #app[data-tutorial-parts~="time"] .map-sidebar {

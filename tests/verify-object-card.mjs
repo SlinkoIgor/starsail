@@ -223,7 +223,7 @@ for(const o of OBJECTS){
  assert.ok(['star','home','galaxy'].includes(o.kind),'only stars and galaxies get a derived subtype: '+o.id);
  assert.ok(!/undefined|null|[A-Z]\d/.test(subtype)&&subtype===subtype.trim()&&subtype.length<60,'a plain subtype: '+o.id+' '+subtype);
  assert.ok(label===type+' · '+subtype||(type==='Звезда'&&subtype.includes('звезда')||type==='Галактика'&&subtype.includes('галактик'))&&label.toLocaleLowerCase('ru')===subtype.toLocaleLowerCase('ru')&&label[0]===label[0].toLocaleUpperCase('ru'),'the subtype stands next to the type: '+o.id+' '+label);
- assert.equal(objectTypeText(o),label+(MapDetails.component(o)?' · компонент '+MapDetails.component(o):''),'the small card shows the same type: '+o.id);
+ assert.equal(objectTypeText(o),label+(MapDetails.multiplicity(o)?' · '+MapDetails.multiplicity(o):''),'the small card shows the same type: '+o.id);
  if(o.kind==='galaxy'&&!MapDetails.galaxyType(o.hubbleType)){assert.ok(card(o.id).includes('<dt>Класс</dt><dd>'+label),'a curated galaxy keeps its described class: '+o.id);continue;}
  if(o.kind==='galaxy'){typedGalaxies++;assert.equal(subtype,MapDetails.galaxyType(o.hubbleType),'galaxy subtype comes from the catalogue morphology: '+o.id);assert.equal(tiles(card(o.id))['Класс'].value,subtype[0].toLocaleUpperCase('ru')+subtype.slice(1)+'<small>'+o.hubbleType+'</small>','morphology tile: '+o.id);}
  else typedStars++;
@@ -245,11 +245,18 @@ const alzirr=object('hyg-32276');
 assert.equal(alzirr.spectral,'F5IV');assert.equal(MapDetails.typeLabel(alzirr),'Звезда · жёлто-белый субгигант');
 assert.ok(card('hyg-32276').startsWith('<article class="object-card"><div class="modal-eyebrow">КАТАЛОГ / ЗВЕЗДА · ЖЁЛТО-БЕЛЫЙ СУБГИГАНТ</div>'));
 assert.equal(MapDetails.typeLabel(object('sol')),'Звезда · Солнце · жёлтый карлик');
-assert.equal(objectTypeText(object('alpha')),'Звезда · жёлтый карлик · компонент A');
-assert.equal(objectTypeText(object('proxima')),'Звезда · вспыхивающий красный карлик · компонент C');
+assert.equal(objectTypeText(object('alpha')),'Звезда · жёлтый карлик · в тройной системе');
+assert.equal(objectTypeText(object('proxima')),'Звезда · вспыхивающий красный карлик · в тройной системе');
+assert.equal(objectTypeText(object('sirius')),MapDetails.typeLabel(object('sirius'))+' · в двойной системе');
+{const members=OBJECTS.filter(o=>MapDetails.component(o)),sizes=new Set(members.map(o=>ExtendedCatalog.systemByMember.get(o.id).members.length));
+ assert.ok(members.length>=96);assert.deepEqual([...sizes].sort(),[2,3,4,5]);
+ for(const o of members){const count=ExtendedCatalog.systemByMember.get(o.id).members.length;
+  assert.equal(MapDetails.multiplicity(o),'в '+{2:'двойной',3:'тройной',4:'четверной',5:'пятикратной'}[count]+' системе',o.id);
+  assert.ok(!objectTypeText(o).includes('компонент'),o.id);}
+ assert.equal(MapDetails.multiplicity(object('sol')),'');assert.equal(MapDetails.multiplicity({id:'lone',stellarComponent:'A'}),'','an unknown system gets no count');}
 assert.equal(MapDetails.typeLabel(object('andromeda')),'Спиральная галактика');assert.equal(MapDetails.typeLabel(object('m87')),'Гигантская эллиптическая галактика');assert.equal(MapDetails.typeLabel(object('opengc-ngc4676')),'Пара галактик');
 assert.equal(MapDetails.subtype(object('sgr')),'');assert.equal(MapDetails.subtype(OBJECTS.find(o=>o.nuclearStar)),'');
-state.destroyed=['alpha'];assert.equal(objectTypeText(object('alpha')),'ОСТАТОК ЗВЕЗДЫ · компонент A');state.destroyed=[];
+state.destroyed=['alpha'];assert.equal(objectTypeText(object('alpha')),'ОСТАТОК ЗВЕЗДЫ · в тройной системе');state.destroyed=[];
 assert.ok(pageHTML.includes('</span><span class="target-tools"><button id="objectInfo" aria-label="Об объекте" title="Об объекте"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6m0-10v1"/></svg></button><button id="objectFocus" aria-label="Показать на карте" title="Показать на карте"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></button></span></h2>'),'the centre icon of the ship button sits right of the info button');
 assert.ok(pageHTML.includes('id="shipBtn" aria-label="Центрировать и следовать: Ковчег" title="Ковчег · центрировать и следовать"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>'),'it is the same icon as on the ship button');
 const plainStar=OBJECTS.find(o=>o.kind==='star'&&o.id!=='sol'&&!o.atlasOnly&&!o.nuclearStar&&!o.stellarSystem&&!OrbitalMotion.isOrbiting(o));

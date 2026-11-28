@@ -10,6 +10,7 @@ const ExpeditionTutorial = {
   approachSeconds: 6,
   galaxyTarget: 'andromeda',
   neighbourSpan: 1e7,
+  neighbourSeconds: 3,
   galaxyRadius: 3e5,
   universeSecondsPerDecade: 2.5,
   approach: null,
@@ -101,6 +102,9 @@ const ExpeditionTutorial = {
     UIContent.text($('startTutorial'), step ? 'Отключить обучение' : 'Начать обучение');
     resize();
   },
+  holdsClocks() {
+    return state.tutorialStep === 'welcome' || state.tutorialStep === 'time';
+  },
   allows(step) {
     return !state.tutorialStep || TUTORIAL_STEPS.indexOf(state.tutorialStep) >= TUTORIAL_STEPS.indexOf(step);
   },
@@ -120,9 +124,11 @@ const ExpeditionTutorial = {
     persist();
     renderUI();
     if (next === 'center') this.showCenter(true);
-    else if (next === 'destination' || next === 'launch' || next === 'blackhole' || next === 'neighbour') this.showMap();
+    else if (next === 'neighbour') this.showNeighbour(true);
+    else if (next === 'destination' || next === 'launch' || next === 'blackhole') this.showMap();
     else if (next === 'hole') select(this.farTarget);
     else if (next === 'universe') this.showUniverse(true);
+    if (cameraGoal) this.render();
   },
   advance() {
     const step = state.tutorialStep;
@@ -223,8 +229,10 @@ const ExpeditionTutorial = {
   showGalaxy() {
     fitCameraPoints([MapLayout.project(object(this.farTarget))], routeViewport(true), zoomStops[2].span);
   },
-  showNeighbour() {
-    fitCameraPoints([FlightView.ship(), MapLayout.project(object(this.galaxyTarget))], routeViewport(true), this.neighbourSpan);
+  showNeighbour(slow = false) {
+    const view = pointsCamera([FlightView.ship(), MapLayout.project(object(this.galaxyTarget))], routeViewport(true), this.neighbourSpan);
+    if (!slow || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) goCamera(view.x, view.y, view.span);
+    else glideCamera(view, FlightView.ship(), this.neighbourSeconds);
   },
   universeView() {
     const view = UniverseMap.overview(), hud = document.querySelector('.telemetry')?.getBoundingClientRect();
@@ -379,6 +387,16 @@ const ExpeditionTutorial = {
     const n = Math.round(years);
     return n + ' ' + this.plural(n, 'год', 'года', 'лет');
   },
+  plain(text) {
+    return String(text).replace(/(\d+)(?:,(\d))? тыс\./g, (found, whole, tenth) => fmt(whole * 1000 + (tenth || 0) * 100, 0));
+  },
+  shown(id) {
+    return this.plain($(id).textContent);
+  },
+  about(text) {
+    const years = /^(\d+),(\d+) (?:год|года|лет)$/.exec(String(text));
+    return years ? '≈ ' + this.yearsText(Number(years[1] + '.' + years[2])) : this.plain(text);
+  },
   objectCount() {
     const n = (typeof ExtendedCatalog === 'undefined' ? 0 : ExtendedCatalog.total) + (globalThis.Exoplanets?.newCount || 0);
     return n > 0 ? n.toLocaleString('ru-RU') + ' ' + this.plural(n, 'объект', 'объекта', 'объектов') : '';
@@ -431,12 +449,13 @@ const ExpeditionTutorial = {
   legend: [
     ['Звёзды', 22, '<circle r="4" stroke-width=".8"/><circle class="solid" r="1.5"/><path stroke-width=".7" d="M-9 0H-6M6 0H9M0-9V-6M0 6V9"/>'],
     ['Чёрные дыры', 22, '<circle r="8" stroke-width=".8"/><circle class="solid" r="4"/><ellipse rx="17" ry="4" stroke-width="1.25" transform="rotate(-17.2)"/>'],
-    ['Пульсары и квазары', 38, '<circle r="5"/><circle r="10" stroke-width=".5"/><path stroke-width=".8" d="M-5 18L5-18M-8 18H0M0-18H8"/>'],
+    ['Пульсары', 38, '<circle r="5"/><circle r="10" stroke-width=".5"/><path stroke-width=".8" d="M-5 18L5-18M-8 18H0M0-18H8"/>'],
     ['Туманности', 22, '<path d="M-4.8 .6C-5.3-2-2.8-4 .2-3.2M2.7-2.7C5-1.9 5.3 .8 3.4 2.2M1.3 3.2C-1.4 4.4-4 2.9-3.5 1.5M-1.8 .5C-1.1-1.7 1.3-1.3 1.7 .5"/>'],
-    ['Звёздные скопления', 22, '<circle class="solid" r="1.6"/>'],
+    ['Звёздные скопления', 22, '<circle r="9" stroke-width=".7" stroke-dasharray="1 4"/><circle class="solid" r="1.6"/>'],
     ['Галактики', 22, '<circle r="1.5" stroke-width=".9"/>'],
+    ['Квазары', 38, '<circle class="solid" r="2.2"/><ellipse rx="11" ry="3.6" transform="rotate(-17.2)"/><path stroke-width=".8" d="M8.7 16.2L1.5 4.8L2 18.2M-8.7-16.2L-1.5-4.8L-2-18.2"/>'],
     ['Скопления галактик', 22, '<circle r="9" stroke-width=".7" stroke-dasharray="7 3 1 3"/><circle r="1.2" stroke-width=".7"/>'],
-    ['Галактические нити', 22, '<path stroke-width=".7" d="M13.9 9L14.4 6.1L16 3L14.8 2.2L13.9 0L14.2-3.8L13.8-4.2L11.3-3.6L9.9-3.9L5-9L3.9-9L.2-6.5L-3.5-3.6L-7.6 .8L-16 2.1"/>'],
+    ['Галактические нити', 22, '<path stroke-width=".7" d="M10.3-2.3L9-2L.1-3.9L-3.5-4.3L-5.8-4.1L-8.6-3.2L-11.1-1.1M1.1 7.3L4.6 2.6L7.4-2.3L10.1-5L12.4-6.6L16-7M2.4-7.3L-1.2-3.8L-8.8-.4L-16 1.6"/>'],
   ],
   galaxyMark() {
     if (this.galaxyGlyph) return this.galaxyGlyph;
@@ -462,8 +481,30 @@ const ExpeditionTutorial = {
     const [icon, label] = this.icons[name];
     return '<span class="tutorial-icon" role="img" aria-label="' + label + '"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#' + icon + '"/></svg></span>';
   },
+  typeset(text) {
+    const bound = [
+      [/«([^«»]{1,24})»/g, (found, name) => '«' + name.replace(/ /g, '\u00a0') + '»'],
+      [/(^|[\s(«])([А-Яа-яЁё]{1,2}) /g, '$1$2\u00a0'],
+      [/(^|[\s(«])([А-Яа-яЁё]{1,2}) /g, '$1$2\u00a0'],
+      [/ — /g, '\u00a0— '],
+      [/(^|[^A-Z])([\d≈%×]) (?=[А-Яа-яЁё\d%c])/g, '$1$2\u00a0'],
+      [/(млн|млрд|тыс\.|св\.) /g, '$1\u00a0'],
+      [/(\S) (A\*|[A-Z]\d{0,3})(?=[\s,.:;!?)»]|$)/g, '$1\u00a0$2'],
+      [/ (?=\{\w+\})/g, '\u00a0'],
+      [/(Млечн[а-яё]+|Альф[а-яё]+|Больш[а-яё]+|[Бб]ортов[а-яё]+|[Чч]ёрн[а-яё]+|[Сс]корост[а-яё]+) (Пут[а-яё]+|Центавра|взрыв[а-яё]*|час[а-яё]+|дыр[а-яё]+|света)/g, '$1\u00a0$2'],
+      [/E = mc²/g, 'E\u00a0=\u00a0mc²'],
+      [/(^|[\s(«])(при|для|без|над|под|про|или) /g, '$1$2\u00a0'],
+      [/(\S) (\d)(?=[\s.:;!?)»]|,\s|$)/g, '$1\u00a0$2'],
+      [/, ([а-яё]{1,7}) (?=\S)/g, ', $1\u00a0'],
+      [/(^|[.!?:] )([^\s,;:.!?—]{1,9}) (?=\S)/g, '$1$2\u00a0'],
+      [/ ([^\s—]{1,9}[.!?:…])(?= |$)/g, '\u00a0$1'],
+      [/ (\S{1,8})$/, '\u00a0$1'],
+      [/[A-Za-zА-Яа-яЁё]+(?:-[A-Za-zА-Яа-яЁё]+)+/g, '<span class="tutorial-nowrap">$&</span>'],
+    ];
+    return bound.reduce((line, [pattern, joined]) => line.replace(pattern, joined), text);
+  },
   paragraph(line) {
-    return '<p>' + SkyGuide.escape(line).replace(/\{(\w+)\}/g, (token, name) => this.icons[name] ? this.iconMark(name) : token) + '</p>';
+    return '<p>' + this.typeset(SkyGuide.escape(line)).replace(/\{(\w+)\}/g, (token, name) => this.icons[name] ? this.iconMark(name) : token) + '</p>';
   },
   recommends(id) {
     return state.tutorialStep === 'quests' && id === Quests.starterId;
@@ -530,9 +571,10 @@ const ExpeditionTutorial = {
     propulsion: {
       title: 'Расстояние и время в пути', anchor: 'arrivalEstimate',
       text: () => QuickFlight.issueReason ||
-        'До Альфы Центавра ' + $('targetDistance').textContent + '. Световой год — путь, который свет проходит за год.\n' +
-        '«Ковчег» будет в пути ' + $('arrivalProper').textContent + ' по бортовым часам и ' +
-        $('arrivalEarth').textContent + ' по часам на Земле: в полёте бортовые часы отстают.',
+        'До Альфы Центавра ' + ExpeditionTutorial.shown('targetDistance') + '. Световой год — путь, который свет проходит за год.\n' +
+        '«Ковчег» будет в пути ' + ExpeditionTutorial.shown('arrivalProper') + ' по бортовым часам и ' +
+        ExpeditionTutorial.shown('arrivalEarth') + ' по часам на Земле. Бортовые часы отстают из-за высокой скорости: «Ковчег» разгонится до ' +
+        $('quickSpeed').textContent + '.',
     },
     launch: {
       title: 'Полёт к Альфе Центавра', anchor: 'launchBtn',
@@ -547,13 +589,12 @@ const ExpeditionTutorial = {
       title: 'Первый межзвёздный перелёт', anchor: 'objectCardBtn',
       text: () => 'Первый межзвёздный перелёт завершён: «Ковчег» на орбите Альфы Центавра A.\n' +
         'Под названием звезды стоит краткая справка: «' + $('targetType').textContent + '». Жёлтый карлик — звезда того же типа, что и Солнце. ' +
-        'Буква A обозначает главную из трёх звёзд системы: рядом с ней обращается Альфа Центавра B, намного дальше — Проксима.\n' +
+        'В системе три звезды: Альфа Центавра A — главная, рядом с ней обращается Альфа Центавра B, намного дальше — Проксима.\n' +
         'Кнопка «Карточка объекта» открывает полную карточку звезды. Нажмите её.',
     },
     blackhole: {
       title: 'Выберите цель',
-      text: () => 'Следующая цель намного дальше — Стрелец A*, сверхмассивная чёрная дыра в центре Млечного Пути, нашей Галактики. Её масса — ' +
-        fmt(MapDetails.mass(object(ExpeditionTutorial.farTarget)) / 1e6, 1) + ' млн масс Солнца.\n' +
+      text: () => 'Следующая цель намного дальше — Стрелец A*, сверхмассивная чёрная дыра в центре Млечного Пути, нашей Галактики.\n' +
         'Выберите её на карте.',
     },
     sail: {
@@ -562,8 +603,8 @@ const ExpeditionTutorial = {
         const setup = FlightSetup.read();
         if (setup.sail && !setup.collector)
           return 'Парус раскрыт, но рассеянного света звезды для разгона мало. Включите «Коллектор»: он соберёт свет в луч.';
-        return 'До Стрельца A* ' + $('targetDistance').textContent + '. Только на тяге двигателя перелёт займёт ' +
-          $('arrivalProper').textContent + ' по бортовым часам.\n' +
+        return 'До Стрельца A* ' + ExpeditionTutorial.shown('targetDistance') + '. Только на тяге двигателя перелёт займёт ' +
+          ExpeditionTutorial.shown('arrivalProper') + ' по бортовым часам.\n' +
           'С фотонным парусом «Ковчег» долетит намного быстрее: ' +
           (FlightSetup.mobile() ? 'подключите парус и коллектор.' : 'включите «Парус» и «Коллектор» в карточке цели.');
       },
@@ -573,8 +614,8 @@ const ExpeditionTutorial = {
       text: () => 'Коллектор — зеркало возле звезды. Оно собирает её свет в узкий луч и направляет на парус «Ковчега». ' +
         'У фотонов нет массы, но есть импульс: отражаясь от паруса, они толкают корабль.\n' +
         'С лучом «Ковчег» разгонится до ' + $('quickSpeed').textContent + ' и пройдёт путь почти наравне со светом — за ' +
-        $('arrivalEarth').textContent + ' по часам наблюдателя. На борту из-за замедления времени пройдёт всего ' +
-        $('arrivalProper').textContent + '.\n' +
+        ExpeditionTutorial.shown('arrivalEarth') + ' по часам наблюдателя. На борту из-за замедления времени пройдёт всего ' +
+        ExpeditionTutorial.about($('arrivalProper').textContent) + '.\n' +
         'Устройство корабля описано в библиотеке — кнопка {library}. ' +
         '«Подробный план» открывает точную настройку полёта.\n' +
         'Нажмите «Лететь».' + ExpeditionTutorial.tempoText(),
@@ -605,7 +646,7 @@ const ExpeditionTutorial = {
             ' звёзд с измеренными траекториями. ' : '') +
           (host?.e < 1 ? '«Ковчег» стоит у ' + host.name + ': она обходит чёрную дыру за ' +
             ExpeditionTutorial.yearsText(NuclearStars.period(host)) + (host === fastest ? ' — быстрее остальных' : '') + '.' : '') + '\n' +
-          'Рядом с чёрной дырой время идёт медленнее из-за её гравитации. Когда звезда S2 проходит ближайшую к чёрной дыре точку орбиты, ' +
+          'Рядом с чёрной дырой время идёт чуть медленнее из-за её гравитации. Когда звезда S2 проходит ближайшую к чёрной дыре точку орбиты, ' +
           'её часы отстают примерно на минуту в сутки: сказываются гравитация чёрной дыры и скорость самой звезды. ' +
           'Это измерили по покраснению света звезды.';
       },
@@ -619,17 +660,20 @@ const ExpeditionTutorial = {
     },
     holecard: {title: 'Стрелец A*', text: ''},
     neighbour: {
-      title: 'Выберите цель',
-      text: 'Дальше — другая галактика. Андромеда — ближайшая к Млечному Пути крупная галактика. Выберите её на карте.',
+      title: 'За пределы Галактики',
+      text: 'Дальше маршрут «Ковчега» уходит за пределы нашей Галактики.\n' +
+        'Следующая цель — Андромеда, ближайшая к Млечному Пути крупная галактика. Она самая большая в Местной группе — ' +
+        'небольшом семействе галактик, куда входит и Млечный Путь. С Земли Андромеду видно без телескопа — как слабое туманное пятно.\n' +
+        'Выберите её на карте.',
     },
     supernova: {
       title: 'Расстояние до цели', anchor: 'arrivalEstimate',
       text: () => {
         const setup = FlightSetup.read(), light = setup.sail && setup.collector,
           time = QuickFlight.issueReason ? '' : (light ? ' С парусом и коллектором перелёт займёт ' : ' Сейчас перелёт займёт ') +
-            $('arrivalProper').textContent + ' по бортовым часам.';
-        return 'До Андромеды ' + $('targetDistance').textContent + '.' + time + '\n' +
-          'Намного сильнее разгоняет вспышка сверхновой. ' +
+            ExpeditionTutorial.shown('arrivalProper') + ' по бортовым часам.';
+        return 'До Андромеды ' + ExpeditionTutorial.shown('targetDistance') + '.' + time + '\n' +
+          'Для межгалактических перелётов есть более мощный способ разгона — вспышка сверхновой. ' +
           (FlightSetup.mobile() ? 'Включите её.' : 'Включите «Сверхновая» в карточке цели.');
       },
     },
@@ -638,11 +682,12 @@ const ExpeditionTutorial = {
       text: () => {
         const setup = FlightSetup.read(), suns = setup.burstLuminosityW / Astro.solarLuminosity,
           star = ExpeditionTutorial.starName(state.current);
-        return 'Сверхновая — взрыв звезды, у которой стоит «Ковчег». Вспышка ' + fmt(setup.burstDays, 0) + ' суток светит как ' +
-          fmt(Math.round(suns / 1e8) * 100, 0) + ' млн Солнц. Коллектор направляет этот свет на парус: чем ярче свет, тем сильнее он толкает корабль.\n' +
-          'Со вспышкой «Ковчег» разгонится до ' + $('quickSpeed').textContent + '. Перелёт займёт ' + $('arrivalProper').textContent +
-          ' по бортовым часам и ' + $('arrivalEarth').textContent + ' по часам наблюдателя.' +
-          (star ? ' Звезда ' + star + ' будет уничтожена.' : '') + '\n' +
+        return 'Некоторые звёзды в конце жизни взрываются как сверхновые. Такая вспышка светит как ' +
+          fmt(Math.round(suns / 1e8) * 100, 0) + ' млн Солнц — примерно как небольшая галактика — и остаётся яркой от нескольких недель до нескольких месяцев.\n' +
+          'В игре «Ковчег» может вызвать вспышку у любой звезды, кроме Солнца. Вспышка длится ' + fmt(setup.burstDays, 0) + ' суток.\n' +
+          'Коллектор направит её свет на парус, и «Ковчег» разгонится до ' + $('quickSpeed').textContent + '. Перелёт займёт ' +
+          ExpeditionTutorial.about($('arrivalProper').textContent) + ' по бортовым часам и ' + ExpeditionTutorial.shown('arrivalEarth') + ' по часам наблюдателя.\n' +
+          (star ? 'От звезды ' + star + ' после вспышки останется только звёздный остаток: разогнаться от неё светом второй раз не получится.\n' : '') +
           'Нажмите «Лететь».' + ExpeditionTutorial.tempoText();
       },
     },
@@ -655,7 +700,7 @@ const ExpeditionTutorial = {
       text: () => {
         const trip = state.lastArrival;
         return 'Перелёт завершён: «Ковчег» в Андромеде, на орбите одной из её звёзд.' +
-          (trip ? '\nВ пути прошло ' + durationText(trip.proper) + ' по бортовым часам и ' + durationText(trip.earth) +
+          (trip ? '\nВ пути прошло ' + ExpeditionTutorial.about(durationText(trip.proper)) + ' по бортовым часам и ' + ExpeditionTutorial.plain(durationText(trip.earth)) +
             ' по часам наблюдателя. Эти числа показаны в карточке, в строке «Время в пути».' : '');
       },
     },
@@ -717,10 +762,16 @@ const ExpeditionTutorial = {
       title: () => Quests.isOpen ? 'Выберите квест' : 'Квесты',
       text: () => {
         if (!Quests.isOpen) return 'Вселенная огромна. Выбрать, куда лететь, помогут квесты: каждый квест — путешествие по интересным объектам с рассказом о них.';
-        const quest = Quests.quest(Quests.view);
-        return 'Рекомендуем начать с квеста «' + Quests.quest(Quests.starterId).title + '» и расширять знание о Вселенной постепенно.\n' +
-          (quest && !Quests.locked(quest) ? 'Чтобы выбрать этот квест, нажмите «Начать квест».' : 'Выберите квест в списке и нажмите «Начать квест».') +
-          ' Либо выберите свободный полёт.';
+        const quest = Quests.quest(Quests.view),
+          free = 'Квесты необязательны: чтобы выбирать цели на карте самостоятельно, нажмите «Свободный полёт».';
+        if (!quest)
+          return 'Рекомендуем начать с квеста «' + Quests.quest(Quests.starterId).title + '» и расширять знание о Вселенной постепенно.\n' +
+            'Откройте квест в списке, чтобы посмотреть его цели.';
+        if (Quests.locked(quest)) return 'Этот квест пока закрыт. Вернитесь к списку и выберите другой.\n' + free;
+        const seen = quest.steps.filter(step => Quests.done(step)).map(step => Quests.name(step));
+        return 'Чтобы выбрать этот квест, нажмите «Начать квест».\n' +
+          (seen.length ? (seen.length === 1 ? 'Одна его цель уже засчитана — ' : 'Часть его целей уже засчитана — ') + seen.join(', ') +
+            ': «Ковчег» побывал там во время обучения.\n' : '') + free;
       },
     },
     farewell: {
@@ -824,7 +875,7 @@ const ExpeditionTutorial = {
         anchor = mark?.height > 0 ? mark : frame;
         sides = ['right', 'below', 'above', 'left'];
         action = '';
-        alt = 'Свободный полёт';
+        alt = quest ? 'Свободный полёт' : '';
       }
     } else if (this.allows('propulsion')) {
       sides = ['left', 'above', 'below', 'right'];

@@ -556,6 +556,11 @@ const MapDetails = {
   component(o) {
     return o.stellarComponent || { alpha: 'A', 'hyg-71453': 'B', proxima: 'C' }[o.id];
   },
+  multiplicities: {2: 'двойной', 3: 'тройной', 4: 'четверной', 5: 'пятикратной', 6: 'шестикратной', 7: 'семикратной'},
+  multiplicity(o) {
+    const count = this.component(o) && ExtendedCatalog.systemByMember.get(o.id)?.members.length;
+    return !(count > 1) ? '' : this.multiplicities[count] ? 'в ' + this.multiplicities[count] + ' системе' : 'в системе из ' + count + ' компонентов';
+  },
   componentNote(o) {
     if (o.stellarSystem) {
       const s = ExtendedCatalog.systemByMember.get(o.id);

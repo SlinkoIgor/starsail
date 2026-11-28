@@ -198,6 +198,12 @@ const SkyGuide = {
       this.identityKeys(o).some(id=>this.curatedPhotoTargets.has(o.kind+':'+id)||
         (o.opticalGroup||['nebula','cluster','galaxy'].includes(o.kind))&&this.curatedPhotoTargets.has('deep-sky:'+id));
   },
+  labelled(p) {
+    const l=p.labelled;
+    return l?{...p,url:l.url,title:l.title,source:l.source,credit:l.credit,rights:l.rights,archive:l.archive,archiveLabel:l.archiveLabel,
+      instrument:l.instrument||p.instrument,band:l.band||p.band,clean:p.url,
+      description:p.description+' Показана версия издателя с подписями на кадре.'}:p;
+  },
   media(o) {
     if (!o || o.synthetic) return [];
     if(o.supersededBy){const current=ExtendedCatalog.get(o.supersededBy);if(current)return this.media(current);}
@@ -207,7 +213,7 @@ const SkyGuide = {
     // One release page can contain several distinct observations. Deduplicate
     // actual image URLs, never the source article shared by those images.
     const seen=new Set(curated.map(p=>p.url));
-    const archive=SkyPhotos.media(o),imaging=typeof SkyImaging==='undefined'?[]:SkyImaging.media(o),wiki=typeof Wikipedia==='undefined'?[]:Wikipedia.media(o);
+    const archive=SkyPhotos.media(o).map(this.labelled),imaging=typeof SkyImaging==='undefined'?[]:SkyImaging.media(o),wiki=typeof Wikipedia==='undefined'?[]:Wikipedia.media(o).map(this.labelled);
     const media=[...curated,...[...archive.filter(p=>p.mediaKind!=='survey'),...imaging,...wiki.filter(p=>p.mediaKind!=='survey'),...archive.filter(p=>p.mediaKind==='survey'),...wiki.filter(p=>p.mediaKind==='survey')]
       .filter(p=>{if(seen.has(p.url))return false;seen.add(p.url);return true;})];
     // Keep the two finding charts in gallery() first; give Webb observations
@@ -307,7 +313,7 @@ const SkyGuide = {
         p.marks.map(m=>'<span class="stellar-photo-mark'+(m.ring?' has-ring':'')+'" style="left:'+100*m.x+'%;top:'+100*m.y+'%"><b>'+esc(m.label)+'</b></span>').join('')+'</div></div>':'',
       photo=p=>'<figure class="stellar-photo" data-photo="'+esc(p.id)+'"><div class="stellar-photo-field">'+
         (p.format==='video'?'<video controls playsinline loop preload="none" data-video-src="'+esc(p.url)+'" data-video-poster="'+esc(p.poster)+'" aria-label="'+esc(p.title)+'"></video>':
-          '<img '+(p.id==='dss'?'id="stellarSkyImage" data-dss-src="':'data-photo-src="')+esc(p.url)+'" alt="'+esc(p.title)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer">'+marks(p))+
+          '<img '+(p.id==='dss'?'id="stellarSkyImage" data-dss-src="':'data-photo-src="')+esc(p.url)+'"'+(p.clean?' data-photo-clean="'+esc(p.clean)+'"':'')+' alt="'+esc(p.title)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer">'+marks(p))+
         '<p class="stellar-photo-loading" role="status"'+(p.format==='video'?' hidden':'')+'>'+(p.format==='video'?'Загрузка видео…':'Загрузка снимка…')+'</p>'+
         '<p class="stellar-photo-error" hidden>'+(p.format==='video'?'Видео сейчас недоступно.':'Снимок сейчас недоступен.')+' Его можно открыть в архиве по ссылке ниже.</p></div>'+
         '<figcaption><strong>'+esc(p.title)+'</strong><span>'+(p.format==='video'?'Видео · ':'')+(types[p.mediaType]?esc(types[p.mediaType])+' · ':'')+esc(p.instrument)+' · '+esc(p.band)+' · <span class="stellar-photo-date">'+esc(p.date)+'</span></span><p'+(p.id==='dss'?' class="stellar-dss-description"':'')+'>'+esc(p.description)+'</p>'+
@@ -325,6 +331,12 @@ const SkyGuide = {
   pauseVideos() {
     for(const video of this.photoVideos||[])video.pause();
   },
+  autoplay(video) {
+    if(globalThis.navigator?.connection?.saveData||globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return false;
+    video.muted=true;
+    video.play()?.catch?.(()=>{});
+    return true;
+  },
   mount(o) {
     this.photoAbort?.abort();
     this.pauseVideos();
@@ -334,13 +346,14 @@ const SkyGuide = {
     let active=-1;
     const cards=[...track.querySelectorAll('figure')],prev=document.getElementById('stellarGalleryPrev'),next=document.getElementById('stellarGalleryNext'),
       current=()=>cards.reduce((best,c,i)=>Math.abs(c.offsetLeft-track.scrollLeft)<Math.abs(cards[best].offsetLeft-track.scrollLeft)?i:best,0),
-      update=()=>{const i=current();if(i===active)return;active=i;prev.disabled=i===0;next.disabled=i===cards.length-1;document.getElementById('stellarGalleryPosition').textContent=(i+1)+' / '+cards.length;
+      update=()=>{const i=current(),opening=active===-1;if(i===active)return;active=i;prev.disabled=i===0;next.disabled=i===cards.length-1;document.getElementById('stellarGalleryPosition').textContent=(i+1)+' / '+cards.length;
         for(const [j,card] of cards.entries()){
           card.inert=j!==i;card.setAttribute('aria-hidden',String(j!==i));card.setAttribute('aria-label',(j+1)+' из '+cards.length);card.querySelector('figcaption').hidden=j!==i;
           const video=card.querySelector('video');
           if(j===i){
             const img=card.querySelector('img[data-photo-src]');if(img&&!img.getAttribute('src'))img.src=img.dataset.photoSrc;
             if(video&&!video.getAttribute('src')){video.poster=video.dataset.videoPoster;video.src=video.dataset.videoSrc;}
+            if(video&&opening&&i===0)this.autoplay(video);
           }else if(video)video.pause();
         }},
       move=delta=>{const i=Math.max(0,Math.min(cards.length-1,current()+delta));track.scrollTo({left:cards[i].offsetLeft,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});};
@@ -349,7 +362,8 @@ const SkyGuide = {
     for(const photo of track.querySelectorAll('img')) {
       const settled=failed=>{photo.hidden=failed;const p=photo.parentElement;p.querySelector('.stellar-photo-loading').hidden=true;p.querySelector('.stellar-photo-error').hidden=!failed;p.classList.toggle('unavailable',failed);
         const marks=p.querySelector('.stellar-photo-marks');if(marks)marks.hidden=failed||Math.abs(photo.naturalWidth/photo.naturalHeight-Number(marks.dataset.ratio))>.01;};
-      photo.onload=()=>settled(false);photo.onerror=()=>settled(true);if(photo.getAttribute?.('src')&&photo.complete)settled(!photo.naturalWidth);
+      photo.onload=()=>settled(false);
+      photo.onerror=()=>{const clean=photo.dataset?.photoClean;if(clean&&photo.getAttribute('src')!==clean){delete photo.dataset.photoClean;photo.src=clean;}else settled(true);};if(photo.getAttribute?.('src')&&photo.complete)settled(!photo.naturalWidth);
     }
     this.photoVideos=[...track.querySelectorAll('video')];
     for(const video of this.photoVideos){

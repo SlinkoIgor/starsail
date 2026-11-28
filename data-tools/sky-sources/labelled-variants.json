@@ -1,0 +1,1536 @@
+{
+  "version": 1,
+  "method": "labelled frame named by the publisher (AstroPix record of the same release or image page linked from the clean frame, title says annotated/labelled); same proportions within 1 %, 9x8 greyscale difference hash within 12 of 64 bits and mean 16x16 RGB difference within 10 of 255; one labelled frame replaces one clean frame of a collection: matching title first, then the closest pixels",
+  "feedRecords": 9080,
+  "pagesRead": 245,
+  "candidates": 65,
+  "records": [
+    {
+      "photo": "astropix-esahubble-heic1415a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "esahubble",
+        "imageId": "heic1415b",
+        "title": "Centaurus A halo annotated",
+        "url": "https://cdn.esahubble.org/archives/images/screen/heic1415b.jpg",
+        "source": "https://esahubble.org/images/heic1415b/",
+        "credit": "ESA/Hubble, NASA, Digitized Sky Survey, MPG/ESO Acknowledgement: Davide de Martin",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "rightsBasis": "Usage of ESA/Hubble Images and Videos",
+        "archive": "https://esahubble.org/images/heic1415b/",
+        "archiveLabel": "ESA/Hubble",
+        "publisherName": "ESA/Hubble"
+      },
+      "evidence": {
+        "method": "publisher-page-link",
+        "page": "https://esahubble.org/images/heic1415a/",
+        "pageSha256": "f9d3c70650ee76feafc9aac92d8f802f89cb2169e4eca0801219cd56f9b0facc",
+        "labelledPageSha256": "7cc9efa9e98131d50effca2d24b0a9f4f7805e2ed7f9defc3ae9c2caaade6d1e",
+        "hashDistance": 12,
+        "colourDifference": 1.6,
+        "cleanSize": [
+          1280,
+          664
+        ],
+        "labelledSize": [
+          1280,
+          664
+        ]
+      }
+    },
+    {
+      "photo": "astropix-esahubble-heic1504d",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "esahubble",
+        "imageId": "heic1504e",
+        "title": "Three moons and their shadows parade across Jupiter — beginning of event, annotated",
+        "url": "https://cdn.esahubble.org/archives/images/screen/heic1504e.jpg",
+        "source": "https://esahubble.org/images/heic1504e/",
+        "credit": "NASA, ESA, Hubble Heritage Team",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "rightsBasis": "Usage of ESA/Hubble Images and Videos",
+        "archive": "https://esahubble.org/images/heic1504e/",
+        "archiveLabel": "ESA/Hubble",
+        "publisherName": "ESA/Hubble"
+      },
+      "evidence": {
+        "method": "publisher-page-link",
+        "page": "https://esahubble.org/images/heic1504d/",
+        "pageSha256": "04e51a5b3e45e34b2da6308934dcb5d7ee5ef814328e7ff2ed4109ad28bef369",
+        "labelledPageSha256": "2822ec3a5004d7f796e9e75a71d79e64d341805d04b8d4b2467ba1defcff386a",
+        "hashDistance": 0,
+        "colourDifference": 1.6,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-esahubble-heic1504f",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "esahubble",
+        "imageId": "heic1504g",
+        "title": "Three moons and their shadows parade across Jupiter — end of event, annotated",
+        "url": "https://cdn.esahubble.org/archives/images/screen/heic1504g.jpg",
+        "source": "https://esahubble.org/images/heic1504g/",
+        "credit": "NASA, ESA, Hubble Heritage Team",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "rightsBasis": "Usage of ESA/Hubble Images and Videos",
+        "archive": "https://esahubble.org/images/heic1504g/",
+        "archiveLabel": "ESA/Hubble",
+        "publisherName": "ESA/Hubble"
+      },
+      "evidence": {
+        "method": "publisher-page-link",
+        "page": "https://esahubble.org/images/heic1504f/",
+        "pageSha256": "62a4c42cd5a0c8ddc153013228e64c4d5593f5787f8e7f11d5b4e4aaa1d6fe02",
+        "labelledPageSha256": "2c81872021a806fc7ea082baf16f2377bef41604a68d9cd62bf45cd9284c562d",
+        "hashDistance": 1,
+        "colourDifference": 1.2,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-esahubble-potw1425a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "esahubble",
+        "imageId": "potw1425b",
+        "title": "A curious supernova in NGC 2441 (annotated)",
+        "url": "https://www.astropix.org/archive/esahubble/potw1425b/esahubble_potw1425b_1280.jpg",
+        "source": "https://www.spacetelescope.org/images/potw1425b/",
+        "credit": "ESA/Hubble & NASA Acknowledgement: Nick Rose",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/esahubble/potw1425b",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESA/Hubble"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 20419,
+        "hashDistance": 0,
+        "colourDifference": 0.1,
+        "cleanSize": [
+          1280,
+          818
+        ],
+        "labelledSize": [
+          1280,
+          818
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-ann1037c",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "ann1037d",
+        "title": "Planet Beta Pictoris seen with the NACO APP (annotated)",
+        "url": "https://www.astropix.org/archive/eso/ann1037d/eso_ann1037d_1280.jpg",
+        "source": "https://www.eso.org/public/images/ann1037d/",
+        "credit": "ESO",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/ann1037d",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 16469,
+        "hashDistance": 1,
+        "colourDifference": 1.1,
+        "cleanSize": [
+          1280,
+          1157
+        ],
+        "labelledSize": [
+          1280,
+          1157
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso0622a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso0622b",
+        "title": "The hooked galaxy and its companion - annotated image",
+        "url": "https://www.astropix.org/archive/eso/eso0622b/eso_eso0622b_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso0622b/",
+        "credit": "ESO",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso0622b",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 15723,
+        "hashDistance": 4,
+        "colourDifference": 1.6,
+        "cleanSize": [
+          868,
+          1280
+        ],
+        "labelledSize": [
+          866,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1002e",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1002b",
+        "title": "The system around HR 8799 (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1002b/eso_eso1002b_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1002b/",
+        "credit": "ESO/M. Janson",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1002b",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 15994,
+        "hashDistance": 1,
+        "colourDifference": 0.1,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1024e",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1024c",
+        "title": "Planet around Beta Pictoris (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1024c/eso_eso1024c_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1024c/",
+        "credit": "ESO/A.-M. Lagrange",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1024c",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 15957,
+        "hashDistance": 10,
+        "colourDifference": 1.2,
+        "cleanSize": [
+          1280,
+          823
+        ],
+        "labelledSize": [
+          1280,
+          823
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1033a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1033c",
+        "title": "VISTA Magellanic Cloud Survey view of the Tarantula Nebula (annotated version)",
+        "url": "https://www.astropix.org/archive/eso/eso1033c/eso_eso1033c_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1033c/",
+        "credit": "ESO/M.-R. Cioni/VISTA Magellanic Cloud Survey. Acknowledgment: Cambridge Astronomical Survey Unit",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1033c",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 15942,
+        "hashDistance": 4,
+        "colourDifference": 0.9,
+        "cleanSize": [
+          958,
+          1280
+        ],
+        "labelledSize": [
+          957,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1034c",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1034b",
+        "title": "Wide Field Imager image of Westerlund 1 (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1034b/eso_eso1034b_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1034b/",
+        "credit": "ESO",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1034b",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 28532,
+        "hashDistance": 1,
+        "colourDifference": 0.5,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1106c",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1106d",
+        "title": "A wide-field view of the sky around the young star T Cha (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1106d/eso_eso1106d_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1106d/",
+        "credit": "ESO and Digitized Sky Survey 2. Acknowledgment: Davide De Martin",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1106d",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 28547,
+        "hashDistance": 0,
+        "colourDifference": 0.3,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1109a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1109c",
+        "title": "Close-up of the drama of star formation (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1109c/eso_eso1109c_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1109c/",
+        "credit": "ESO/Sergey Stepanenko",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1109c",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 16041,
+        "hashDistance": 2,
+        "colourDifference": 1.0,
+        "cleanSize": [
+          1279,
+          1280
+        ],
+        "labelledSize": [
+          1279,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1228a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1228b",
+        "title": "Dark galaxies spotted for the first time (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1228b/eso_eso1228b_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1228b/",
+        "credit": "ESO, Digitized Sky Survey 2 and S. Cantalupo (UCSC)",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1228b",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 16105,
+        "hashDistance": 4,
+        "colourDifference": 2.1,
+        "cleanSize": [
+          1205,
+          1280
+        ],
+        "labelledSize": [
+          1205,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1245d",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1245c",
+        "title": "The free-floating planet CFBDSIR J214947.2-040308.9 (annotated)",
+        "url": "https://www.astropix.org/archive/eso/eso1245c/eso_eso1245c_1280.jpg",
+        "source": "https://www.eso.org/public/images/eso1245c/",
+        "credit": "ESO/P. Delorme",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/eso1245c",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 21656,
+        "hashDistance": 3,
+        "colourDifference": 0.1,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-eso1629i",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1629f",
+        "title": "The sky around Alpha Centauri and Proxima Centauri (annotated)",
+        "url": "https://cdn.eso.org/images/screen/eso1629f.jpg",
+        "source": "https://www.eso.org/public/images/eso1629f/",
+        "credit": "Digitized Sky Survey 2 Acknowledgement: Davide De Martin/ Mahdi Zamani",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "rightsBasis": "Usage of ESO images, videos, web texts and music",
+        "archive": "https://www.eso.org/public/images/eso1629f/",
+        "archiveLabel": "ESO",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "publisher-page-link",
+        "page": "https://www.eso.org/public/images/eso1629i/",
+        "pageSha256": "9930d640b0fd0fd64fa606820cac2285aa174acb9fe91f92561b3eef3b568415",
+        "labelledPageSha256": "85acba833a6fde6b5739030b06d25a5ff43d13f665cbea6204e6c3c4f3ce8eee",
+        "hashDistance": 3,
+        "colourDifference": 2.0,
+        "cleanSize": [
+          1261,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1299
+        ]
+      }
+    },
+    {
+      "photo": "astropix-eso-potw2622a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "potw2622b",
+        "title": "VLT image of the protoplanetary disc around AB Aurigae (annotated)",
+        "url": "https://www.astropix.org/archive/eso/potw2622b/eso_potw2622b_1280.jpg",
+        "source": "https://www.eso.org/public/images/potw2622b/",
+        "credit": "ESO/A. Boccaletti et al.",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "archive": "https://www.astropix.org/image/eso/potw2622b",
+        "archiveLabel": "AstroPix",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 29682,
+        "hashDistance": 0,
+        "colourDifference": 0.1,
+        "cleanSize": [
+          1280,
+          720
+        ],
+        "labelledSize": [
+          1280,
+          720
+        ]
+      }
+    },
+    {
+      "photo": "astropix-nhsc-nhsc2011-013a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "nhsc",
+        "imageId": "nhsc2011-013a1",
+        "title": "The Milky Way's Twisted Ring (annotated)",
+        "url": "https://www.astropix.org/archive/nhsc/nhsc2011-013a1/nhsc_nhsc2011-013a1_1280.jpg",
+        "source": "https://www.herschel.caltech.edu/image/nhsc2011-013a1",
+        "credit": "ESA/NASA/JPL-Caltech",
+        "rights": "http://www.jpl.nasa.gov/imagepolicy/",
+        "archive": "https://www.astropix.org/image/nhsc/nhsc2011-013a1",
+        "archiveLabel": "AstroPix",
+        "publisherName": ""
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 13857,
+        "hashDistance": 1,
+        "colourDifference": 0.6,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-noirlab-iotw2530a",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "noirlab",
+        "imageId": "iotw2530b",
+        "title": "Home of a Gamma-ray Pulsar (Annotated)",
+        "url": "https://storage.noirlab.edu/media/archives/images/screen/iotw2530b.jpg",
+        "source": "https://noirlab.edu/public/images/iotw2530b/",
+        "credit": "International Gemini Observatory/NOIRLab/NSF/AURA Image Processing: J. Miller (International Gemini Observatory/NSF NOIRLab), M. Rodriguez (International Gemini Observatory/NSF NOIRLab) & M. Zamani (NSF NOIRLab) Acknowledgments: M. de Vries & R. Romani (Stanford University)",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "rightsBasis": "Usage of NOIRLab Images and Videos",
+        "archive": "https://noirlab.edu/public/images/iotw2530b/",
+        "archiveLabel": "NOIRLab",
+        "publisherName": "NOIRLab"
+      },
+      "evidence": {
+        "method": "publisher-page-link",
+        "page": "https://noirlab.edu/public/images/iotw2530a/",
+        "pageSha256": "d4135a6b2364a3c50ac1a1915308e615819dbcd5ae751e88d020dad8d4c11ccf",
+        "labelledPageSha256": "5a6232902477d68bdf620dc7e817c3d99e9e978824b2acfe3c3639bbc2b37418",
+        "hashDistance": 2,
+        "colourDifference": 2.5,
+        "cleanSize": [
+          1280,
+          1016
+        ],
+        "labelledSize": [
+          1280,
+          1017
+        ]
+      }
+    },
+    {
+      "photo": "astropix-nustar-nustar170124b",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "nustar",
+        "imageId": "nustar170124a",
+        "title": "Supernova SN 2014C (X-ray) (Annotated)",
+        "url": "https://www.astropix.org/archive/nustar/nustar170124a/nustar_nustar170124a_1280.jpg",
+        "source": "https://nustar.caltech.edu/image/nustar170124a",
+        "credit": "NASA/CXC/CIERA/R.Margutti et al",
+        "rights": "http://www.jpl.nasa.gov/imagepolicy/",
+        "archive": "https://www.astropix.org/image/nustar/nustar170124a",
+        "archiveLabel": "AstroPix",
+        "publisherName": ""
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 13906,
+        "hashDistance": 0,
+        "colourDifference": 0.1,
+        "cleanSize": [
+          1280,
+          1280
+        ],
+        "labelledSize": [
+          1280,
+          1280
+        ]
+      }
+    },
+    {
+      "photo": "astropix-wise-WISE2014-0703b",
+      "collection": "astropix",
+      "labelled": {
+        "publisher": "wise",
+        "imageId": "WISE2014-0703a",
+        "title": "Infrared Sequence of a Comet and Distant Galaxy (annotated)",
+        "url": "https://www.astropix.org/archive/wise/wise2014-0703a/wise_wise2014-0703a_1280.jpg",
+        "source": "https://www.jpl.nasa.gov/news/news.php?feature=4206",
+        "credit": "NASA/JPL-Caltech",
+        "rights": "Public Domain",
+        "archive": "https://www.astropix.org/image/wise/WISE2014-0703a",
+        "archiveLabel": "AstroPix",
+        "publisherName": ""
+      },
+      "evidence": {
+        "method": "astropix-release-twin",
+        "astropixId": 14104,
+        "hashDistance": 2,
+        "colourDifference": 2.1,
+        "cleanSize": [
+          1280,
+          922
+        ],
+        "labelledSize": [
+          1280,
+          922
+        ]
+      }
+    },
+    {
+      "photo": "wiki-54f5ebaef039d3da",
+      "collection": "wikipedia",
+      "labelled": {
+        "publisher": "eso",
+        "imageId": "eso1629f",
+        "title": "The sky around Alpha Centauri and Proxima Centauri (annotated)",
+        "url": "https://cdn.eso.org/images/screen/eso1629f.jpg",
+        "source": "https://www.eso.org/public/images/eso1629f/",
+        "credit": "Digitized Sky Survey 2 Acknowledgement: Davide De Martin/ Mahdi Zamani",
+        "rights": "Creative Commons Attribution 4.0 International License",
+        "rightsBasis": "Usage of ESO images, videos, web texts and music",
+        "archive": "https://www.eso.org/public/images/eso1629f/",
+        "archiveLabel": "ESO",
+        "publisherName": "ESO"
+      },
+      "evidence": {
+        "method": "publisher-page-link",
+        "page": "https://www.eso.org/public/images/eso1629i/",
+        "pageSha256": "9930d640b0fd0fd64fa606820cac2285aa174acb9fe91f92561b3eef3b568415",
+        "labelledPageSha256": "85acba833a6fde6b5739030b06d25a5ff43d13f665cbea6204e6c3c4f3ce8eee",
+        "hashDistance": 3,
+        "colourDifference": 1.2,
+        "cleanSize": [
+          1280,
+          1300
+        ],
+        "labelledSize": [
+          1280,
+          1299
+        ]
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "photo": "astropix-esahubble-heic1415c",
+      "candidate": "https://esahubble.org/images/heic1415b/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 26,
+      "colourDifference": 7.5,
+      "cleanSize": [
+        1280,
+        1262
+      ],
+      "labelledSize": [
+        1280,
+        664
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-heic1415d",
+      "candidate": "https://esahubble.org/images/heic1415b/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 33,
+      "colourDifference": 8.0,
+      "cleanSize": [
+        1280,
+        1255
+      ],
+      "labelledSize": [
+        1280,
+        664
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-opo1432b",
+      "candidate": "https://esahubble.org/images/opo1432a/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 7,
+      "colourDifference": 28.3,
+      "cleanSize": [
+        1280,
+        881
+      ],
+      "labelledSize": [
+        1280,
+        1024
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-opo1432c",
+      "candidate": "https://esahubble.org/images/opo1432a/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 33,
+      "colourDifference": 40.5,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1024
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-opo1432d",
+      "candidate": "https://esahubble.org/images/opo1432a/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 30,
+      "colourDifference": 41.1,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1024
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-opo1433b",
+      "candidate": "https://esahubble.org/images/opo1433a/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 22,
+      "colourDifference": 9.9,
+      "cleanSize": [
+        1280,
+        878
+      ],
+      "labelledSize": [
+        1280,
+        1024
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-opo1433c",
+      "candidate": "https://esahubble.org/images/opo1433a/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 24,
+      "colourDifference": 41.5,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1024
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-opo1433d",
+      "candidate": "https://esahubble.org/images/opo1433a/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 26,
+      "colourDifference": 29.5,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1024
+      ]
+    },
+    {
+      "photo": "astropix-esahubble-potw1724a",
+      "candidate": "https://esahubble.org/images/potw1724b/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 23,
+      "colourDifference": 27.4,
+      "cleanSize": [
+        1280,
+        960
+      ],
+      "labelledSize": [
+        1280,
+        853
+      ]
+    },
+    {
+      "photo": "astropix-eso-ann1037a",
+      "candidate": "https://www.eso.org/public/images/ann1037d/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 38,
+      "colourDifference": 49.5,
+      "cleanSize": [
+        1280,
+        1275
+      ],
+      "labelledSize": [
+        1280,
+        1157
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0416a",
+      "candidate": "https://www.eso.org/public/images/eso0416b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 1,
+      "colourDifference": 21.0,
+      "cleanSize": [
+        1270,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1278
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0416c",
+      "candidate": "https://www.eso.org/public/images/eso0416b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 38,
+      "colourDifference": 97.0,
+      "cleanSize": [
+        1264,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1278
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0416e",
+      "candidate": "https://www.eso.org/public/images/eso0416b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 30,
+      "colourDifference": 80.2,
+      "cleanSize": [
+        1280,
+        857
+      ],
+      "labelledSize": [
+        1280,
+        1278
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0842a",
+      "candidate": "https://www.eso.org/public/images/eso0842b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 15,
+      "colourDifference": 1.5,
+      "cleanSize": [
+        1280,
+        1275
+      ],
+      "labelledSize": [
+        1280,
+        1274
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0923a",
+      "candidate": "https://www.eso.org/public/images/eso0923b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 31,
+      "colourDifference": 16.9,
+      "cleanSize": [
+        1280,
+        725
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0923c",
+      "candidate": "https://www.eso.org/public/images/eso0923b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 36,
+      "colourDifference": 10.5,
+      "cleanSize": [
+        1149,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924c",
+      "candidate": "https://www.eso.org/public/images/eso0924a/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 5,
+      "colourDifference": 1.9,
+      "cleanSize": [
+        941,
+        1280
+      ],
+      "labelledSize": [
+        953,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924c",
+      "candidate": "https://www.eso.org/public/images/eso0924b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 27,
+      "colourDifference": 12.3,
+      "cleanSize": [
+        941,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        87
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924d",
+      "candidate": "https://www.eso.org/public/images/eso0924a/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 34,
+      "colourDifference": 14.8,
+      "cleanSize": [
+        1280,
+        54
+      ],
+      "labelledSize": [
+        953,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924d",
+      "candidate": "https://www.eso.org/public/images/eso0924b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 22,
+      "colourDifference": 10.9,
+      "cleanSize": [
+        1280,
+        54
+      ],
+      "labelledSize": [
+        1280,
+        87
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924e",
+      "candidate": "https://www.eso.org/public/images/eso0924a/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 22,
+      "colourDifference": 26.1,
+      "cleanSize": [
+        1280,
+        651
+      ],
+      "labelledSize": [
+        953,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924e",
+      "candidate": "https://www.eso.org/public/images/eso0924b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 28,
+      "colourDifference": 22.3,
+      "cleanSize": [
+        1280,
+        651
+      ],
+      "labelledSize": [
+        1280,
+        87
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924f",
+      "candidate": "https://www.eso.org/public/images/eso0924a/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 26,
+      "colourDifference": 25.7,
+      "cleanSize": [
+        1280,
+        366
+      ],
+      "labelledSize": [
+        953,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924f",
+      "candidate": "https://www.eso.org/public/images/eso0924b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 32,
+      "colourDifference": 24.4,
+      "cleanSize": [
+        1280,
+        366
+      ],
+      "labelledSize": [
+        1280,
+        87
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924g",
+      "candidate": "https://www.eso.org/public/images/eso0924a/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 29,
+      "colourDifference": 13.6,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        953,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0924g",
+      "candidate": "https://www.eso.org/public/images/eso0924b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 33,
+      "colourDifference": 14.9,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        87
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0927b",
+      "candidate": "https://www.eso.org/public/images/eso0927c/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 23,
+      "colourDifference": 54.2,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        535
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0927e",
+      "candidate": "https://www.eso.org/public/images/eso0927c/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 25,
+      "colourDifference": 41.5,
+      "cleanSize": [
+        1280,
+        961
+      ],
+      "labelledSize": [
+        1280,
+        535
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0943a",
+      "candidate": "https://www.eso.org/public/images/eso0943b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 26,
+      "colourDifference": 24.0,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0943c",
+      "candidate": "https://www.eso.org/public/images/eso0943b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 31,
+      "colourDifference": 3.6,
+      "cleanSize": [
+        1277,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0943d",
+      "candidate": "https://www.eso.org/public/images/eso0943b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 32,
+      "colourDifference": 23.4,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0943e",
+      "candidate": "https://www.eso.org/public/images/eso0943b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 32,
+      "colourDifference": 26.0,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0943f",
+      "candidate": "https://www.eso.org/public/images/eso0943b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 30,
+      "colourDifference": 26.3,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso0943g",
+      "candidate": "https://www.eso.org/public/images/eso0943b/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 31,
+      "colourDifference": 27.3,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1021a",
+      "candidate": "https://www.eso.org/public/images/eso1021b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 33,
+      "colourDifference": 10.3,
+      "cleanSize": [
+        1280,
+        1240
+      ],
+      "labelledSize": [
+        1280,
+        788
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1021c",
+      "candidate": "https://www.eso.org/public/images/eso1021b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 32,
+      "colourDifference": 16.6,
+      "cleanSize": [
+        1280,
+        1007
+      ],
+      "labelledSize": [
+        1280,
+        788
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1024a",
+      "candidate": "https://www.eso.org/public/images/eso1024c/",
+      "method": "astropix-release-twin",
+      "reason": "labelled-frame-replaces-another-photo",
+      "replaces": "astropix-eso-eso1024e",
+      "hashDistance": 10,
+      "colourDifference": 1.1
+    },
+    {
+      "photo": "astropix-eso-eso1024d",
+      "candidate": "https://www.eso.org/public/images/eso1024c/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 31,
+      "colourDifference": 23.6,
+      "cleanSize": [
+        967,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        823
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1033b",
+      "candidate": "https://www.eso.org/public/images/eso1033c/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 34,
+      "colourDifference": 19.8,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        957,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1117a",
+      "candidate": "https://www.eso.org/public/images/eso1117b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 17,
+      "colourDifference": 63.0,
+      "cleanSize": [
+        1278,
+        1280
+      ],
+      "labelledSize": [
+        928,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1228d",
+      "candidate": "https://www.eso.org/public/images/eso1228b/",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 26,
+      "colourDifference": 5.3,
+      "cleanSize": [
+        1277,
+        1280
+      ],
+      "labelledSize": [
+        1205,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-eso1245b",
+      "candidate": "https://www.eso.org/public/images/eso1245c/",
+      "method": "astropix-release-twin",
+      "reason": "different-frame",
+      "hashDistance": 25,
+      "colourDifference": 1.9,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-eso-potw1814a",
+      "candidate": "https://www.eso.org/public/images/potw1814b/",
+      "method": "publisher-page-link",
+      "reason": "different-proportions",
+      "hashDistance": 37,
+      "colourDifference": 16.6,
+      "cleanSize": [
+        1280,
+        1246
+      ],
+      "labelledSize": [
+        1280,
+        1280
+      ]
+    },
+    {
+      "photo": "astropix-wise-WISE2014-0703c",
+      "candidate": "https://www.jpl.nasa.gov/news/news.php?feature=4206",
+      "method": "astropix-release-twin",
+      "reason": "different-proportions",
+      "hashDistance": 29,
+      "colourDifference": 11.2,
+      "cleanSize": [
+        1280,
+        1280
+      ],
+      "labelledSize": [
+        1280,
+        922
+      ]
+    },
+    {
+      "photo": "wiki-00346ea488b0413c",
+      "candidate": "potw2424a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-020401894c518964",
+      "candidate": "potw2430a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-04ec3767611b73a6",
+      "candidate": "potw2420a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-0759dc02ff632a9b",
+      "candidate": "potw2202a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-081d34705d5ed214",
+      "candidate": "potw2507a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-1e2e0c5f4663e853",
+      "candidate": "potw1730a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-25034f1119f77b3f",
+      "candidate": "potw2003a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-2c47659f29c1fa4b",
+      "candidate": "potw2237a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-2e824dd047d12078",
+      "candidate": "potw2140a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-37e29f6e0430e37e",
+      "candidate": "potw1831a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-39c8e0fdbc9e2b10",
+      "candidate": "potw2423a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-4468779e48919e19",
+      "candidate": "potw1739a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-481e6e15035f601c",
+      "candidate": "potw2413a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-5965ed2ab90b720e",
+      "candidate": "potw2231a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-5e47e358fc37c77e",
+      "candidate": "potw1009a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-647cb8e1de7a617f",
+      "candidate": "potw1901a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-69d9190fd886cd0b",
+      "candidate": "potw2310a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-6d8544ed2bfe76fe",
+      "candidate": "potw1605a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-705156a4b4867929",
+      "candidate": "potw2310a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-71ca38f13d65fdca",
+      "candidate": "potw2550a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-777e956f18ca7627",
+      "candidate": "potw2340a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-a4c895f8106813a0",
+      "candidate": "potw2245a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-ab5741fdc1392d30",
+      "candidate": "potw2324a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-abdaf15ea278022a",
+      "candidate": "potw2523a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-b6dadd648fb8ae97",
+      "candidate": "potw2440a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-c8e119376726fc2f",
+      "candidate": "potw1949a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-c90cca838887f6c5",
+      "candidate": "potw2426a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-d2f905163579ac2d",
+      "candidate": "potw1645a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-daf90b4e8c19d285",
+      "candidate": "potw1742a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-e3e6b0f95d57f923",
+      "candidate": "potw1905a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-f10ea1c0dab6c1a9",
+      "candidate": "potw2415a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-f3e61cfb3da97c82",
+      "candidate": "potw1428a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-fae7253e5847f72a",
+      "candidate": "potw1706a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-fd09c2f7360fc5a3",
+      "candidate": "potw1330a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-ff06118c2762a5bf",
+      "candidate": "potw2123a",
+      "reason": "publisher-not-identified"
+    },
+    {
+      "photo": "wiki-ff92d6321c08e77c",
+      "candidate": "potw2027a",
+      "reason": "publisher-not-identified"
+    }
+  ]
+}

@@ -154,7 +154,14 @@ assert.equal(orbits.availability.status,200);assert.equal(orbits.availability.co
 assert.ok(orbits.credit==='ESO/MPE'&&orbits.poster.startsWith('https://cdn.eso.org/videos/'));
 const orbitGallery=SkyGuide.gallery(object('sgr')),orbitSlide=orbitGallery.split('data-photo="eso-eso1825e-orbits"')[1].split('</figure>')[0];
 assert.ok(orbitSlide.includes('<video controls playsinline loop preload="none" data-video-src="'+orbits.url+'"'));
-assert.ok(!orbitSlide.includes('<img')&&!orbitSlide.includes('autoplay'),'video is user initiated and never treated as a still image');
+assert.ok(!orbitSlide.includes('<img')&&!orbitSlide.includes('autoplay'),'a video is never treated as a still image and has no autoplay attribute: only the opening slide starts by itself');
+{const clip=()=>({played:0,muted:false,play(){this.played++;return Promise.reject(new Error('blocked'));}}),motion=globalThis.matchMedia,connection=Object.getOwnPropertyDescriptor(globalThis,'navigator');
+ const first=clip();assert.equal(SkyGuide.autoplay(first),true);assert.ok(first.played===1&&first.muted,'the opening video starts muted; a refused start is ignored');
+ globalThis.matchMedia=()=>({matches:true});const calm=clip();assert.equal(SkyGuide.autoplay(calm),false);assert.ok(!calm.played&&!calm.muted,'reduced motion keeps the video waiting for the reader');
+ globalThis.matchMedia=motion;Object.defineProperty(globalThis,'navigator',{value:{connection:{saveData:true}},configurable:true});
+ const saving=clip();assert.equal(SkyGuide.autoplay(saving),false);assert.equal(saving.played,0,'data saving keeps the video unloaded');
+ if(connection)Object.defineProperty(globalThis,'navigator',connection);else delete globalThis.navigator;
+ assert.ok(String(SkyGuide.mount).includes("if(video&&opening&&i===0)this.autoplay(video);"),'only the slide that opens the card starts by itself');}
 assert.ok(orbitSlide.includes('почти двадцать лет')&&orbitSlide.includes('Сама чёрная дыра в этих кадрах не видна'));
 {const frames=SkyGuide.media(object('sgr')).map(p=>p.id);
  assert.deepEqual(frames,['eht-eso2208-eht-mwa','eso-eso1825e-orbits','eso-eso0846a-centre','eso-eso2119b-gravity','chandra-sgra-gas','hubble-opo0928b-centre','eht-eso2406a-polarised']);
@@ -173,7 +180,7 @@ for(const id of ['bh-m87','m87','milkyway','s2']){assert.ok(object(id));assert.o
 assert.equal(object('bh-m87').kind,'blackhole');assert.ok(object('bh-m87').massSolar>1e9);
 assert.ok(SkyGuide.media(object('bh-m87')).some(p=>p.id==='eso-eso1907a'),'M87* retains its first EHT image');
 assert.ok(SkyGuide.hasObservatoryPhoto(object('sgr'))&&SkyGuide.hasObservatoryPhoto(object('bh-m87')),'both EHT black holes remain in the photo collection');
-console.log('PASS observed Sgr A* star-orbit movie: exact target, lazy native player, no autoplay, provenance and separate M87* EHT image');
+console.log('PASS observed Sgr A* star-orbit movie: exact target, lazy native player, start only as the opening slide, provenance and separate M87* EHT image');
 assert.ok(!SkyGuide.media({...object('andromeda'),id:'other-galaxy',ngc:'NGC2244',messier:null,aliases:[]}).some(p=>p.objects.includes('andromeda')),'no substring catalogue matches');
 assert.ok(SKY_GUIDE_DATA.media.length>=200,'broad observed-image catalogue');
 const gallery=SkyGuide.gallery(object('sirius'));
